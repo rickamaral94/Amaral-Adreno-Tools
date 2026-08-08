@@ -1,0 +1,60 @@
+name: Publish Turnip Amaral 26.3.0-devel v1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: mesa-26.3.0-devel-v1
+      RELEASE_TARGET: 65adc346fe71c61cce1201e6d5fa0fcf3cce5dad
+      ARTIFACT_ID: "9021295645"
+      DRIVER_FILE: turnip_amaral_26.3.0-devel_v1.zip
+      EXPECTED_SHA256: 6a7ce670ee78069adecbca291e7fd74b55071e88039b3dffc691de814aae14e5
+
+    steps:
+      - name: Checkout release metadata
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Download the already validated artifact
+        run: |
+          gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" \
+            > workflow-artifact.zip
+          mkdir -p release-assets
+          unzip -q workflow-artifact.zip -d release-assets
+
+      - name: Verify exact release bytes
+        run: |
+          echo "${EXPECTED_SHA256}  release-assets/${DRIVER_FILE}" | sha256sum --check
+          unzip -t "release-assets/${DRIVER_FILE}"
+          test -s release-assets/SHA256SUMS.txt
+          grep -Fq "${EXPECTED_SHA256}  ${DRIVER_FILE}" release-assets/SHA256SUMS.txt
+
+      - name: Publish pre-release
+        run: |
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release ${RELEASE_TAG} já existe; nenhuma alteração foi feita."
+            exit 0
+          fi
+          gh release create "${RELEASE_TAG}" \
+            "release-assets/${DRIVER_FILE}" \
+            "release-assets/SHA256SUMS.txt" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${RELEASE_TARGET}" \
+            --title "Turnip Amaral 26.3.0-devel v1" \
+            --notes-file docs/releases/mesa-26.3.0-devel-v1.md \
+            --prerelease
+
