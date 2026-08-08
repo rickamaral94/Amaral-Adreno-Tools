@@ -1,0 +1,8 @@
+Mako==1.3.10
+MarkupSafe==3.0.3
+meson==1.9.1
+ninja==1.13.0
+packaging==26.0
+ply==3.11
+PyYAML==6.0.3
+

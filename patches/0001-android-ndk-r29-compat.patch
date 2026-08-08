@@ -1,0 +1,90 @@
+diff --git a/include/android_stub/cutils/native_handle.h b/include/android_stub/cutils/native_handle.h
+index e46e7cd..ef5d472 100644
+--- a/include/android_stub/cutils/native_handle.h
++++ b/include/android_stub/cutils/native_handle.h
+@@ -46,7 +46,7 @@ typedef struct native_handle
+ #endif
+ } native_handle_t;
+ 
+-typedef const native_handle_t* buffer_handle_t;
++typedef void* buffer_handle_t;
+ 
+ /*
+  * Closes the file descriptors contained in this native_handle_t, which may
+diff --git a/src/util/u_gralloc/u_gralloc_fallback.c b/src/util/u_gralloc/u_gralloc_fallback.c
+index 44fb32d..17bc699 100644
+--- a/src/util/u_gralloc/u_gralloc_fallback.c
++++ b/src/util/u_gralloc/u_gralloc_fallback.c
+@@ -53,7 +53,7 @@ fallback_gralloc_get_yuv_info(struct u_gralloc *gralloc,
+    int fds[3];
+    int ret;
+ 
+-   num_fds = get_native_buffer_fds(hnd->handle, fds);
++   num_fds = get_native_buffer_fds((void *) hnd->handle, fds);
+    if (num_fds == 0)
+       return -EINVAL;
+ 
+@@ -62,7 +62,8 @@ fallback_gralloc_get_yuv_info(struct u_gralloc *gralloc,
+    }
+ 
+    memset(&ycbcr, 0, sizeof(ycbcr));
+-   ret = gr_mod->lock_ycbcr(gr_mod, hnd->handle, 0, 0, 0, 0, 0, &ycbcr);
++   ret = gr_mod->lock_ycbcr(gr_mod, (void *) hnd->handle,
++                            0, 0, 0, 0, 0, &ycbcr);
+    if (ret) {
+       /* HACK: See native_window_buffer_get_buffer_info() and
+        * https://issuetracker.google.com/32077885.*/
+@@ -72,7 +73,7 @@ fallback_gralloc_get_yuv_info(struct u_gralloc *gralloc,
+       mesa_logw("gralloc->lock_ycbcr failed: %d", ret);
+       return -EINVAL;
+    }
+-   gr_mod->unlock(gr_mod, hnd->handle);
++   gr_mod->unlock(gr_mod, (void *) hnd->handle);
+ 
+    ret = bufferinfo_from_ycbcr(&ycbcr, hnd, out);
+    if (ret)
+@@ -106,7 +107,7 @@ fallback_gralloc_get_buffer_info(struct u_gralloc *gralloc,
+    int drm_fourcc = 0;
+    int stride = 0;
+ 
+-   if (hnd->handle->numFds == 0)
++   if (((const native_handle_t *) hnd->handle)->numFds == 0)
+       return -EINVAL;
+ 
+    if (is_hal_format_yuv(hnd->hal_format)) {
+@@ -144,14 +145,15 @@ fallback_gralloc_get_buffer_info(struct u_gralloc *gralloc,
+    out->drm_fourcc = drm_fourcc;
+    out->modifier = DRM_FORMAT_MOD_INVALID;
+    out->num_planes = num_planes;
+-   out->fds[0] = hnd->handle->data[0];
++   out->fds[0] = ((const native_handle_t *) hnd->handle)->data[0];
+    out->strides[0] = stride;
+ 
+ #ifdef HAS_FREEDRENO
+    uint32_t gmsm = ('g' << 24) | ('m' << 16) | ('s' << 8) | 'm';
+-   if (hnd->handle->numInts >= 2 && hnd->handle->data[hnd->handle->numFds] == gmsm) {
++   const native_handle_t *handle = (const native_handle_t *) hnd->handle;
++   if (handle->numInts >= 2 && handle->data[handle->numFds] == gmsm) {
+       /* This UBWC flag was introduced in a5xx. */
+-      bool ubwc = hnd->handle->data[hnd->handle->numFds + 1] & 0x08000000;
++      bool ubwc = handle->data[handle->numFds + 1] & 0x08000000;
+       out->modifier = ubwc ? DRM_FORMAT_MOD_QCOM_COMPRESSED : DRM_FORMAT_MOD_LINEAR;
+    }
+ #endif
+diff --git a/src/vulkan/runtime/vk_android.c b/src/vulkan/runtime/vk_android.c
+index fd9ee5d..c3c62ef 100644
+--- a/src/vulkan/runtime/vk_android.c
++++ b/src/vulkan/runtime/vk_android.c
+@@ -195,9 +195,10 @@ vk_android_import_anb_memory(struct vk_device *device,
+                              const VkNativeBufferANDROID *anb,
+                              const VkAllocationCallbacks *alloc)
+ {
+-   assert(anb && anb->handle && anb->handle->numFds > 0);
++   assert(anb && anb->handle &&
++          ((const native_handle_t *) anb->handle)->numFds > 0);
+ 
+-   int dma_buf_fd = anb->handle->data[0];
++   int dma_buf_fd = ((const native_handle_t *) anb->handle)->data[0];
+ 
+    /* Query image memory requirements for size and supported memory types */
+    VkMemoryRequirements mem_reqs;

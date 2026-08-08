@@ -1,0 +1,11 @@
+prefix=@NDK_SYSROOT@/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib/aarch64-linux-android/@ANDROID_API@
+includedir=${prefix}/include
+
+Name: zlib
+Description: Android NDK zlib
+Version: 1.3
+Libs: -L${libdir} -lz
+Cflags: -I${includedir}
+

@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "project_version": "1.0.0-alpha1",
+  "mesa": {
+    "repository": "https://gitlab.freedesktop.org/mesa/mesa.git",
+    "branch": "main",
+    "commit": "32fab1ad098a393ffa40dce8e5272f52aa0ff70a",
+    "version": "26.3.0-devel",
+    "commit_date_utc": "2026-08-08T04:32:37Z",
+    "checked_at_utc": "2026-08-08T00:00:00Z"
+  },
+  "build": {
+    "ndk": "r29",
+    "android_api": 29,
+    "abi": "arm64-v8a",
+    "cpu": "armv8-a",
+    "kmd": "kgsl"
+  }
+}
+
