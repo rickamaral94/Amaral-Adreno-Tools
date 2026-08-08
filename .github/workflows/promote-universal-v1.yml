@@ -1,0 +1,80 @@
+name: Promote universal v1 release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/promote-universal-v1.yml
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Promote release and update notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_BODY: |
+            # Turnip Amaral 26.3.0-devel v1
+
+            Primeira versão universal do Amaral Adreno Tools, criada para oferecer uma base única de compatibilidade para GPUs Adreno reconhecidas pelo Mesa nas famílias A6xx, A7xx e A8xx.
+
+            ## O que mudou
+
+            - Snapshot Mesa `26.3.0-devel` no commit `32fab1ad098a393ffa40dce8e5272f52aa0ff70a`.
+            - Base mais recente que o snapshot A7xx usado como referência, incorporando 201 commits upstream do intervalo auditado.
+            - Tratamento mais robusto de itens inválidos no cache de shaders.
+            - `VK_KHR_maintenance9` concluído para o Turnip no upstream.
+            - Otimizações internas no NIR e ajustes de manutenção do Freedreno.
+            - Build universal AArch64 `armv8-a`, backend KGSL e Android mínimo 29.
+            - Autotuner GMEM/SYSMEM original do Mesa preservado.
+            - Sem spoof de GPU/Vulkan, recursos artificiais ou hacks globais específicos de jogo.
+            - ZIP e ELF reproduzidos por duas compilações independentes e idênticos byte a byte.
+
+            ## Vulkan
+
+            Compilado com headers **Vulkan 1.4.358**. Os recursos disponíveis continuam dependendo da GPU, firmware, Android e emulador.
+
+            ## Validação física inicial
+
+            Testado no **AYN Odin 2 Portal**, Snapdragon 8 Gen 2 / Adreno 740, usando o Eden:
+
+            - O Eden carregou corretamente o `turnip Mesa driver`.
+            - Identidade confirmada: Mesa `26.3.0-devel (git-32fab1ad09)`.
+            - Vulkan API reportada: **1.4.358**.
+            - As chamadas Vulkan registradas retornaram `VK_SUCCESS` (`0`).
+            - Nenhum marcador explícito de fatal, erro ou warning apareceu no trecho analisado.
+
+            No Amaral Driver Lab, o candidato apresentou sinais preliminares de:
+
+            - **+44,72%** na compilação de shaders.
+            - **+22,52%** no trace misto de gráficos, compute e barreiras.
+            - Frametime da cena estável em empate técnico.
+            - Correção offscreen com 100% de correspondência antes e depois da carga.
+
+            Esses percentuais são resultados sintéticos do aparelho testado e não representam garantia de ganho em todos os jogos ou dispositivos.
+
+            ## Limitações conhecidas
+
+            - O log de GPU do Eden atingiu o limite de 2 MB do importador; ele confirma o carregamento e a execução inicial, mas não uma sessão completa.
+            - As cenas visíveis do benchmark não foram consideradas comparáveis entre Turnip e o driver proprietário da Qualcomm; por isso o ganho ponderado não é apresentado como ganho geral.
+            - O relatório marcado como “fatal” no Driver Lab usava o driver proprietário Qualcomm `512.676.53`, Vulkan 1.3.128, e não este Turnip.
+            - Ainda precisamos ampliar a matriz real de testes nas famílias A6xx, A7xx e A8xx.
+
+            Relatórios: [validação do driver](https://github.com/rickamaral94/Amaral-Driver-Lab/issues/30) · [log do Eden com Turnip](https://github.com/rickamaral94/Amaral-Driver-Lab/issues/31) · [falso positivo com driver Qualcomm](https://github.com/rickamaral94/Amaral-Driver-Lab/issues/32)
+
+            ## Status
+
+            **Release pública experimental.** O build passou pela validação estática, reprodutibilidade e pelo primeiro teste físico no Odin 2 Portal. Compartilhe logs, capturas e comparações reproduzíveis para orientar as próximas revisões Amaral.
+
+            ## Integridade
+
+            - Arquivo: `turnip_amaral_26.3.0-devel_v1.zip`
+            - SHA-256 do ZIP: `6a7ce670ee78069adecbca291e7fd74b55071e88039b3dffc691de814aae14e5`
+            - SHA-256 do ELF: `4b6f973bc072bce6040d310a0675a7d67e1696f90bb50b6bc66f2ae22090d010`
+        run: |
+          jq -n --arg body "$RELEASE_BODY" '{prerelease: false, make_latest: "true", body: $body}' |
+            gh api --method PATCH repos/${{ github.repository }}/releases/367244398 --input -
