@@ -1,0 +1,42 @@
+name: Relatório de emulador/driver
+description: Envie um caso reproduzível para a matriz universal.
+title: "[Driver Report] "
+body:
+  - type: input
+    id: device
+    attributes:
+      label: Aparelho, SoC e GPU
+    validations:
+      required: true
+  - type: input
+    id: software
+    attributes:
+      label: Android, emulador e versão
+    validations:
+      required: true
+  - type: input
+    id: driver
+    attributes:
+      label: Nome do ZIP e SHA-256 do driver
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Passos para reproduzir
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Esperado e observado
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs, capturas e comparação com referência
+      description: Remova dados pessoais antes de anexar.
+    validations:
+      required: true
+

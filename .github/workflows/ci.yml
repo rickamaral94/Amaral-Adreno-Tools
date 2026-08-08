@@ -1,0 +1,28 @@
+name: Project checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Validate metadata and evidence gates
+        run: python3 tools/validate_project.py
+      - name: Check shell syntax
+        run: bash -n scripts/*.sh
+      - name: Verify NDK patch against pinned Mesa
+        run: |
+          commit="$(python3 -c 'import json; print(json.load(open("config/mesa-lock.json"))["mesa"]["commit"])')"
+          git init work/mesa
+          git -C work/mesa remote add origin https://gitlab.freedesktop.org/mesa/mesa.git
+          git -C work/mesa fetch --depth=1 origin "${commit}"
+          git -C work/mesa checkout --detach FETCH_HEAD
+          git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0001-android-ndk-r29-compat.patch"
+

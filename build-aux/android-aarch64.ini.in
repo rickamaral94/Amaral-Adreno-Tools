@@ -1,0 +1,21 @@
+[binaries]
+ar = '@NDK_BIN@/llvm-ar'
+c = ['@NDK_BIN@/aarch64-linux-android@ANDROID_API@-clang', '--sysroot=@NDK_SYSROOT@']
+cpp = ['@NDK_BIN@/aarch64-linux-android@ANDROID_API@-clang++', '--sysroot=@NDK_SYSROOT@', '-fno-exceptions', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables', '--start-no-unused-arguments', '-static-libstdc++', '--end-no-unused-arguments']
+c_ld = 'lld'
+cpp_ld = 'lld'
+strip = '@NDK_BIN@/llvm-strip'
+pkg-config = ['env', 'PKG_CONFIG_LIBDIR=@PKG_CONFIG_LIBDIR@', '@PKG_CONFIG@']
+
+[host_machine]
+system = 'android'
+cpu_family = 'aarch64'
+cpu = 'armv8-a'
+endian = 'little'
+
+[built-in options]
+c_args = ['-D__ANDROID__', '-march=armv8-a', '-fno-plt', '-ffunction-sections', '-fdata-sections', '-Wno-error', '-Wno-deprecated-declarations']
+cpp_args = ['-D__ANDROID__', '-march=armv8-a', '-fno-plt', '-ffunction-sections', '-fdata-sections', '-Wno-error', '-Wno-deprecated-declarations']
+c_link_args = ['-fuse-ld=lld', '-Wl,-O2', '-Wl,--gc-sections']
+cpp_link_args = ['-fuse-ld=lld', '-Wl,-O2', '-Wl,--gc-sections', '-static-libstdc++']
+

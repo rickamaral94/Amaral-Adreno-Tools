@@ -1,0 +1,13 @@
+[binaries]
+c = '@NATIVE_CC@'
+cpp = '@NATIVE_CPP@'
+ar = '@NATIVE_AR@'
+strip = '@NATIVE_STRIP@'
+pkg-config = '@PKG_CONFIG@'
+
+[host_machine]
+system = 'linux'
+cpu_family = 'x86_64'
+cpu = 'x86_64'
+endian = 'little'
+

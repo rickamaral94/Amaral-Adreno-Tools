@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "candidates": [
+    {
+      "id": "build-ndk-r29-native-handle",
+      "kind": "build-compatibility",
+      "status": "active",
+      "default": true,
+      "patch": "patches/0001-android-ndk-r29-compat.patch",
+      "reason": "Compatibiliza os tipos de native_handle do Mesa com o NDK r29; não altera a política de execução do Turnip.",
+      "source": "Repositórios Amaral 6xx/7xx/8xx",
+      "license_review": "compatible",
+      "verified_on_mesa": "32fab1ad098a393ffa40dce8e5272f52aa0ff70a"
+    },
+    {
+      "id": "force-gmem-or-sysmem-global",
+      "kind": "runtime-hack",
+      "status": "rejected",
+      "default": false,
+      "reason": "Uma decisão global substitui o autotuner upstream e tende a trocar compatibilidade entre jogos. Driver Lab #16 e #17 também registrou falhas visuais e confiança baixa na comparação contra o sistema.",
+      "evidence": [
+        "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/16",
+        "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/17"
+      ]
+    },
+    {
+      "id": "gpu-or-vulkan-spoofing",
+      "kind": "runtime-hack",
+      "status": "rejected",
+      "default": false,
+      "reason": "Pode abrir caminhos não suportados no jogo/emulador e esconder a identidade real do hardware. Não é aceitável no pacote universal."
+    },
+    {
+      "id": "legacy-max-performance-profile",
+      "kind": "runtime-profile",
+      "status": "reference-only",
+      "default": false,
+      "reason": "Mantido para comparação histórica. No Driver Lab #18 e #21 ficou dentro da margem prática do perfil otimizado, sem vitória demonstrada.",
+      "evidence": [
+        "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/18",
+        "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/21"
+      ]
+    }
+  ]
+}
+

@@ -1,0 +1,38 @@
+name: Mesa upstream watch
+
+on:
+  schedule:
+    - cron: "17 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - id: mesa
+        name: Compare pinned Mesa with main
+        continue-on-error: true
+        run: python3 tools/check_mesa_update.py --github-output "${GITHUB_OUTPUT}"
+      - name: Open update report
+        if: steps.mesa.outputs.update_available == 'true'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          script: |
+            const title = `Mesa update: ${{ steps.mesa.outputs.latest_short }}`;
+            const {data} = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo, state: 'open'
+            });
+            if (!data.some(issue => issue.title === title)) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body: `Novo Mesa main detectado.\n\nPinned: \`${{ steps.mesa.outputs.pinned_sha }}\`\nLatest: \`${{ steps.mesa.outputs.latest_sha }}\`\n\nSiga \`docs/UPSTREAM-UPDATES.md\`. Esta automação não altera nem publica o driver.`
+              });
+            }
+

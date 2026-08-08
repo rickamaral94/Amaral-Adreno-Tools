@@ -1,0 +1,29 @@
+name: Candidato de patch/hack
+description: Proponha uma mudança comunitária com fonte e evidência.
+title: "[Candidate] "
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Fonte original e licença
+    validations:
+      required: true
+  - type: textarea
+    id: mechanism
+    attributes:
+      label: O que muda e por que deve funcionar
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: GPUs, emuladores e jogos afetados
+    validations:
+      required: true
+  - type: textarea
+    id: results
+    attributes:
+      label: Resultados A/B, rodadas, visuais, estabilidade e logs
+    validations:
+      required: true
+
