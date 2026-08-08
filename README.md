@@ -57,6 +57,16 @@ NDK_ROOT=/caminho/android-ndk-r29 ./scripts/build_universal.sh
 O build usa apenas o commit fixado, aplica a compatibilidade necessária ao NDK
 r29, valida o ELF e gera ZIP + `SHA256SUMS.txt` em `dist/`.
 
+Para o gate de reprodutibilidade usado antes dos testes:
+
+```bash
+NDK_ROOT=/caminho/android-ndk-r29 ./scripts/check_reproducibility.sh
+```
+
+Ele faz duas compilações isoladas e só mantém o candidato quando ZIP e ELF forem
+idênticos byte a byte. O workflow envia o resultado como artefato temporário por
+14 dias; ele não cria release.
+
 ## Como uma ideia entra no driver
 
 1. Registrar a fonte e a hipótese em `evidence/candidates.json`.

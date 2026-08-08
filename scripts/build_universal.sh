@@ -62,6 +62,27 @@ fi
 
 ndk_bin="${ndk_root}/toolchains/llvm/prebuilt/linux-x86_64/bin"
 ndk_sysroot="${ndk_root}/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
+
+ensure_ndk_symlink() {
+  local link_path="$1"
+  local expected_target="$2"
+
+  if [[ -L "${link_path}" ]]; then
+    [[ "$(readlink "${link_path}")" == "${expected_target}" ]]
+    return
+  fi
+  if [[ -f "${link_path}" && "$(< "${link_path}")" == "${expected_target}" ]]; then
+    ln -sf "${expected_target}" "${link_path}"
+    return
+  fi
+  echo "Link do NDK inválido: ${link_path} -> ${expected_target}" >&2
+  exit 1
+}
+
+ensure_ndk_symlink "${ndk_bin}/clang++" "clang"
+ensure_ndk_symlink "${ndk_bin}/ld.lld" "lld"
+ensure_ndk_symlink "${ndk_bin}/llvm-strip" "llvm-objcopy"
+
 for required in meson ninja flex bison glslangValidator pkg-config python3 git zip unzip zipinfo file readelf sha256sum; do
   command -v "${required}" >/dev/null
 done

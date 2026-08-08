@@ -1,0 +1,64 @@
+name: Reproducible universal build
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-twice:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Install host tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            bison \
+            build-essential \
+            file \
+            flex \
+            glslang-tools \
+            pkg-config \
+            python3-venv \
+            unzip \
+            zip
+
+      - name: Install pinned Python build tools
+        run: |
+          python3 -m venv work/venv
+          work/venv/bin/pip install --requirement requirements-build.txt
+          echo "${GITHUB_WORKSPACE}/work/venv/bin" >> "${GITHUB_PATH}"
+
+      - name: Download verified Android NDK r29
+        run: |
+          mkdir -p work/toolchains
+          curl --fail --location \
+            --output work/android-ndk-r29-linux.zip \
+            https://dl.google.com/android/repository/android-ndk-r29-linux.zip
+          echo "87e2bb7e9be5d6a1c6cdf5ec40dd4e0c6d07c30b  work/android-ndk-r29-linux.zip" \
+            | sha1sum --check
+          unzip -q work/android-ndk-r29-linux.zip -d work/toolchains
+
+      - name: Build twice and compare byte for byte
+        env:
+          NDK_ROOT: ${{ github.workspace }}/work/toolchains/android-ndk-r29
+        run: ./scripts/check_reproducibility.sh
+
+      - name: Upload test candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: turnip-amaral-test-candidate
+          path: |
+            dist/turnip_amaral_*.zip
+            dist/SHA256SUMS.txt
+            dist/REPRODUCIBILITY.txt
+          if-no-files-found: error
+          retention-days: 14
+
