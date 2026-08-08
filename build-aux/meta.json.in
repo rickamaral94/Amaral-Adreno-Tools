@@ -1,12 +1,11 @@
 {
   "schemaVersion": 1,
-  "name": "Amaral Turnip Universal v@PROJECT_VERSION@",
-  "description": "Mesa @MESA_VERSION@ (@MESA_SHORT_COMMIT@); Turnip/KGSL; AArch64 armv8-a; baseline universal sem hacks globais.",
+  "name": "Turnip Amaral @MESA_VERSION@ v@AMARAL_REVISION@",
+  "description": "Turnip Amaral @MESA_VERSION@ v@AMARAL_REVISION@ · Vulkan 1.4.@VK_HEADER_VERSION@",
   "author": "Mesa/Freedreno; Amaral Adreno Tools",
-  "packageVersion": "@PROJECT_VERSION@",
+  "packageVersion": "@AMARAL_REVISION@",
   "vendor": "Mesa",
-  "driverVersion": "Mesa @MESA_VERSION@ @MESA_SHORT_COMMIT@; Vulkan 1.4.@VK_HEADER_VERSION@",
+  "driverVersion": "Vulkan 1.4.@VK_HEADER_VERSION@",
   "minApi": @ANDROID_API@,
   "libraryName": "libvulkan_freedreno.so"
 }
-

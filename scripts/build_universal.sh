@@ -25,7 +25,7 @@ PY
 
 expected_commit="$(read_lock mesa.commit)"
 mesa_url="$(read_lock mesa.repository)"
-project_version="$(read_lock project_version)"
+amaral_revision="$(read_lock amaral_revision)"
 android_api="$(read_lock build.android_api)"
 
 if [[ ! -d "${mesa_src}/.git" ]]; then
@@ -104,16 +104,15 @@ driver_path="${install_root}/lib/libvulkan_freedreno.so"
 test -f "${driver_path}"
 mesa_version="$(tr -d '\r\n' < "${mesa_src}/VERSION")"
 vk_header_version="$(sed -n 's/^#define VK_HEADER_VERSION \([0-9][0-9]*\)$/\1/p' "${mesa_src}/include/vulkan/vulkan_core.h")"
-short_commit="${actual_commit:0:7}"
-package_basename="Amaral-Turnip-Universal-v${project_version}-Mesa-${mesa_version}-${short_commit}"
+package_basename="turnip_amaral_${mesa_version}_v${amaral_revision}"
 artifact_path="${output_root}/${package_basename}.zip"
 
 rm -rf "${package_dir}"
 rm -f "${artifact_path}"
 mkdir -p "${package_dir}"
 cp "${driver_path}" "${package_dir}/libvulkan_freedreno.so"
-sed -e "s|@PROJECT_VERSION@|${project_version}|g" -e "s|@ANDROID_API@|${android_api}|g" \
-  -e "s|@MESA_VERSION@|${mesa_version}|g" -e "s|@MESA_SHORT_COMMIT@|${short_commit}|g" \
+sed -e "s|@AMARAL_REVISION@|${amaral_revision}|g" -e "s|@ANDROID_API@|${android_api}|g" \
+  -e "s|@MESA_VERSION@|${mesa_version}|g" \
   -e "s|@VK_HEADER_VERSION@|${vk_header_version}|g" \
   "${repo_root}/build-aux/meta.json.in" > "${package_dir}/meta.json"
 touch -d "@${SOURCE_DATE_EPOCH}" "${package_dir}/libvulkan_freedreno.so" "${package_dir}/meta.json"
@@ -121,4 +120,3 @@ touch -d "@${SOURCE_DATE_EPOCH}" "${package_dir}/libvulkan_freedreno.so" "${pack
 (cd "${output_root}" && sha256sum "${package_basename}.zip" > SHA256SUMS.txt)
 "${repo_root}/scripts/validate_artifact.sh" "${artifact_path}"
 echo "${artifact_path}"
-

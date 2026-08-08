@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "project_version": "1.0.0-alpha1",
+  "amaral_revision": 1,
   "mesa": {
     "repository": "https://gitlab.freedesktop.org/mesa/mesa.git",
     "branch": "main",
@@ -17,4 +17,3 @@
     "kmd": "kgsl"
   }
 }
-

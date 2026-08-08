@@ -24,7 +24,7 @@ emuladores.
 
 | Item | Valor |
 |---|---|
-| Versão de desenvolvimento | `1.0.0-alpha1` |
+| Revisão Amaral | `v1` |
 | Mesa | `26.3.0-devel` |
 | Commit fixado | `32fab1ad098a393ffa40dce8e5272f52aa0ff70a` |
 | Backend | Turnip/Freedreno + KGSL |
@@ -32,9 +32,16 @@ emuladores.
 | API mínima proposta | Android 10 / API 29, pendente de matriz completa |
 | Hacks de execução ativos | nenhum |
 
-O arquivo canônico é [`config/mesa-lock.json`](config/mesa-lock.json). O nome de
-um futuro artefato seguirá:
-`Amaral-Turnip-Universal-v1.0.0-alpha1-Mesa-26.3.0-devel-32fab1a.zip`.
+O arquivo canônico é [`config/mesa-lock.json`](config/mesa-lock.json). O padrão
+curto de identificação é:
+
+- nome: `Turnip Amaral 26.3.0-devel v1`;
+- arquivo: `turnip_amaral_26.3.0-devel_v1.zip`;
+- descrição: `Turnip Amaral 26.3.0-devel v1 · Vulkan 1.4.xxx`.
+
+O número `v1` é a revisão Amaral. Ele avança (`v2`, `v3`...) enquanto a versão
+do Mesa for a mesma e volta para `v1` quando a versão do Mesa mudar. O commit
+completo continua no lock e nos checksums, não no nome público.
 
 ## Começar
 
@@ -75,4 +82,3 @@ nova validação no Driver Lab. Consulte
 - [freedreno_turnip-CI](https://github.com/s1mptom/freedreno_turnip-CI)
 
 Este projeto não é afiliado à Qualcomm, Mesa ou aos projetos de emulação.
-

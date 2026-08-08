@@ -28,7 +28,7 @@ with open(sys.argv[1], encoding="utf-8") as stream:
 assert meta["schemaVersion"] == 1
 assert meta["libraryName"] == "libvulkan_freedreno.so"
 assert meta["minApi"] == 29
-assert meta["name"].startswith("Amaral Turnip Universal v")
+assert meta["name"].startswith("Turnip Amaral ")
+assert meta["description"] == f'{meta["name"]} · {meta["driverVersion"]}'
 PY
 sha256sum "${artifact}" "${driver}"
-
