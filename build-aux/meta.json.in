@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "name": "Turnip Amaral @MESA_VERSION@ v@AMARAL_REVISION@",
-  "description": "Turnip Amaral @MESA_VERSION@ v@AMARAL_REVISION@ · Vulkan 1.4.@VK_HEADER_VERSION@",
+  "name": "Turnip Amaral @MESA_VERSION@ v@AMARAL_REVISION@@DRIVER_NAME_SUFFIX@",
+  "description": "Turnip Amaral @MESA_VERSION@ v@AMARAL_REVISION@@DRIVER_NAME_SUFFIX@ · Vulkan 1.4.@VK_HEADER_VERSION@",
   "author": "Mesa/Freedreno; Amaral Adreno Tools",
   "packageVersion": "@AMARAL_REVISION@",
   "vendor": "Mesa",

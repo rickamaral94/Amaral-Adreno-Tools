@@ -17,7 +17,7 @@ jobs:
         run: python3 tools/validate_project.py
       - name: Check shell syntax
         run: bash -n scripts/*.sh
-      - name: Verify NDK patch against pinned Mesa
+      - name: Verify driver patches against pinned Mesa
         run: |
           commit="$(python3 -c 'import json; print(json.load(open("config/mesa-lock.json"))["mesa"]["commit"])')"
           git init work/mesa
@@ -25,4 +25,9 @@ jobs:
           git -C work/mesa fetch --depth=1 origin "${commit}"
           git -C work/mesa checkout --detach FETCH_HEAD
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0001-android-ndk-r29-compat.patch"
-
+          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0001-android-ndk-r29-compat.patch"
+          git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0002-a825-experimental.patch"
+          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0002-a825-experimental.patch"
+          git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0003-oneui-ubwc.patch"
+          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0003-oneui-ubwc.patch"
+          git -C work/mesa diff --check

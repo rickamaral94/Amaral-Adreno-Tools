@@ -4,12 +4,27 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/.." && pwd)"
 work_root="${WORK_ROOT:-${repo_root}/work}"
-mesa_src="${MESA_SRC:-${work_root}/mesa}"
+driver_variant="${DRIVER_VARIANT:-standard}"
+case "${driver_variant}" in
+  standard)
+    artifact_suffix=""
+    driver_name_suffix=""
+    ;;
+  oneui)
+    artifact_suffix="_oneUI"
+    driver_name_suffix=" OneUI"
+    ;;
+  *)
+    echo "DRIVER_VARIANT inválida: ${driver_variant}; use standard ou oneui" >&2
+    exit 2
+    ;;
+esac
+mesa_src="${MESA_SRC:-${work_root}/mesa-${driver_variant}}"
 ndk_root="${NDK_ROOT:-${work_root}/toolchains/android-ndk-r29}"
 output_root="${OUTPUT_ROOT:-${repo_root}/dist}"
-build_dir="${work_root}/build-universal"
-install_root="${work_root}/install-universal"
-package_dir="${work_root}/package-universal"
+build_dir="${work_root}/build-${driver_variant}"
+install_root="${work_root}/install-${driver_variant}"
+package_dir="${work_root}/package-${driver_variant}"
 lock_file="${repo_root}/config/mesa-lock.json"
 
 read_lock() {
@@ -42,15 +57,30 @@ if [[ "${actual_commit}" != "${expected_commit}" ]]; then
   exit 1
 fi
 
-patch_file="${repo_root}/patches/0001-android-ndk-r29-compat.patch"
-if ! git -C "${mesa_src}" apply --reverse --check "${patch_file}" >/dev/null 2>&1; then
-  git -C "${mesa_src}" apply --check "${patch_file}"
-  git -C "${mesa_src}" apply "${patch_file}"
+apply_patch_once() {
+  local patch_file="$1"
+  if ! git -C "${mesa_src}" apply --reverse --check "${patch_file}" >/dev/null 2>&1; then
+    git -C "${mesa_src}" apply --check "${patch_file}"
+    git -C "${mesa_src}" apply "${patch_file}"
+  fi
+}
+
+apply_patch_once "${repo_root}/patches/0001-android-ndk-r29-compat.patch"
+apply_patch_once "${repo_root}/patches/0002-a825-experimental.patch"
+if [[ "${driver_variant}" == "oneui" ]]; then
+  apply_patch_once "${repo_root}/patches/0003-oneui-ubwc.patch"
+elif git -C "${mesa_src}" apply --reverse --check \
+    "${repo_root}/patches/0003-oneui-ubwc.patch" >/dev/null 2>&1; then
+  echo "A árvore Mesa da variante standard contém o patch OneUI." >&2
+  exit 1
 fi
 git -C "${mesa_src}" diff --check
 mapfile -t changed_source_files < <(git -C "${mesa_src}" diff --name-only | LC_ALL=C sort)
 expected_source_files=(
   "include/android_stub/cutils/native_handle.h"
+  "src/freedreno/common/freedreno_devices.py"
+  "src/freedreno/drm-shim/freedreno_noop.c"
+  "src/freedreno/vulkan/tu_pipeline.cc"
   "src/util/u_gralloc/u_gralloc_fallback.c"
   "src/vulkan/runtime/vk_android.c"
 )
@@ -125,7 +155,7 @@ driver_path="${install_root}/lib/libvulkan_freedreno.so"
 test -f "${driver_path}"
 mesa_version="$(tr -d '\r\n' < "${mesa_src}/VERSION")"
 vk_header_version="$(sed -n 's/^#define VK_HEADER_VERSION \([0-9][0-9]*\)$/\1/p' "${mesa_src}/include/vulkan/vulkan_core.h")"
-package_basename="turnip_amaral_${mesa_version}_v${amaral_revision}"
+package_basename="turnip_amaral_${mesa_version}_v${amaral_revision}${artifact_suffix}"
 artifact_path="${output_root}/${package_basename}.zip"
 
 rm -rf "${package_dir}"
@@ -134,6 +164,7 @@ mkdir -p "${package_dir}"
 cp "${driver_path}" "${package_dir}/libvulkan_freedreno.so"
 sed -e "s|@AMARAL_REVISION@|${amaral_revision}|g" -e "s|@ANDROID_API@|${android_api}|g" \
   -e "s|@MESA_VERSION@|${mesa_version}|g" \
+  -e "s|@DRIVER_NAME_SUFFIX@|${driver_name_suffix}|g" \
   -e "s|@VK_HEADER_VERSION@|${vk_header_version}|g" \
   "${repo_root}/build-aux/meta.json.in" > "${package_dir}/meta.json"
 touch -d "@${SOURCE_DATE_EPOCH}" "${package_dir}/libvulkan_freedreno.so" "${package_dir}/meta.json"

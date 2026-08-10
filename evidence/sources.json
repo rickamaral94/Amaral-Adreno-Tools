@@ -21,6 +21,11 @@
   ],
   "community": [
     {
+      "name": "whitebelyash/mesa-unified",
+      "url": "https://github.com/whitebelyash/mesa-unified/tree/turnip/gen8",
+      "use": "Fonte do suporte comunitário experimental à Adreno 825; somente mudanças isoladas e revisadas são portadas"
+    },
+    {
       "name": "freedreno_turnip-CI",
       "url": "https://github.com/s1mptom/freedreno_turnip-CI",
       "use": "Comparação de builds e retorno histórico da comunidade A8xx"
@@ -31,4 +36,3 @@
     }
   ]
 }
-

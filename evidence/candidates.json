@@ -40,7 +40,28 @@
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/18",
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/21"
       ]
+    },
+    {
+      "id": "a825-community-support",
+      "kind": "device-support",
+      "status": "testing",
+      "default": true,
+      "patch": "patches/0002-a825-experimental.patch",
+      "reason": "Adiciona o ID KGSL e a configuração comunitária da Adreno 825, mantendo os workarounds de pipeline condicionados exclusivamente ao chip_id 0x44030000.",
+      "source": "whitebelyash/mesa-unified turnip/gen8",
+      "license_review": "compatible",
+      "verified_on_mesa": "32fab1ad098a393ffa40dce8e5272f52aa0ff70a"
+    },
+    {
+      "id": "oneui-tp-ubwc-flag-hint",
+      "kind": "device-compatibility",
+      "status": "testing",
+      "default": false,
+      "patch": "patches/0003-oneui-ubwc.patch",
+      "reason": "Gera uma variante separada que ativa TP_UBWC_FLAG_HINT somente na entrada FD740 para corresponder a blobs de sistema que utilizam esse bit.",
+      "source": "Mesa 3D e builds comunitários OneUI",
+      "license_review": "compatible",
+      "verified_on_mesa": "32fab1ad098a393ffa40dce8e5272f52aa0ff70a"
     }
   ]
 }
-

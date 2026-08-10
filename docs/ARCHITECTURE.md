@@ -11,9 +11,18 @@ transforme em comportamento global:
 4. **Validação:** ELF, reprodutibilidade, qualidade visual, estabilidade e A/B no
    Amaral Driver Lab.
 
-O pacote universal não seleciona perfis por família. O próprio Mesa usa a
-identificação real da GPU e sua device database. Novas GPUs só entram no escopo
-quando reconhecidas pelo snapshot upstream e quando houver validação real.
+O pacote universal não seleciona perfis globais por família. O próprio Mesa usa
+a identificação real da GPU e sua device database. A única exceção atual é a
+Adreno 825 experimental: sua configuração e seus workarounds são condicionados
+ao `chip_id` KGSL `0x44030000`, sem alterar outras GPUs.
+
+O pipeline gera duas variantes a partir da mesma base:
+
+- `standard`: Mesa fixado + compatibilidade NDK + suporte A825 isolado;
+- `oneui`: todo o conteúdo de `standard` + `TP_UBWC_FLAG_HINT` na FD740.
+
+Cada variante usa diretórios de fonte, build e pacote separados para impedir
+que o patch OneUI permaneça na compilação padrão.
 
 ## Princípios técnicos
 
@@ -23,4 +32,5 @@ quando reconhecidas pelo snapshot upstream e quando houver validação real.
 - nenhuma variável `TU_DEBUG` embutida.
 - sem spoof de nome, modelo, extensões ou versão Vulkan.
 - ZIP simples para Adreno Tools: `libvulkan_freedreno.so` e `meta.json`.
-
+- nenhum perfil IR3 global, aumento global de shared memory ou conjunto de hacks
+  A8xx do fork comunitário é aplicado.
