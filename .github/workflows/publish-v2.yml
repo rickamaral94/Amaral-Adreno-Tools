@@ -58,10 +58,13 @@ jobs:
             sha256sum "${STANDARD_FILE}" "${ONEUI_FILE}" > SHA256SUMS.txt
           )
 
-      - name: Publish pre-release
+      - name: Publish stable release
         run: |
           if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-            echo "Release ${RELEASE_TAG} já existe; nenhuma alteração foi feita."
+            gh release edit "${RELEASE_TAG}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --prerelease=false
+            echo "Release ${RELEASE_TAG} promovida para estável."
             exit 0
           fi
           gh release create "${RELEASE_TAG}" \
@@ -71,5 +74,4 @@ jobs:
             --repo "${GITHUB_REPOSITORY}" \
             --target "${GITHUB_SHA}" \
             --title "Turnip Amaral 26.3.0-devel v2" \
-            --notes-file docs/releases/mesa-26.3.0-devel-v2.md \
-            --prerelease
+            --notes-file docs/releases/mesa-26.3.0-devel-v2.md
