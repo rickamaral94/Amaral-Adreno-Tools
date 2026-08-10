@@ -40,8 +40,9 @@ texturas.
 A OneUI não é uma versão de desempenho geral e não modifica GPUs A8xx. A
 variante padrão continua sendo a primeira recomendação de teste.
 
-## Validação antes da pré-release
+## Validação da pré-release
 
 O CI compila as variantes padrão e OneUI separadamente, duas vezes cada, e
-exige ZIPs e ELFs idênticos byte a byte. A publicação da pré-release depende da
-conclusão desse gate e da geração dos respectivos checksums.
+exige ZIPs e ELFs idênticos byte a byte. A promoção para pré-release reutiliza
+somente os artefatos aprovados por esse gate e verifica seus hashes antes da
+publicação.
