@@ -12,6 +12,10 @@ def load(relative):
         return json.load(stream)
 
 
+def read_text(relative):
+    return (ROOT / relative).read_text(encoding="utf-8")
+
+
 def main():
     lock = load("config/mesa-lock.json")
     evidence = load("evidence/candidates.json")
@@ -20,7 +24,7 @@ def main():
     commit = lock["mesa"]["commit"]
     assert re.fullmatch(r"[0-9a-f]{40}", commit), "Mesa commit must be a full SHA"
     assert isinstance(lock["amaral_revision"], int)
-    assert lock["amaral_revision"] >= 1
+    assert lock["amaral_revision"] == 2
     assert lock["build"]["cpu"] == "armv8-a"
     assert lock["build"]["kmd"] == "kgsl"
     assert sources["primary"][0]["name"] == "Mesa 3D"
@@ -41,6 +45,20 @@ def main():
             assert gate.get("families") == ["A6xx", "A7xx", "A8xx"]
         if item.get("patch"):
             assert (ROOT / item["patch"]).is_file(), item["patch"]
+
+    a825_patch = read_text("patches/0002-a825-experimental.patch")
+    assert 'GPUId(chip_id=0x44030000, name="Adreno (TM) 825")' in a825_patch
+    assert "is_a825 ? false" in a825_patch
+    assert "is_target_gpu" not in a825_patch
+    assert "cs_shared_mem_size = 64 * 1024" not in a825_patch
+    assert "const bool is_a810" not in a825_patch
+    assert "const bool is_a829" not in a825_patch
+    assert "const bool is_a830" not in a825_patch
+    assert "const bool is_a840" not in a825_patch
+
+    oneui_patch = read_text("patches/0003-oneui-ubwc.patch")
+    assert oneui_patch.count("enable_tp_ubwc_flag_hint = True") == 1
+    assert "0x44030000" not in oneui_patch
 
     print("Project metadata and evidence gates are valid.")
     return 0

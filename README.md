@@ -1,49 +1,78 @@
 # Amaral Adreno Tools
 
-Projeto do **Amaral Turnip Universal**, um único pacote de driver Vulkan para
-Android/KGSL, construído a partir do Mesa 3D e orientado a compatibilidade em
-emuladores.
+Projeto do **Amaral Turnip Universal**, driver Vulkan para Android/KGSL
+construído a partir do Mesa 3D e orientado à compatibilidade em emuladores.
 
-> Status: estrutura inicial de desenvolvimento. Ainda não há release universal
-> recomendada para uso diário.
+> Status: `v2` em pré-release de validação comunitária. O suporte à Adreno 825
+> e a variante OneUI são experimentais.
+
+## Variantes da atualização v2
+
+As duas variantes usam o mesmo snapshot Mesa, a mesma revisão Amaral e o mesmo
+suporte experimental à Adreno 825. A variante OneUI acrescenta somente a
+compatibilidade UBWC descrita abaixo.
+
+| Variante | Arquivo | Uso |
+|---|---|---|
+| Padrão | `turnip_amaral_26.3.0-devel_v2.zip` | Recomendada como ponto de partida |
+| OneUI | `turnip_amaral_26.3.0-devel_v2_oneUI.zip` | Para sistemas cujo driver proprietário exige o mesmo `TP_UBWC_FLAG_HINT` |
+
+### Suporte experimental à Adreno 825
+
+A variante padrão e a OneUI reconhecem a Adreno 825 pelo `chip_id` KGSL
+`0x44030000`. O port comunitário adiciona uma configuração própria de
+GMEM/CCU/VPC e mantém os dois workarounds de pipeline condicionados diretamente
+a esse ID. Assim, eles não alteram A810, A829, A830, A840 nem outras GPUs do
+pacote Universal.
+
+Esse suporte deriva do fork
+[`whitebelyash/mesa-unified`](https://github.com/whitebelyash/mesa-unified/tree/turnip/gen8),
+mas o fork completo não foi incorporado. Perfis globais de compilação IR3,
+aumento global de shared memory e alterações conjuntas para várias A8xx ficaram
+de fora. A A825 ainda não está definida no snapshot oficial do Mesa usado por
+esta revisão e não possui validação CTS ou matriz física completa; por isso seu
+suporte deve ser considerado **experimental**.
+
+### Variante OneUI
+
+A OneUI é o mesmo driver padrão com `enable_tp_ubwc_flag_hint` ativado somente
+na entrada FD740. O Mesa documenta que esse bit precisa coincidir com o driver
+proprietário do sistema; quando há divergência, podem ocorrer falhas em blits,
+escala e texturas. Ela não é um perfil de desempenho geral para aparelhos
+Samsung e não altera a configuração das GPUs A8xx.
+
+Use primeiro a variante padrão. Teste a OneUI quando o firmware/driver do
+sistema apresentar sintomas compatíveis com a divergência de UBWC.
 
 ## Direção do projeto
 
 - **Fonte principal:** Mesa 3D/Freedreno/Turnip, fixado por commit.
-- **Alvo inicial de validação:** Adreno A6xx, A7xx e A8xx reconhecidas pelo
-  snapshot do Mesa. Suporte real depende também do aparelho, firmware, Android
-  e emulador.
+- **Alvo de validação:** Adreno A6xx, A7xx e A8xx reconhecidas pelo snapshot,
+  mais a A825 em suporte comunitário experimental.
 - **Um perfil público:** AArch64 `armv8-a`, KGSL e decisões upstream como padrão.
 - **Sem atalhos globais:** nada de spoof de GPU/Vulkan, recursos inventados,
   `TU_DEBUG` forçado ou hack específico de jogo no pacote universal.
-- **Evidência antes de otimização:** relatos da comunidade, issues de emuladores,
-  repositórios antigos e Amaral Driver Lab alimentam candidatos isolados; não
-  viram patch ativo sem teste A/B e validação visual.
+- **Evidência antes de otimização:** mudanças novas ficam isoladas por variante
+  ou por `chip_id` e só são promovidas após teste A/B e validação visual.
 
-## Baseline inicial
+## Baseline
 
 | Item | Valor |
 |---|---|
-| Revisão Amaral | `v1` |
+| Revisão Amaral | `v2` |
 | Mesa | `26.3.0-devel` |
 | Commit fixado | `32fab1ad098a393ffa40dce8e5272f52aa0ff70a` |
 | Backend | Turnip/Freedreno + KGSL |
 | ABI | Android AArch64, `armv8-a` |
 | API mínima proposta | Android 10 / API 29, pendente de matriz completa |
-| Hacks de execução ativos | nenhum |
+| Exceção não upstream | Adreno 825, experimental e isolada por `chip_id` |
 
-O arquivo canônico é [`config/mesa-lock.json`](config/mesa-lock.json). O padrão
-curto de identificação é:
+O arquivo canônico é [`config/mesa-lock.json`](config/mesa-lock.json). O número
+`v2` é a revisão Amaral: ele avança enquanto a versão do Mesa for a mesma e
+volta para `v1` quando a versão do Mesa mudar. O commit completo permanece no
+lock e nos checksums, não no nome público.
 
-- nome: `Turnip Amaral 26.3.0-devel v1`;
-- arquivo: `turnip_amaral_26.3.0-devel_v1.zip`;
-- descrição: `Turnip Amaral 26.3.0-devel v1 · Vulkan 1.4.xxx`.
-
-O número `v1` é a revisão Amaral. Ele avança (`v2`, `v3`...) enquanto a versão
-do Mesa for a mesma e volta para `v1` quando a versão do Mesa mudar. O commit
-completo continua no lock e nos checksums, não no nome público.
-
-## Começar
+## Compilar
 
 Requisitos: Linux x86_64, Android NDK r29, Python 3, Git, Meson, Ninja, Flex,
 Bison, glslang, pkg-config, zip e ferramentas ELF.
@@ -51,21 +80,28 @@ Bison, glslang, pkg-config, zip e ferramentas ELF.
 ```bash
 python3 -m venv work/venv
 work/venv/bin/pip install --requirement requirements-build.txt
-NDK_ROOT=/caminho/android-ndk-r29 ./scripts/build_universal.sh
+
+# Variante padrão
+NDK_ROOT=/caminho/android-ndk-r29 \
+  DRIVER_VARIANT=standard ./scripts/build_universal.sh
+
+# Variante OneUI
+NDK_ROOT=/caminho/android-ndk-r29 \
+  DRIVER_VARIANT=oneui ./scripts/build_universal.sh
 ```
 
-O build usa apenas o commit fixado, aplica a compatibilidade necessária ao NDK
-r29, valida o ELF e gera ZIP + `SHA256SUMS.txt` em `dist/`.
-
-Para o gate de reprodutibilidade usado antes dos testes:
+Para o gate de reprodutibilidade, execute cada variante duas vezes:
 
 ```bash
-NDK_ROOT=/caminho/android-ndk-r29 ./scripts/check_reproducibility.sh
+NDK_ROOT=/caminho/android-ndk-r29 \
+  DRIVER_VARIANT=standard ./scripts/check_reproducibility.sh
+NDK_ROOT=/caminho/android-ndk-r29 \
+  DRIVER_VARIANT=oneui ./scripts/check_reproducibility.sh
 ```
 
-Ele faz duas compilações isoladas e só mantém o candidato quando ZIP e ELF forem
-idênticos byte a byte. O workflow envia o resultado como artefato temporário por
-14 dias; ele não cria release.
+O workflow executa a mesma matriz e só mantém candidatos quando ZIP e ELF são
+idênticos byte a byte. Os artefatos temporários ficam disponíveis por 14 dias;
+o workflow de candidatos não cria release automaticamente.
 
 ## Como uma ideia entra no driver
 
@@ -87,6 +123,7 @@ nova validação no Driver Lab. Consulte
 ## Referências
 
 - [Mesa 3D](https://gitlab.freedesktop.org/mesa/mesa)
+- [whitebelyash/mesa-unified](https://github.com/whitebelyash/mesa-unified/tree/turnip/gen8)
 - Repositórios privados Amaral Adreno 6xx/7xx/8xx (histórico técnico)
 - [Amaral Driver Lab](https://github.com/rickamaral94/Amaral-Driver-Lab)
 - [freedreno_turnip-CI](https://github.com/s1mptom/freedreno_turnip-CI)
