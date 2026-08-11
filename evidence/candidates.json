@@ -10,7 +10,7 @@
       "reason": "Compatibiliza os tipos de native_handle do Mesa com o NDK r29; não altera a política de execução do Turnip.",
       "source": "Repositórios Amaral 6xx/7xx/8xx",
       "license_review": "compatible",
-      "verified_on_mesa": "32fab1ad098a393ffa40dce8e5272f52aa0ff70a"
+      "verified_on_mesa": "1b2e70de00f68f8cf32dca8cd1a64fba9b6410a8"
     },
     {
       "id": "force-gmem-or-sysmem-global",
@@ -47,10 +47,15 @@
       "status": "testing",
       "default": true,
       "patch": "patches/0002-a825-experimental.patch",
-      "reason": "Adiciona o ID KGSL e a configuração comunitária da Adreno 825, mantendo os workarounds de pipeline condicionados exclusivamente ao chip_id 0x44030000.",
-      "source": "whitebelyash/mesa-unified turnip/gen8",
+      "reason": "Adiciona o ID KGSL e um perfil A830-like adaptado à topologia real da Adreno 825: caches GMEM conservadores, depth de 128 KiB e tile 96x32, sem desvios de pipeline ou afirmação não validada de VRS.",
+      "source": "Mesa A830 gen1 + whitebelyash/mesa-tu8 depth-cache fix; adaptado e isolado para A825",
       "license_review": "compatible",
-      "verified_on_mesa": "32fab1ad098a393ffa40dce8e5272f52aa0ff70a"
+      "verified_on_mesa": "1b2e70de00f68f8cf32dca8cd1a64fba9b6410a8",
+      "evidence": [
+        "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/37",
+        "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/38",
+        "https://github.com/whitebelyash/mesa-tu8/commit/9f47fad2d70ac224c6f7a07d9807496ac2207a66"
+      ]
     },
     {
       "id": "oneui-tp-ubwc-flag-hint",
@@ -61,7 +66,7 @@
       "reason": "Gera uma variante separada que ativa TP_UBWC_FLAG_HINT somente na entrada FD740 para corresponder a blobs de sistema que utilizam esse bit.",
       "source": "Mesa 3D e builds comunitários OneUI",
       "license_review": "compatible",
-      "verified_on_mesa": "32fab1ad098a393ffa40dce8e5272f52aa0ff70a"
+      "verified_on_mesa": "1b2e70de00f68f8cf32dca8cd1a64fba9b6410a8"
     }
   ]
 }
