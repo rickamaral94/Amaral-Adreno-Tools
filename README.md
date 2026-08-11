@@ -3,74 +3,68 @@
 Projeto do **Amaral Turnip Universal**, driver Vulkan para Android/KGSL
 construído a partir do Mesa 3D e orientado à compatibilidade em emuladores.
 
-> Status: `v2` em pré-release de validação comunitária. O suporte à Adreno 825
-> e a variante OneUI são experimentais.
+> Status: `v3` em pré-release de validação comunitária. O perfil revisado da
+> Adreno 825 e a variante OneUI permanecem experimentais.
 
-## Variantes da atualização v2
-
-As duas variantes usam o mesmo snapshot Mesa, a mesma revisão Amaral e o mesmo
-suporte experimental à Adreno 825. A variante OneUI acrescenta somente a
-compatibilidade UBWC descrita abaixo.
+## Variantes da atualização v3
 
 | Variante | Arquivo | Uso |
 |---|---|---|
-| Padrão | `turnip_amaral_26.3.0-devel_v2.zip` | Recomendada como ponto de partida |
-| OneUI | `turnip_amaral_26.3.0-devel_v2_oneUI.zip` | Para sistemas cujo driver proprietário exige o mesmo `TP_UBWC_FLAG_HINT` |
+| Padrão | `turnip_amaral_26.3.0-devel_v3.zip` | Recomendada como ponto de partida |
+| OneUI | `turnip_amaral_26.3.0-devel_v3_oneUI.zip` | Para sistemas cujo driver proprietário exige o mesmo `TP_UBWC_FLAG_HINT` |
 
-### Suporte experimental à Adreno 825
+As duas variantes usam o snapshot Mesa e o perfil A825 idênticos. A OneUI
+acrescenta somente o ajuste UBWC condicionado à entrada FD740.
 
-A variante padrão e a OneUI reconhecem a Adreno 825 pelo `chip_id` KGSL
-`0x44030000`. O port comunitário adiciona uma configuração própria de
-GMEM/CCU/VPC e mantém os dois workarounds de pipeline condicionados diretamente
-a esse ID. Assim, eles não alteram A810, A829, A830, A840 nem outras GPUs do
-pacote Universal.
+### Perfil experimental da Adreno 825
 
-Esse suporte deriva do fork
-[`whitebelyash/mesa-unified`](https://github.com/whitebelyash/mesa-unified/tree/turnip/gen8),
-mas o fork completo não foi incorporado. Perfis globais de compilação IR3,
-aumento global de shared memory e alterações conjuntas para várias A8xx ficaram
-de fora. A A825 ainda não está definida no snapshot oficial do Mesa usado por
-esta revisão e não possui validação CTS ou matriz física completa; por isso seu
-suporte deve ser considerado **experimental**.
+A v3 reconhece a A825 pelo `chip_id` KGSL `0x44030000` e mantém sua topologia
+real: 4 CCUs, 2 slices, 2 MiB de GMEM e 32 KiB de shared memory.
+
+Com base nos resultados reproduzidos nos issues
+[#37](https://github.com/rickamaral94/Amaral-Driver-Lab/issues/37) e
+[#38](https://github.com/rickamaral94/Amaral-Driver-Lab/issues/38), o perfil foi
+aproximado da A830 apenas nos parâmetros que controlam caches e tiles:
+
+- color cache GMEM: `EIGHTH / 16 KiB`;
+- depth cache GMEM: `FULL / 128 KiB`;
+- tile alignment: `96 x 32`;
+- caches sysmem e buffers VPC preservados nos limites conhecidos da A825.
+
+Os desvios de FDM e sample interpolation da v2 foram removidos, assim como a
+afirmação não validada de correspondência VRS/Vulkan. O Turnip volta a decidir
+esses caminhos pelo comportamento upstream.
 
 ### Variante OneUI
 
-A OneUI é o mesmo driver padrão com `enable_tp_ubwc_flag_hint` ativado somente
-na entrada FD740. O Mesa documenta que esse bit precisa coincidir com o driver
-proprietário do sistema; quando há divergência, podem ocorrer falhas em blits,
-escala e texturas. Ela não é um perfil de desempenho geral para aparelhos
-Samsung e não altera a configuração das GPUs A8xx.
-
-Use primeiro a variante padrão. Teste a OneUI quando o firmware/driver do
-sistema apresentar sintomas compatíveis com a divergência de UBWC.
+A OneUI ativa `enable_tp_ubwc_flag_hint` somente na entrada FD740. Use primeiro
+a variante padrão e teste a OneUI apenas quando o firmware do sistema apresentar
+sintomas compatíveis com divergência UBWC em blits, escala ou texturas.
 
 ## Direção do projeto
 
 - **Fonte principal:** Mesa 3D/Freedreno/Turnip, fixado por commit.
-- **Alvo de validação:** Adreno A6xx, A7xx e A8xx reconhecidas pelo snapshot,
-  mais a A825 em suporte comunitário experimental.
-- **Um perfil público:** AArch64 `armv8-a`, KGSL e decisões upstream como padrão.
-- **Sem atalhos globais:** nada de spoof de GPU/Vulkan, recursos inventados,
-  `TU_DEBUG` forçado ou hack específico de jogo no pacote universal.
-- **Evidência antes de otimização:** mudanças novas ficam isoladas por variante
-  ou por `chip_id` e só são promovidas após teste A/B e validação visual.
+- **Alvo:** A6xx, A7xx e A8xx reconhecidas pelo snapshot, mais A825 experimental.
+- **Perfil público:** AArch64 `armv8-a`, KGSL e decisões upstream como padrão.
+- **Sem atalhos globais:** sem spoof de GPU/Vulkan, `TU_DEBUG` forçado,
+  capabilities inventadas ou hacks específicos de jogo.
+- **Compatibilidade antes de FPS:** uma otimização só avança após validação
+  visual, estabilidade e comparação A/B.
 
 ## Baseline
 
 | Item | Valor |
 |---|---|
-| Revisão Amaral | `v2` |
+| Revisão Amaral | `v3` |
 | Mesa | `26.3.0-devel` |
-| Commit fixado | `32fab1ad098a393ffa40dce8e5272f52aa0ff70a` |
+| Commit fixado | `1b2e70de00f68f8cf32dca8cd1a64fba9b6410a8` |
 | Backend | Turnip/Freedreno + KGSL |
 | ABI | Android AArch64, `armv8-a` |
-| API mínima proposta | Android 10 / API 29, pendente de matriz completa |
+| API mínima proposta | Android 10 / API 29 |
 | Exceção não upstream | Adreno 825, experimental e isolada por `chip_id` |
 
-O arquivo canônico é [`config/mesa-lock.json`](config/mesa-lock.json). O número
-`v2` é a revisão Amaral: ele avança enquanto a versão do Mesa for a mesma e
-volta para `v1` quando a versão do Mesa mudar. O commit completo permanece no
-lock e nos checksums, não no nome público.
+O número `v3` é a revisão Amaral e avança enquanto a versão pública do Mesa
+permanece `26.3.0-devel`. A v2 continua disponível como fallback.
 
 ## Compilar
 
@@ -81,50 +75,31 @@ Bison, glslang, pkg-config, zip e ferramentas ELF.
 python3 -m venv work/venv
 work/venv/bin/pip install --requirement requirements-build.txt
 
-# Variante padrão
 NDK_ROOT=/caminho/android-ndk-r29 \
   DRIVER_VARIANT=standard ./scripts/build_universal.sh
 
-# Variante OneUI
 NDK_ROOT=/caminho/android-ndk-r29 \
   DRIVER_VARIANT=oneui ./scripts/build_universal.sh
 ```
 
-Para o gate de reprodutibilidade, execute cada variante duas vezes:
-
-```bash
-NDK_ROOT=/caminho/android-ndk-r29 \
-  DRIVER_VARIANT=standard ./scripts/check_reproducibility.sh
-NDK_ROOT=/caminho/android-ndk-r29 \
-  DRIVER_VARIANT=oneui ./scripts/check_reproducibility.sh
-```
-
-O workflow executa a mesma matriz e só mantém candidatos quando ZIP e ELF são
-idênticos byte a byte. Os artefatos temporários ficam disponíveis por 14 dias;
-o workflow de candidatos não cria release automaticamente.
+O workflow compila cada variante duas vezes e só mantém candidatos quando ZIP e
+ELF são idênticos byte a byte.
 
 ## Como uma ideia entra no driver
 
-1. Registrar a fonte e a hipótese em `evidence/candidates.json`.
+1. Registrar fonte e hipótese em `evidence/candidates.json`.
 2. Reproduzir o problema no driver de referência e no candidato.
 3. Isolar a mudança em patch pequeno, reversível e licenciado.
-4. Executar a matriz do Driver Lab com checagem visual antes da velocidade.
-5. Promover somente se não houver corrupção, crash ou regressão relevante.
+4. Executar o Driver Lab com checagem visual antes da velocidade.
+5. Promover somente sem corrupção, crash ou regressão relevante.
 
-Os critérios completos estão em [`docs/EVIDENCE-POLICY.md`](docs/EVIDENCE-POLICY.md).
-
-## Atualizações do Mesa
-
-A automação semanal somente detecta um novo `main` e abre um relatório. A troca
-do snapshot exige auditoria de **todo o intervalo**, duas compilações idênticas e
-nova validação no Driver Lab. Consulte
-[`docs/UPSTREAM-UPDATES.md`](docs/UPSTREAM-UPDATES.md).
+Consulte [a política de evidências](docs/EVIDENCE-POLICY.md) e o
+[processo de atualização upstream](docs/UPSTREAM-UPDATES.md).
 
 ## Referências
 
 - [Mesa 3D](https://gitlab.freedesktop.org/mesa/mesa)
-- [whitebelyash/mesa-unified](https://github.com/whitebelyash/mesa-unified/tree/turnip/gen8)
-- Repositórios privados Amaral Adreno 6xx/7xx/8xx (histórico técnico)
+- [whitebelyash/mesa-tu8](https://github.com/whitebelyash/mesa-tu8)
 - [Amaral Driver Lab](https://github.com/rickamaral94/Amaral-Driver-Lab)
 - [freedreno_turnip-CI](https://github.com/s1mptom/freedreno_turnip-CI)
 
