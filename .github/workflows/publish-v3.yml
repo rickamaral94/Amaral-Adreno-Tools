@@ -1,0 +1,77 @@
+name: Publish Turnip Amaral 26.3.0-devel v3
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-v3.yml"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: mesa-26.3.0-devel-v3
+      STANDARD_ARTIFACT_ID: "9086204127"
+      ONEUI_ARTIFACT_ID: "9086190363"
+      STANDARD_FILE: turnip_amaral_26.3.0-devel_v3.zip
+      ONEUI_FILE: turnip_amaral_26.3.0-devel_v3_oneUI.zip
+      STANDARD_SHA256: d67098221bce656fcb4a598fdec0c23ff5b850b674a4272a3c44782584e85ca9
+      ONEUI_SHA256: fe214d6870a20c757df09c54ff56602c484a211fabc6cbee025687139470af4c
+
+    steps:
+      - name: Checkout release metadata
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Download validated candidates
+        run: |
+          gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${STANDARD_ARTIFACT_ID}/zip" \
+            > standard-artifact.zip
+          gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ONEUI_ARTIFACT_ID}/zip" \
+            > oneui-artifact.zip
+          mkdir -p candidates/standard candidates/oneui release-assets
+          unzip -q standard-artifact.zip -d candidates/standard
+          unzip -q oneui-artifact.zip -d candidates/oneui
+
+      - name: Verify exact release bytes
+        run: |
+          echo "${STANDARD_SHA256}  candidates/standard/${STANDARD_FILE}" | sha256sum --check
+          echo "${ONEUI_SHA256}  candidates/oneui/${ONEUI_FILE}" | sha256sum --check
+          unzip -t "candidates/standard/${STANDARD_FILE}"
+          unzip -t "candidates/oneui/${ONEUI_FILE}"
+          grep -Fq "${STANDARD_SHA256}  ${STANDARD_FILE}" candidates/standard/SHA256SUMS.txt
+          grep -Fq "${ONEUI_SHA256}  ${ONEUI_FILE}" candidates/oneui/SHA256SUMS.txt
+          grep -Fq "reproducible=true" candidates/standard/REPRODUCIBILITY_standard.txt
+          grep -Fq "reproducible=true" candidates/oneui/REPRODUCIBILITY_oneui.txt
+          cp "candidates/standard/${STANDARD_FILE}" release-assets/
+          cp "candidates/oneui/${ONEUI_FILE}" release-assets/
+          (
+            cd release-assets
+            sha256sum "${STANDARD_FILE}" "${ONEUI_FILE}" > SHA256SUMS.txt
+          )
+
+      - name: Publish experimental pre-release
+        run: |
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release ${RELEASE_TAG} já existe; nenhuma alteração foi feita."
+            exit 0
+          fi
+          gh release create "${RELEASE_TAG}" \
+            "release-assets/${STANDARD_FILE}" \
+            "release-assets/${ONEUI_FILE}" \
+            "release-assets/SHA256SUMS.txt" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${GITHUB_SHA}" \
+            --title "Turnip Amaral 26.3.0-devel v3" \
+            --notes-file docs/releases/mesa-26.3.0-devel-v3.md \
+            --prerelease
