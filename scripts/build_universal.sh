@@ -80,7 +80,7 @@ expected_source_files=(
   "include/android_stub/cutils/native_handle.h"
   "src/freedreno/common/freedreno_devices.py"
   "src/freedreno/drm-shim/freedreno_noop.c"
-  "src/freedreno/vulkan/tu_pipeline.cc"
+
   "src/util/u_gralloc/u_gralloc_fallback.c"
   "src/vulkan/runtime/vk_android.c"
 )
