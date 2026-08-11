@@ -24,7 +24,7 @@ def main():
     commit = lock["mesa"]["commit"]
     assert re.fullmatch(r"[0-9a-f]{40}", commit), "Mesa commit must be a full SHA"
     assert isinstance(lock["amaral_revision"], int)
-    assert lock["amaral_revision"] == 2
+    assert lock["amaral_revision"] == 3
     assert lock["build"]["cpu"] == "armv8-a"
     assert lock["build"]["kmd"] == "kgsl"
     assert sources["primary"][0]["name"] == "Mesa 3D"
@@ -48,7 +48,13 @@ def main():
 
     a825_patch = read_text("patches/0002-a825-experimental.patch")
     assert 'GPUId(chip_id=0x44030000, name="Adreno (TM) 825")' in a825_patch
-    assert "is_a825 ? false" in a825_patch
+    assert "gmem_ccu_color_cache_fraction = CCUColorCacheFraction.EIGHTH.value" in a825_patch
+    assert "gmem_per_ccu_color_cache_size = 16 * 1024" in a825_patch
+    assert "gmem_ccu_depth_cache_fraction = CCUColorCacheFraction.FULL.value" in a825_patch
+    assert "gmem_per_ccu_depth_cache_size = 128 * 1024" in a825_patch
+    assert "tile_align_w = 96" in a825_patch
+    assert "shading_rate_matches_vk = True" not in a825_patch
+    assert "tu_pipeline.cc" not in a825_patch
     assert "is_target_gpu" not in a825_patch
     assert "cs_shared_mem_size = 64 * 1024" not in a825_patch
     assert "const bool is_a810" not in a825_patch
