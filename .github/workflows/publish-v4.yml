@@ -1,0 +1,117 @@
+name: Publish Turnip Amaral 26.3.0-devel v4
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-v4.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-verify-publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: mesa-26.3.0-devel-v4
+      STABLE_TAG: mesa-26.3.0-devel-v3
+      STANDARD_FILE: turnip_amaral_26.3.0-devel_v4.zip
+      ONEUI_FILE: turnip_amaral_26.3.0-devel_v4_oneUI.zip
+      STANDARD_SHA256: f5b89f2100a2d1e8371061dbb99eebcd3e43e6c142f9c27aa02edf57f87c2f86
+      ONEUI_SHA256: b08ba8f9490d2acea5e3e17ee92b15edd29d51b3b9f3b037e1c30f8bff4cf4c6
+      STANDARD_ELF_SHA256: a1728f657587df0d2eae240d2e43df37df78a4dd2be8825cbffff64b7a7b5eb1
+      ONEUI_ELF_SHA256: 28af73854c04d5a8c66ef3bae77ce8361e61c33e1938bf03eb880599e1dcadc2
+
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Validate project metadata
+        run: |
+          python3 tools/validate_project.py
+          bash -n scripts/*.sh
+
+      - name: Install host tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            bison \
+            build-essential \
+            file \
+            flex \
+            glslang-tools \
+            pkg-config \
+            python3-venv \
+            unzip \
+            zip
+
+      - name: Install pinned Python build tools
+        run: |
+          python3 -m venv work/venv
+          work/venv/bin/pip install --requirement requirements-build.txt
+          echo "${GITHUB_WORKSPACE}/work/venv/bin" >> "${GITHUB_PATH}"
+
+      - name: Download verified Android NDK r29
+        run: |
+          mkdir -p work/toolchains
+          curl --fail --location \
+            --output work/android-ndk-r29-linux.zip \
+            https://dl.google.com/android/repository/android-ndk-r29-linux.zip
+          echo "87e2bb7e9be5d6a1c6cdf5ec40dd4e0c6d07c30b  work/android-ndk-r29-linux.zip" \
+            | sha1sum --check
+          unzip -q work/android-ndk-r29-linux.zip -d work/toolchains
+
+      - name: Build Standard twice
+        env:
+          NDK_ROOT: ${{ github.workspace }}/work/toolchains/android-ndk-r29
+          DRIVER_VARIANT: standard
+        run: ./scripts/check_reproducibility.sh
+
+      - name: Build OneUI twice
+        env:
+          NDK_ROOT: ${{ github.workspace }}/work/toolchains/android-ndk-r29
+          DRIVER_VARIANT: oneui
+        run: ./scripts/check_reproducibility.sh
+
+      - name: Verify exact validated bytes
+        run: |
+          echo "${STANDARD_SHA256}  dist/${STANDARD_FILE}" | sha256sum --check
+          echo "${ONEUI_SHA256}  dist/${ONEUI_FILE}" | sha256sum --check
+          grep -Fq "artifact_sha256=${STANDARD_SHA256}" dist/REPRODUCIBILITY_standard.txt
+          grep -Fq "elf_sha256=${STANDARD_ELF_SHA256}" dist/REPRODUCIBILITY_standard.txt
+          grep -Fq "artifact_sha256=${ONEUI_SHA256}" dist/REPRODUCIBILITY_oneui.txt
+          grep -Fq "elf_sha256=${ONEUI_ELF_SHA256}" dist/REPRODUCIBILITY_oneui.txt
+          unzip -t "dist/${STANDARD_FILE}"
+          unzip -t "dist/${ONEUI_FILE}"
+          (
+            cd dist
+            sha256sum "${STANDARD_FILE}" "${ONEUI_FILE}" > SHA256SUMS.txt
+          )
+
+      - name: Publish v4 pre-release and keep v3 latest
+        run: |
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release edit "${RELEASE_TAG}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --prerelease
+          else
+            gh release create "${RELEASE_TAG}" \
+              "dist/${STANDARD_FILE}" \
+              "dist/${ONEUI_FILE}" \
+              "dist/SHA256SUMS.txt" \
+              "dist/REPRODUCIBILITY_standard.txt" \
+              "dist/REPRODUCIBILITY_oneui.txt" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --target "${GITHUB_SHA}" \
+              --title "Turnip Amaral 26.3.0-devel v4" \
+              --notes-file docs/releases/mesa-26.3.0-devel-v4.md \
+              --prerelease
+          fi
+
+          gh release edit "${STABLE_TAG}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --prerelease=false \
+            --latest

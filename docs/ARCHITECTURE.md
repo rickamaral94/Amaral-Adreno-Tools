@@ -19,7 +19,8 @@ ao `chip_id` KGSL `0x44030000`, sem alterar outras GPUs.
 O pipeline gera duas variantes a partir da mesma base:
 
 - `standard`: Mesa fixado + compatibilidade NDK + suporte A825 isolado;
-- `oneui`: todo o conteúdo de `standard` + `TP_UBWC_FLAG_HINT` na FD740.
+- `oneui`: todo o conteúdo de `standard` + `TP_UBWC_FLAG_HINT` somente nas
+  entradas KGSL da FD740 (`0x43050a01` e `0xffff43050a01`).
 
 Cada variante usa diretórios de fonte, build e pacote separados para impedir
 que o patch OneUI permaneça na compilação padrão.

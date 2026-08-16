@@ -13,6 +13,10 @@ release. O processo de atualização é:
 7. executar Driver Lab contra a release anterior em A6xx/A7xx/A8xx;
 8. publicar primeiro alpha/RC; promover apenas após retorno suficiente.
 
+A release prévia nunca substitui automaticamente a estável/latest. A promoção
+é uma decisão explícita depois da validação comunitária; enquanto isso, a
+release estável anterior permanece destacada como fallback.
+
 ## Versionamento curto
 
 O nome público usa `Turnip Amaral <Mesa> v<revisão>`. A revisão Amaral começa em

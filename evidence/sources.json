@@ -17,6 +17,11 @@
       "name": "Amaral Driver Lab",
       "url": "https://github.com/rickamaral94/Amaral-Driver-Lab",
       "use": "A/B, qualidade visual, estabilidade, desempenho e logs"
+    },
+    {
+      "name": "Amaral Adreno Tools IA",
+      "visibility": "private",
+      "use": "Fonte de estudo, auditoria de patches e metodologia; alterações só entram após revisão e validação no repositório produtivo"
     }
   ],
   "community": [
