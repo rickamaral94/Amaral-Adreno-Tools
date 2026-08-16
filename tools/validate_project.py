@@ -24,7 +24,7 @@ def main():
     commit = lock["mesa"]["commit"]
     assert re.fullmatch(r"[0-9a-f]{40}", commit), "Mesa commit must be a full SHA"
     assert isinstance(lock["amaral_revision"], int)
-    assert lock["amaral_revision"] == 3
+    assert lock["amaral_revision"] == 4
     assert lock["build"]["cpu"] == "armv8-a"
     assert lock["build"]["kmd"] == "kgsl"
     assert sources["primary"][0]["name"] == "Mesa 3D"
@@ -65,6 +65,11 @@ def main():
     oneui_patch = read_text("patches/0003-oneui-ubwc.patch")
     assert oneui_patch.count("enable_tp_ubwc_flag_hint = True") == 1
     assert "0x44030000" not in oneui_patch
+    assert oneui_patch.count('GPUId(chip_id=0x43050a01, name="FD740")') == 2
+    assert oneui_patch.count('GPUId(chip_id=0xffff43050a01, name="FD740")') == 2
+    assert "GPUId(740)" in oneui_patch
+    assert "0xffff43050c01" in oneui_patch
+    assert "restrito às entradas KGSL da FD740" in oneui_patch
 
     print("Project metadata and evidence gates are valid.")
     return 0

@@ -3,22 +3,24 @@
 Projeto do **Amaral Turnip Universal**, driver Vulkan para Android/KGSL
 construído a partir do Mesa 3D e orientado à compatibilidade em emuladores.
 
-> Status: `v3` em pré-release de validação comunitária. O perfil revisado da
-> Adreno 825 e a variante OneUI permanecem experimentais.
+> Status: `v4` em pré-release de validação comunitária; `v3` é a release
+> estável/latest. O perfil da Adreno 825 e a variante OneUI permanecem
+> experimentais.
 
-## Variantes da atualização v3
+## Variantes da atualização v4
 
 | Variante | Arquivo | Uso |
 |---|---|---|
-| Padrão | `turnip_amaral_26.3.0-devel_v3.zip` | Recomendada como ponto de partida |
-| OneUI | `turnip_amaral_26.3.0-devel_v3_oneUI.zip` | Para sistemas cujo driver proprietário exige o mesmo `TP_UBWC_FLAG_HINT` |
+| Padrão | `turnip_amaral_26.3.0-devel_v4.zip` | Recomendada como ponto de partida |
+| OneUI | `turnip_amaral_26.3.0-devel_v4_oneUI.zip` | Para sistemas cujo driver proprietário exige o mesmo `TP_UBWC_FLAG_HINT` |
 
 As duas variantes usam o snapshot Mesa e o perfil A825 idênticos. A OneUI
-acrescenta somente o ajuste UBWC condicionado à entrada FD740.
+acrescenta somente o ajuste UBWC nas duas entradas KGSL da FD740, sem alcançar
+o ID legado `GPUId(740)` nem a Adreno X1-85.
 
 ### Perfil experimental da Adreno 825
 
-A v3 reconhece a A825 pelo `chip_id` KGSL `0x44030000` e mantém sua topologia
+A v4 reconhece a A825 pelo `chip_id` KGSL `0x44030000` e mantém sua topologia
 real: 4 CCUs, 2 slices, 2 MiB de GMEM e 32 KiB de shared memory.
 
 Com base nos resultados reproduzidos nos issues
@@ -55,16 +57,17 @@ sintomas compatíveis com divergência UBWC em blits, escala ou texturas.
 
 | Item | Valor |
 |---|---|
-| Revisão Amaral | `v3` |
+| Revisão Amaral | `v4` |
 | Mesa | `26.3.0-devel` |
-| Commit fixado | `1b2e70de00f68f8cf32dca8cd1a64fba9b6410a8` |
+| Commit fixado | `f0bcf54488119f97502da9f4cca87a214e502a3e` |
 | Backend | Turnip/Freedreno + KGSL |
 | ABI | Android AArch64, `armv8-a` |
 | API mínima proposta | Android 10 / API 29 |
 | Exceção não upstream | Adreno 825, experimental e isolada por `chip_id` |
 
-O número `v3` é a revisão Amaral e avança enquanto a versão pública do Mesa
-permanece `26.3.0-devel`. A v2 continua disponível como fallback.
+O número `v4` é a revisão Amaral e avança enquanto a versão pública do Mesa
+permanece `26.3.0-devel`. A v3 é a release estável e continua disponível como
+fallback durante a validação da v4.
 
 ## Compilar
 
