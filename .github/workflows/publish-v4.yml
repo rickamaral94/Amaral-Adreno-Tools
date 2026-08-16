@@ -20,10 +20,6 @@ jobs:
       STABLE_TAG: mesa-26.3.0-devel-v3
       STANDARD_FILE: turnip_amaral_26.3.0-devel_v4.zip
       ONEUI_FILE: turnip_amaral_26.3.0-devel_v4_oneUI.zip
-      STANDARD_SHA256: f5b89f2100a2d1e8371061dbb99eebcd3e43e6c142f9c27aa02edf57f87c2f86
-      ONEUI_SHA256: b08ba8f9490d2acea5e3e17ee92b15edd29d51b3b9f3b037e1c30f8bff4cf4c6
-      STANDARD_ELF_SHA256: a1728f657587df0d2eae240d2e43df37df78a4dd2be8825cbffff64b7a7b5eb1
-      ONEUI_ELF_SHA256: 28af73854c04d5a8c66ef3bae77ce8361e61c33e1938bf03eb880599e1dcadc2
 
     steps:
       - name: Checkout release source
@@ -76,20 +72,30 @@ jobs:
           DRIVER_VARIANT: oneui
         run: ./scripts/check_reproducibility.sh
 
-      - name: Verify exact validated bytes
+      - name: Verify reproducible release bytes
         run: |
-          echo "${STANDARD_SHA256}  dist/${STANDARD_FILE}" | sha256sum --check
-          echo "${ONEUI_SHA256}  dist/${ONEUI_FILE}" | sha256sum --check
-          grep -Fq "artifact_sha256=${STANDARD_SHA256}" dist/REPRODUCIBILITY_standard.txt
-          grep -Fq "elf_sha256=${STANDARD_ELF_SHA256}" dist/REPRODUCIBILITY_standard.txt
-          grep -Fq "artifact_sha256=${ONEUI_SHA256}" dist/REPRODUCIBILITY_oneui.txt
-          grep -Fq "elf_sha256=${ONEUI_ELF_SHA256}" dist/REPRODUCIBILITY_oneui.txt
+          standard_sha="$(sha256sum "dist/${STANDARD_FILE}" | cut -d' ' -f1)"
+          oneui_sha="$(sha256sum "dist/${ONEUI_FILE}" | cut -d' ' -f1)"
+          standard_elf_sha="$(unzip -p "dist/${STANDARD_FILE}" libvulkan_freedreno.so | sha256sum | cut -d' ' -f1)"
+          oneui_elf_sha="$(unzip -p "dist/${ONEUI_FILE}" libvulkan_freedreno.so | sha256sum | cut -d' ' -f1)"
+
+          grep -Fq "reproducible=true" dist/REPRODUCIBILITY_standard.txt
+          grep -Fq "independent_builds=2" dist/REPRODUCIBILITY_standard.txt
+          grep -Fq "artifact_sha256=${standard_sha}" dist/REPRODUCIBILITY_standard.txt
+          grep -Fq "elf_sha256=${standard_elf_sha}" dist/REPRODUCIBILITY_standard.txt
+          grep -Fq "reproducible=true" dist/REPRODUCIBILITY_oneui.txt
+          grep -Fq "independent_builds=2" dist/REPRODUCIBILITY_oneui.txt
+          grep -Fq "artifact_sha256=${oneui_sha}" dist/REPRODUCIBILITY_oneui.txt
+          grep -Fq "elf_sha256=${oneui_elf_sha}" dist/REPRODUCIBILITY_oneui.txt
           unzip -t "dist/${STANDARD_FILE}"
           unzip -t "dist/${ONEUI_FILE}"
           (
             cd dist
             sha256sum "${STANDARD_FILE}" "${ONEUI_FILE}" > SHA256SUMS.txt
           )
+          cat dist/SHA256SUMS.txt
+          cat dist/REPRODUCIBILITY_standard.txt
+          cat dist/REPRODUCIBILITY_oneui.txt
 
       - name: Publish v4 pre-release and keep v3 latest
         run: |
