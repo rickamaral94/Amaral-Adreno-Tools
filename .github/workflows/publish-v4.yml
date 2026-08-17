@@ -100,8 +100,22 @@ jobs:
       - name: Publish v4 pre-release and keep v3 latest
         run: |
           if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh api --method PATCH \
+              "/repos/${GITHUB_REPOSITORY}/git/refs/tags/${RELEASE_TAG}" \
+              -f sha="${GITHUB_SHA}" \
+              -F force=true >/dev/null
+            gh release upload "${RELEASE_TAG}" \
+              "dist/${STANDARD_FILE}" \
+              "dist/${ONEUI_FILE}" \
+              "dist/SHA256SUMS.txt" \
+              "dist/REPRODUCIBILITY_standard.txt" \
+              "dist/REPRODUCIBILITY_oneui.txt" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --clobber
             gh release edit "${RELEASE_TAG}" \
               --repo "${GITHUB_REPOSITORY}" \
+              --title "Turnip Amaral 26.3.0-devel v4" \
+              --notes-file docs/releases/mesa-26.3.0-devel-v4.md \
               --prerelease
           else
             gh release create "${RELEASE_TAG}" \

@@ -18,6 +18,20 @@ As duas variantes usam o snapshot Mesa e o perfil A825 idênticos. A OneUI
 acrescenta somente o ajuste UBWC nas duas entradas KGSL da FD740, sem alcançar
 o ID legado `GPUId(740)` nem a Adreno X1-85.
 
+### Compatibilidade FD740 validada no Driver Lab
+
+As duas variantes expõem `VK_EXT_depth_range_unrestricted` e o subconjunto
+suportado de `VK_EXT_depth_bias_control` somente nas entradas KGSL
+`0x43050a01` e `0xffff43050a01` da FD740. No
+[#69](https://github.com/rickamaral94/Amaral-Driver-Lab/issues/69), o Driver Lab
+confirmou as duas extensões em runtime, nenhuma capacidade perdida,
+compatibilidade 100/100 e zero divergência em 116 comparações.
+
+O caminho de profundidade irrestrita quando explicitamente habilitado pelo
+aplicativo ainda precisa de validação em sessão real do Eden. Por isso a v4
+continua pré-release e a mudança permanece no degrau L0, sem alcançar outras
+GPUs A7xx/A8xx.
+
 ### Perfil experimental da Adreno 825
 
 A v4 reconhece a A825 pelo `chip_id` KGSL `0x44030000` e mantém sua topologia
@@ -59,7 +73,7 @@ sintomas compatíveis com divergência UBWC em blits, escala ou texturas.
 |---|---|
 | Revisão Amaral | `v4` |
 | Mesa | `26.3.0-devel` |
-| Commit fixado | `f0bcf54488119f97502da9f4cca87a214e502a3e` |
+| Commit fixado | `dddaef6f8c970770cc60f6bab6ab5392f54e7679` |
 | Backend | Turnip/Freedreno + KGSL |
 | ABI | Android AArch64, `armv8-a` |
 | API mínima proposta | Android 10 / API 29 |
@@ -104,6 +118,7 @@ Consulte [a política de evidências](docs/EVIDENCE-POLICY.md) e o
 - [Mesa 3D](https://gitlab.freedesktop.org/mesa/mesa)
 - [whitebelyash/mesa-tu8](https://github.com/whitebelyash/mesa-tu8)
 - [Amaral Driver Lab](https://github.com/rickamaral94/Amaral-Driver-Lab)
+- [Banners-Turnip](https://github.com/The412Banner/Banners-Turnip)
 - [freedreno_turnip-CI](https://github.com/s1mptom/freedreno_turnip-CI)
 
 Este projeto não é afiliado à Qualcomm, Mesa ou aos projetos de emulação.

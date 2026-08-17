@@ -22,6 +22,11 @@ O pipeline gera duas variantes a partir da mesma base:
 - `oneui`: todo o conteúdo de `standard` + `TP_UBWC_FLAG_HINT` somente nas
   entradas KGSL da FD740 (`0x43050a01` e `0xffff43050a01`).
 
+As extensões de profundidade avaliadas no Driver Lab também seguem o degrau L0:
+são anunciadas apenas nessas duas entradas KGSL da FD740. A presença de código
+genérico no pipeline não amplia o escopo, porque outros dispositivos não podem
+habilitar as extensões.
+
 Cada variante usa diretórios de fonte, build e pacote separados para impedir
 que o patch OneUI permaneça na compilação padrão.
 

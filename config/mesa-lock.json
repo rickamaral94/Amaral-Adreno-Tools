@@ -4,10 +4,10 @@
   "mesa": {
     "repository": "https://gitlab.freedesktop.org/mesa/mesa.git",
     "branch": "main",
-    "commit": "f0bcf54488119f97502da9f4cca87a214e502a3e",
+    "commit": "dddaef6f8c970770cc60f6bab6ab5392f54e7679",
     "version": "26.3.0-devel",
-    "commit_date_utc": "2026-08-15T12:21:55Z",
-    "checked_at_utc": "2026-08-16T00:00:00Z"
+    "commit_date_utc": "2026-08-17T06:53:58Z",
+    "checked_at_utc": "2026-08-17T09:30:00Z"
   },
   "build": {
     "ndk": "r29",

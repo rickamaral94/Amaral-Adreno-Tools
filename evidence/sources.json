@@ -36,6 +36,11 @@
       "use": "Comparação de builds e retorno histórico da comunidade A8xx"
     },
     {
+      "name": "Banners-Turnip",
+      "url": "https://github.com/The412Banner/Banners-Turnip",
+      "use": "Referência diária de Mesa main e auditoria comparativa da variante A6xx/A7xx sem patches de performance"
+    },
+    {
       "name": "Issues dos emuladores",
       "use": "Reprodução de incompatibilidades em Eden, GameHub/Winlator, Vita3K, Cemu e Xendroid"
     }
