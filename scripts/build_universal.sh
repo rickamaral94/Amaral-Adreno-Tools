@@ -67,6 +67,7 @@ apply_patch_once() {
 
 apply_patch_once "${repo_root}/patches/0001-android-ndk-r29-compat.patch"
 apply_patch_once "${repo_root}/patches/0002-a825-experimental.patch"
+apply_patch_once "${repo_root}/patches/0004-fd740-depth-extensions.patch"
 if [[ "${driver_variant}" == "oneui" ]]; then
   apply_patch_once "${repo_root}/patches/0003-oneui-ubwc.patch"
 elif git -C "${mesa_src}" apply --reverse --check \
@@ -80,7 +81,8 @@ expected_source_files=(
   "include/android_stub/cutils/native_handle.h"
   "src/freedreno/common/freedreno_devices.py"
   "src/freedreno/drm-shim/freedreno_noop.c"
-
+  "src/freedreno/vulkan/tu_device.cc"
+  "src/freedreno/vulkan/tu_pipeline.cc"
   "src/util/u_gralloc/u_gralloc_fallback.c"
   "src/vulkan/runtime/vk_android.c"
 )

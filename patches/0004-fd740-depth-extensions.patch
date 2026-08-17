@@ -1,0 +1,130 @@
+Turnip Amaral: extensões de profundidade restritas à FD740 KGSL
+
+Porta os patches 0010 e 0011 avaliados no Amaral Adreno Tools IA, mas reduz o
+escopo ao degrau L0 sustentado pela evidência do Driver Lab #69: somente os
+chip_ids KGSL 0x43050a01 e 0xffff43050a01 da FD740.
+
+O capability_diff confirmou VK_EXT_depth_range_unrestricted e
+VK_EXT_depth_bias_control em runtime, sem extensões/features/limites perdidos.
+O portão gráfico passou com compatibilidade 100/100 e zero divergência em 116
+comparações. O caminho com depth_range_unrestricted habilitado continua
+experimental até validação no Eden; quem não habilita a extensão mantém o
+fluxo de comandos anterior.
+
+Origem:   Amaral Adreno Tools IA, patches 0010 e 0011
+Evidência: Amaral Driver Lab issue #69
+Licença:  MIT (mesmos arquivos do Mesa)
+Base:     Mesa dddaef6f8c970770cc60f6bab6ab5392f54e7679
+Degrau:   L0, 0x43050a01 e 0xffff43050a01 (FD740 KGSL)
+
+diff --git a/src/freedreno/vulkan/tu_device.cc b/src/freedreno/vulkan/tu_device.cc
+index 88eb56b1..1eab10fb 100644
+--- a/src/freedreno/vulkan/tu_device.cc
++++ b/src/freedreno/vulkan/tu_device.cc
+@@ -205,6 +205,16 @@ static bool tu_is_vk_1_1(const struct tu_physical_device *device)
+    return tu_has_multiview(device);
+ }
+ 
++/* Amaral L0 gate: these compatibility extensions were validated on the
++ * FD740 KGSL entries used by the Odin2 Portal.  Do not generalize them to
++ * other a7xx/a8xx devices without equivalent hardware evidence. */
++static bool
++tu_is_fd740_kgsl(const struct tu_physical_device *device)
++{
++   return device->dev_id.chip_id == 0x43050a01 ||
++          device->dev_id.chip_id == 0xffff43050a01;
++}
++
+ static void
+ get_device_extensions(const struct tu_physical_device *device,
+                       struct vk_device_extension_table *ext)
+@@ -329,8 +339,10 @@ get_device_extensions(const struct tu_physical_device *device,
+       .EXT_custom_border_color = true,
+       .EXT_custom_resolve = true,
+       .EXT_debug_marker = true,
++      .EXT_depth_bias_control = tu_is_fd740_kgsl(device),
+       .EXT_depth_clamp_control = true,
+       .EXT_depth_clamp_zero_one = true,
++      .EXT_depth_range_unrestricted = tu_is_fd740_kgsl(device),
+       .EXT_depth_clip_control = true,
+       .EXT_depth_clip_enable = true,
+       .EXT_descriptor_buffer = true,
+@@ -707,6 +719,17 @@ tu_get_features(struct tu_physical_device *pdevice,
+    /* VK_KHR_depth_clamp_zero_one */
+    features->depthClampZeroOne = true;
+ 
++   /* VK_EXT_depth_bias_control — L0/FD740 KGSL only.  The common Vulkan
++    * runtime already handles VkDepthBiasRepresentationInfoEXT and
++    * vkCmdSetDepthBias2EXT.  Adreno natively implements the least-
++    * representable-value form, but has no control bit for forcing an UNORM
++    * representation on D32_SFLOAT, so advertise only the supported subset. */
++   const bool has_depth_bias_control = tu_is_fd740_kgsl(pdevice);
++   features->depthBiasControl = has_depth_bias_control;
++   features->depthBiasExact = has_depth_bias_control;
++   features->leastRepresentableValueForceUnormRepresentation = false;
++   features->floatRepresentation = false;
++
+    /* VK_EXT_depth_clip_control */
+    features->depthClipControl = true;
+ 
+diff --git a/src/freedreno/vulkan/tu_pipeline.cc b/src/freedreno/vulkan/tu_pipeline.cc
+index 6ccb868f..0fdf962c 100644
+--- a/src/freedreno/vulkan/tu_pipeline.cc
++++ b/src/freedreno/vulkan/tu_pipeline.cc
+@@ -2553,6 +2553,20 @@ static const enum mesa_vk_dynamic_graphics_state tu_viewport_state[] = {
+    MESA_VK_DYNAMIC_RS_DEPTH_CLAMP_ENABLE,
+ };
+ 
++/* VK_EXT_depth_range_unrestricted
++ *
++ * A7xx+ does not clamp to [0,1] in hardware when depth clamp is disabled;
++ * Turnip forces that clamp for Vulkan core and depth_clamp_zero_one.  On the
++ * validated FD740 KGSL entries, let the hardware remain unrestricted only
++ * when the application explicitly enables depth_range_unrestricted. */
++static inline bool
++tu_force_zero_one_depth_clamp(const struct tu_device *dev)
++{
++   return !dev->vk.enabled_extensions.EXT_depth_range_unrestricted ||
++          dev->vk.enabled_extensions.EXT_depth_clamp_zero_one ||
++          dev->vk.enabled_extensions.KHR_depth_clamp_zero_one;
++}
++
+ template <chip CHIP>
+ static unsigned
+ tu6_viewport_nregs(const struct vk_viewport_state *vp)
+@@ -2651,7 +2665,8 @@ tu6_emit_viewport(struct tu_cs *cs,
+     * VK_EXT_depth_clamp_zero_one we have to always enable clamp and manually
+     * set range to [0,1] when rs->depth_clamp_enable is false.
+     */
+-   bool zero_one_depth_clamp = CHIP >= A7XX && !rs->depth_clamp_enable;
++   bool zero_one_depth_clamp = CHIP >= A7XX && !rs->depth_clamp_enable &&
++                               tu_force_zero_one_depth_clamp(cs->device);
+ 
+    for (uint32_t i = 0; i < vp->viewport_count; i++) {
+       const VkViewport *viewport = &vp->viewports[i];
+@@ -3516,8 +3531,10 @@ tu6_emit_rast(struct tu_cs *cs,
+                    GRAS_CL_CNTL(CHIP,
+                      .znear_clip_disable = !depth_clip_enable,
+                      .zfar_clip_disable = !depth_clip_enable,
+-                     /* To support VK_EXT_depth_clamp_zero_one on a7xx+ */
+-                     .z_clamp_enable = rs->depth_clamp_enable || CHIP >= A7XX,
++                     /* Preserve [0,1] unless unrestricted depth was
++                      * explicitly enabled on the validated FD740 path. */
++                     .z_clamp_enable = rs->depth_clamp_enable ||
++                        (CHIP >= A7XX && tu_force_zero_one_depth_clamp(cs->device)),
+                      .zero_gb_scale_z = vp->depth_clip_negative_one_to_one ? 0 : 1,
+                      .vp_clip_code_ignore = 1));
+ 
+@@ -3720,8 +3737,10 @@ tu6_emit_rb_depth_cntl(struct tu_cs *cs,
+          .z_test_enable = depth_test,
+          .z_write_enable = ds->depth.test_enable && ds->depth.write_enable,
+          .zfunc = zfunc,
+-         /* To support VK_EXT_depth_clamp_zero_one on a7xx+ */
+-         .z_clamp_enable = rs->depth_clamp_enable || CHIP >= A7XX,
++         /* Preserve [0,1] unless unrestricted depth was explicitly enabled
++          * on the validated FD740 path. */
++         .z_clamp_enable = rs->depth_clamp_enable ||
++            (CHIP >= A7XX && tu_force_zero_one_depth_clamp(cs->device)),
+          .z_read_enable =
+             (ds->depth.test_enable && (zfunc != FUNC_NEVER && zfunc != FUNC_ALWAYS)) ||
+             ds->depth.bounds_test.enable,

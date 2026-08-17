@@ -71,6 +71,16 @@ def main():
     assert "0xffff43050c01" in oneui_patch
     assert "restrito às entradas KGSL da FD740" in oneui_patch
 
+    depth_patch = read_text("patches/0004-fd740-depth-extensions.patch")
+    assert depth_patch.count("device->dev_id.chip_id == 0x43050a01") == 1
+    assert depth_patch.count("device->dev_id.chip_id == 0xffff43050a01") == 1
+    assert "EXT_depth_range_unrestricted = tu_is_fd740_kgsl(device)" in depth_patch
+    assert "EXT_depth_bias_control = tu_is_fd740_kgsl(device)" in depth_patch
+    assert "features->depthBiasExact = has_depth_bias_control" in depth_patch
+    assert "EXT_depth_range_unrestricted = device->info->chip >= 7" not in depth_patch
+    assert "force_sysmem" not in depth_patch
+    assert "0008-android-shader-cache" not in depth_patch
+
     print("Project metadata and evidence gates are valid.")
     return 0
 
