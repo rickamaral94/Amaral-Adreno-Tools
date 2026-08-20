@@ -31,6 +31,11 @@
       "use": "Fonte do suporte comunitário experimental à Adreno 825; somente mudanças isoladas e revisadas são portadas"
     },
     {
+      "name": "DiskDVD/TurniptoolsA8XX e DiskDVD/A8XX-Y",
+      "url": "https://github.com/DiskDVD/TurniptoolsA8XX",
+      "use": "Evidência comunitária em A825 real nos modos GMEM/SYSMEM e estudo do perfil de caches, tiles e shared memory; o conjunto global de hacks não é importado"
+    },
+    {
       "name": "freedreno_turnip-CI",
       "url": "https://github.com/s1mptom/freedreno_turnip-CI",
       "use": "Comparação de builds e retorno histórico da comunidade A8xx"

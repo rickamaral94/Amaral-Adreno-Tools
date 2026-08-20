@@ -23,3 +23,11 @@ O nome público usa `Turnip Amaral <Mesa> v<revisão>`. A revisão Amaral começ
 `v1`, avança enquanto a versão Mesa permanecer igual e volta para `v1` quando a
 versão Mesa mudar. O commit upstream completo permanece no lock e no registro
 da release para garantir rastreabilidade sem alongar o nome do driver.
+
+## Atualização v4.1
+
+O snapshot avançou de `c363342a1130b8e00743337492055c71541724af` para
+`6e41d819219d7f4025a95cbbaddfbe492d210ff3`. Os oito commits intermediários
+tratam de documentação, CI/CTS, Broadcom, VC4 e Panfrost/PanVK; não alteram o
+Turnip. A subida mantém o projeto sincronizado com o `mesa/main` sem atribuir a
+ela ganho de desempenho no Adreno.
