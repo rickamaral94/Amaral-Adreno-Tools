@@ -3,16 +3,16 @@
 Projeto do **Amaral Turnip Universal**, driver Vulkan para Android/KGSL
 construído a partir do Mesa 3D e orientado à compatibilidade em emuladores.
 
-> Status: `v4` é a release estável/latest; `v3` permanece disponível como
+> Status: `v4.1` é a release estável/latest; `v4` permanece disponível como
 > fallback. O perfil da Adreno 825 e a variante OneUI continuam com escopo
-> experimental e isolado.
+> experimental e isolado dentro do pacote universal.
 
-## Variantes da atualização v4
+## Variantes da atualização v4.1
 
 | Variante | Arquivo | Uso |
 |---|---|---|
-| Padrão | `turnip_amaral_26.3.0-devel_v4.zip` | Recomendada como ponto de partida |
-| OneUI | `turnip_amaral_26.3.0-devel_v4_oneUI.zip` | Para sistemas cujo driver proprietário exige o mesmo `TP_UBWC_FLAG_HINT` |
+| Padrão | `turnip_amaral_26.3.0-devel_v4.1.zip` | Recomendada como ponto de partida |
+| OneUI | `turnip_amaral_26.3.0-devel_v4.1_oneUI.zip` | Para sistemas cujo driver proprietário exige o mesmo `TP_UBWC_FLAG_HINT` |
 
 As duas variantes usam o snapshot Mesa e o perfil A825 idênticos. A OneUI
 acrescenta somente o ajuste UBWC nas duas entradas KGSL da FD740, sem alcançar
@@ -31,24 +31,28 @@ O caminho de profundidade irrestrita quando explicitamente habilitado pelo
 aplicativo continua monitorado em sessões reais do Eden. A mudança permanece no
 degrau L0, sem alcançar outras GPUs A7xx/A8xx.
 
-### Perfil experimental da Adreno 825
+### Perfil experimental da Adreno 825 — atualizado na v4.1
 
-A v4 reconhece a A825 pelo `chip_id` KGSL `0x44030000` e mantém sua topologia
-real: 4 CCUs, 2 slices, 2 MiB de GMEM e 32 KiB de shared memory.
+A v4.1 reconhece a A825 pelo `chip_id` KGSL `0x44030000` e mantém sua topologia
+real: 4 CCUs, 2 slices e 2 MiB de GMEM. A atualização incorpora ao perfil
+isolado as propriedades observadas nos builds comunitários testados em hardware
+A825 real, tanto em GMEM quanto em SYSMEM.
 
 Com base nos resultados reproduzidos nos issues
 [#37](https://github.com/rickamaral94/Amaral-Driver-Lab/issues/37) e
-[#38](https://github.com/rickamaral94/Amaral-Driver-Lab/issues/38), o perfil foi
-aproximado da A830 apenas nos parâmetros que controlam caches e tiles:
+[#38](https://github.com/rickamaral94/Amaral-Driver-Lab/issues/38), somados à
+evidência do [DiskDVD/TurniptoolsA8XX](https://github.com/DiskDVD/TurniptoolsA8XX/releases/tag/tu_A8XX-Y2.5),
+o perfil passa a usar:
 
-- color cache GMEM: `EIGHTH / 16 KiB`;
-- depth cache GMEM: `FULL / 128 KiB`;
-- tile alignment: `96 x 32`;
+- color cache GMEM: `HALF / 128 KiB`;
+- depth cache GMEM: `HALF / 128 KiB`;
+- tile alignment: `64 x 32`;
+- shared memory: `64 KiB`;
 - caches sysmem e buffers VPC preservados nos limites conhecidos da A825.
 
-Os desvios de FDM e sample interpolation da v2 foram removidos, assim como a
-afirmação não validada de correspondência VRS/Vulkan. O Turnip volta a decidir
-esses caminhos pelo comportamento upstream.
+As mudanças alcançam somente a A825. O autotuner continua escolhendo GMEM ou
+SYSMEM, sem variável forçada. Os hacks comunitários de FDM/sample interpolation,
+UBWC global e a afirmação não validada de correspondência VRS/Vulkan não entram.
 
 ### Variante OneUI
 
@@ -74,16 +78,16 @@ sintomas compatíveis com divergência UBWC em blits, escala ou texturas.
 
 | Item | Valor |
 |---|---|
-| Revisão Amaral | `v4` |
+| Revisão Amaral | `v4.1` |
 | Mesa | `26.3.0-devel` |
-| Commit fixado | `c363342a1130b8e00743337492055c71541724af` |
+| Commit fixado | `6e41d819219d7f4025a95cbbaddfbe492d210ff3` |
 | Backend | Turnip/Freedreno + KGSL |
 | ABI | Android AArch64, `armv8-a` |
 | API mínima proposta | Android 10 / API 29 |
 | Exceção não upstream | Adreno 825, experimental e isolada por `chip_id` |
 
-O número `v4` é a revisão Amaral e avança enquanto a versão pública do Mesa
-permanece `26.3.0-devel`. A v4 é a release estável/latest e a v3 continua
+O número `v4.1` é a revisão Amaral e avança enquanto a versão pública do Mesa
+permanece `26.3.0-devel`. A v4.1 é a release estável/latest e a v4 continua
 disponível como fallback.
 
 ## Compilar

@@ -2,20 +2,21 @@ diff --git a/src/freedreno/common/freedreno_devices.py b/src/freedreno/common/fr
 index f220181..0000000 100644
 --- a/src/freedreno/common/freedreno_devices.py
 +++ b/src/freedreno/common/freedreno_devices.py
-@@ -1422,6 +1422,39 @@ add_gpus([
+@@ -1422,6 +1422,40 @@ add_gpus([
          raw_magic_regs = a8xx_base_raw_magic_regs,
      ))
  
-+# Experimental compatibility profile for the Adreno 825 (gen8_6_0).
-+# Keep all non-upstream properties local to this exact KGSL chip ID.
++# Experimental hardware profile for the Adreno 825 (gen8_6_0).
++# Community hardware testing covered both GMEM and SYSMEM.  Keep every
++# non-upstream property local to this exact KGSL chip ID.
 +add_gpus([
 +        GPUId(chip_id=0x44030000, name="Adreno (TM) 825"),
 +    ], A6xxGPUInfo(
 +        CHIP.A8XX,
 +        [a7xx_base, a7xx_gen3, a8xx_base, a8xx_gen1, GPUProps(
-+            gmem_ccu_color_cache_fraction = CCUColorCacheFraction.EIGHTH.value,
-+            gmem_per_ccu_color_cache_size = 16 * 1024,
-+            gmem_ccu_depth_cache_fraction = CCUColorCacheFraction.FULL.value,
++            gmem_ccu_color_cache_fraction = CCUColorCacheFraction.HALF.value,
++            gmem_per_ccu_color_cache_size = 128 * 1024,
++            gmem_ccu_depth_cache_fraction = CCUColorCacheFraction.HALF.value,
 +            gmem_per_ccu_depth_cache_size = 128 * 1024,
 +            sysmem_ccu_color_cache_fraction = CCUColorCacheFraction.FULL.value,
 +            sysmem_per_ccu_color_cache_size = 128 * 1024,
@@ -27,12 +28,12 @@ index f220181..0000000 100644
 +        )],
 +        num_ccu = 4,
 +        num_slices = 2,
-+        tile_align_w = 96,
++        tile_align_w = 64,
 +        tile_align_h = 32,
 +        tile_max_w = 16416,
 +        tile_max_h = 16384,
 +        num_vsc_pipes = 32,
-+        cs_shared_mem_size = 32 * 1024,
++        cs_shared_mem_size = 64 * 1024,
 +        wave_granularity = 2,
 +        fibers_per_sp = 128 * 2 * 16,
 +        magic_regs = dict(),
@@ -58,4 +59,3 @@ index 004ac5f..0000000 100644
  };
  
  static void
-

@@ -1,4 +1,4 @@
-name: Publish Turnip Amaral 26.3.0-devel v4
+name: Publish Turnip Amaral 26.3.0-devel v4.1
 
 on:
   push:
@@ -16,9 +16,9 @@ jobs:
     timeout-minutes: 120
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: mesa-26.3.0-devel-v4
-      STANDARD_FILE: turnip_amaral_26.3.0-devel_v4.zip
-      ONEUI_FILE: turnip_amaral_26.3.0-devel_v4_oneUI.zip
+      RELEASE_TAG: mesa-26.3.0-devel-v4.1
+      STANDARD_FILE: turnip_amaral_26.3.0-devel_v4.1.zip
+      ONEUI_FILE: turnip_amaral_26.3.0-devel_v4.1_oneUI.zip
 
     steps:
       - name: Checkout release source
@@ -97,7 +97,7 @@ jobs:
           cat dist/REPRODUCIBILITY_standard.txt
           cat dist/REPRODUCIBILITY_oneui.txt
 
-      - name: Publish v4 release and mark it latest
+      - name: Publish v4.1 release and mark it latest
         run: |
           if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
             gh api --method PATCH \
@@ -114,8 +114,8 @@ jobs:
               --clobber
             gh release edit "${RELEASE_TAG}" \
               --repo "${GITHUB_REPOSITORY}" \
-              --title "Turnip Amaral 26.3.0-devel v4" \
-              --notes-file docs/releases/mesa-26.3.0-devel-v4.md \
+              --title "Turnip Amaral 26.3.0-devel v4.1" \
+              --notes-file docs/releases/mesa-26.3.0-devel-v4.1.md \
               --prerelease=false \
               --latest
           else
@@ -127,8 +127,8 @@ jobs:
               "dist/REPRODUCIBILITY_oneui.txt" \
               --repo "${GITHUB_REPOSITORY}" \
               --target "${GITHUB_SHA}" \
-              --title "Turnip Amaral 26.3.0-devel v4" \
-              --notes-file docs/releases/mesa-26.3.0-devel-v4.md
+              --title "Turnip Amaral 26.3.0-devel v4.1" \
+              --notes-file docs/releases/mesa-26.3.0-devel-v4.1.md
             gh release edit "${RELEASE_TAG}" \
               --repo "${GITHUB_REPOSITORY}" \
               --prerelease=false \

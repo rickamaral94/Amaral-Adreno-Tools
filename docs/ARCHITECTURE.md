@@ -18,7 +18,7 @@ ao `chip_id` KGSL `0x44030000`, sem alterar outras GPUs.
 
 O pipeline gera duas variantes a partir da mesma base:
 
-- `standard`: Mesa fixado + compatibilidade NDK + suporte A825 isolado;
+- `standard`: Mesa fixado + compatibilidade NDK + perfil A825 isolado;
 - `oneui`: todo o conteúdo de `standard` + `TP_UBWC_FLAG_HINT` somente nas
   entradas KGSL da FD740 (`0x43050a01` e `0xffff43050a01`).
 
@@ -39,4 +39,5 @@ que o patch OneUI permaneça na compilação padrão.
 - sem spoof de nome, modelo, extensões ou versão Vulkan.
 - ZIP simples para Adreno Tools: `libvulkan_freedreno.so` e `meta.json`.
 - nenhum perfil IR3 global, aumento global de shared memory ou conjunto de hacks
-  A8xx do fork comunitário é aplicado.
+  A8xx do fork comunitário é aplicado; os 64 KiB de shared memory da v4.1 ficam
+  exclusivamente na entrada A825 `0x44030000`.
