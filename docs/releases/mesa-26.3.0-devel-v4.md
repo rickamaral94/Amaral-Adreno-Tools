@@ -1,8 +1,8 @@
-# Turnip Amaral 26.3.0-devel v4 — atualização 2026-08-17
+# Turnip Amaral 26.3.0-devel v4 — atualização 2026-08-20
 
 Esta atualização substitui os binários anteriores da v4 e avança a base para o
-Mesa `dddaef6f8c970770cc60f6bab6ab5392f54e7679`, cabeça do `main` auditada em
-17/08/2026. A v4 permanece pré-release; a v3 continua estável/latest e fallback.
+Mesa `c363342a1130b8e00743337492055c71541724af`, cabeça do `main` auditada em
+20/08/2026. A v4 permanece pré-release; a v3 continua estável/latest e fallback.
 
 ## Drivers
 
@@ -13,16 +13,33 @@ Mesa `dddaef6f8c970770cc60f6bab6ab5392f54e7679`, cabeça do `main` auditada em
 
 ## Auditoria da atualização do Mesa
 
-O Mesa avançou oito commits desde a base anterior `f0bcf544`. Cinco corrigem
-encode H.265 no ANV/Intel, um corrige ciclo de vida no Gallivm, um é específico
-do RADV e um preserva bits de I/O não interpolado no `nir_opt_varyings` quando o
-driver opta pelo novo modo. O Turnip não habilita essa opção hoje. Portanto, a
-subida entrega o snapshot upstream mais recente, mas não sustenta alegação de
-ganho de FPS na A740.
+O Mesa avançou 212 commits desde `dddaef6`. A maior parte pertence a outros
+drivers, CI e infraestrutura, mas a auditoria encontrou correções upstream
+diretamente relevantes para compatibilidade e estabilidade do Turnip:
 
-O Banners-Turnip `20260817-r4` foi usado como referência independente. Sua
-variante A6xx/A7xx também é Mesa puro, sem patch de performance; dela aproveitamos
-a confirmação da base e das correções necessárias ao NDK r29, não hacks A8xx.
+- o NIR deixa de achatar `read_invocation` de modo que possa gerar índice não
+  uniforme e travar o hardware;
+- o IR3 corrige sparse loads de imagens de 64 bits;
+- o Turnip passa a enviar os flags `MSM_SUBMIT_SYNCOBJ_*` quando existem apenas
+  syncobjs internos nas filas combinadas de gráficos/sparse;
+- custom resolve dinâmico deixa de armazenar/limpar attachments antes da hora;
+- imagens AHB multicamada com DRM modifier explícito passam a ser importadas no
+  gralloc Qualcomm;
+- o runtime Vulkan Android corrige a política de tiling para imagens mutáveis,
+  preservando optimal tiling no caso UNORM/SRGB e evitando a regressão de
+  desempenho observada no ANGLE;
+- o suporte upstream reconhece o novo chip-id A830v1.
+
+Também entram correções genéricas de SPIR-V, NIR e comandos Vulkan compartilhados.
+Não foi adicionado patch comunitário de FPS nem configuração agressiva: o ganho
+esperado desta subida é principalmente compatibilidade, estabilidade e redução
+de hangs/regressões, sem promessa de aumento de FPS na A740.
+
+O Banners-Turnip `20260817-r4` permanece como referência independente histórica.
+Sua variante A6xx/A7xx é Mesa puro, sem patch de performance; dela aproveitamos
+a confirmação da metodologia e das correções necessárias ao NDK r29, não hacks
+A8xx. O snapshot `c363342a` desta atualização foi verificado diretamente no
+`mesa/main`.
 
 ## Melhorias incorporadas do Amaral Adreno Tools IA
 

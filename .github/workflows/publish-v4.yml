@@ -29,6 +29,7 @@ jobs:
         run: |
           python3 tools/validate_project.py
           bash -n scripts/*.sh
+          test -x scripts/build_universal.sh
 
       - name: Install host tools
         run: |

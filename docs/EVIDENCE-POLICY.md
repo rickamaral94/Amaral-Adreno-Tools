@@ -4,10 +4,16 @@ Uma dica da comunidade é uma hipótese, não uma correção. Para entrar no dri
 universal, um hack precisa ter fonte rastreável, licença compatível, mudança
 isolada, mecanismo técnico explicável e resultado reproduzível.
 
+A decisão segue sempre esta ordem: compatibilidade gráfica, estabilidade,
+frametimes consistentes e desempenho. Ganho de FPS não compensa artefato,
+travamento, piora de P95/P99 ou comportamento térmico/energético inadequado.
+
 ## Barreiras obrigatórias
 
 - problema reproduzido com logs e identidade do driver confirmada;
 - mesma configuração, temperatura e sequência para candidato e referência;
+- comparar FPS, P50/P95/P99, stutter, temperatura, consumo, estabilidade e
+  qualidade gráfica nas GPUs e nos emuladores alcançados pela mudança;
 - pelo menos 5 rodadas por cenário (10 nas decisões de release);
 - qualidade visual aprovada antes de considerar FPS/tempo;
 - zero crash, `device lost`, corrupção ou recurso Vulkan artificial;
@@ -17,8 +23,9 @@ isolada, mecanismo técnico explicável e resultado reproduzível.
 - teste nos emuladores afetados e um conjunto de controle.
 
 Resultado específico de jogo pode justificar documentação ou opção de diagnóstico,
-mas não um comportamento global. Spoofing e recursos não suportados são rejeitados
-no pacote universal.
+mas não um comportamento global. Otimizações específicas devem ficar isoladas
+por GPU, família ou aplicativo e manter reversão simples. Spoofing e recursos
+não suportados são rejeitados no pacote universal.
 
 ## Estados
 
@@ -28,4 +35,3 @@ no pacote universal.
 - `active`: incluído no build padrão.
 - `reference-only`: útil como histórico, não distribuído.
 - `rejected`: evidência insuficiente, regressão ou risco incompatível.
-

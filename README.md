@@ -64,8 +64,12 @@ sintomas compatíveis com divergência UBWC em blits, escala ou texturas.
 - **Perfil público:** AArch64 `armv8-a`, KGSL e decisões upstream como padrão.
 - **Sem atalhos globais:** sem spoof de GPU/Vulkan, `TU_DEBUG` forçado,
   capabilities inventadas ou hacks específicos de jogo.
-- **Compatibilidade antes de FPS:** uma otimização só avança após validação
-  visual, estabilidade e comparação A/B.
+- **Prioridade obrigatória:** compatibilidade gráfica, estabilidade, frametimes
+  consistentes e, por último, desempenho/FPS.
+- **Evidência antes do padrão:** otimizações da comunidade, inclusive
+  experimentais, só avançam após A/B reproduzível com qualidade visual, crash,
+  stutter, temperatura e consumo; mudanças específicas ficam isoladas e
+  reversíveis por GPU, família ou aplicativo.
 
 ## Baseline
 
@@ -73,7 +77,7 @@ sintomas compatíveis com divergência UBWC em blits, escala ou texturas.
 |---|---|
 | Revisão Amaral | `v4` |
 | Mesa | `26.3.0-devel` |
-| Commit fixado | `dddaef6f8c970770cc60f6bab6ab5392f54e7679` |
+| Commit fixado | `c363342a1130b8e00743337492055c71541724af` |
 | Backend | Turnip/Freedreno + KGSL |
 | ABI | Android AArch64, `armv8-a` |
 | API mínima proposta | Android 10 / API 29 |
