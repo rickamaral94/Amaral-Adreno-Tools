@@ -2,7 +2,8 @@
 
 Esta atualização substitui os binários anteriores da v4 e avança a base para o
 Mesa `c363342a1130b8e00743337492055c71541724af`, cabeça do `main` auditada em
-20/08/2026. A v4 permanece pré-release; a v3 continua estável/latest e fallback.
+20/08/2026. Após as validações reprodutíveis, a v4 foi promovida a release
+estável/latest; a v3 continua disponível como fallback.
 
 ## Drivers
 

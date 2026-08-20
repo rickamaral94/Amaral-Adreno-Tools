@@ -3,9 +3,9 @@
 Projeto do **Amaral Turnip Universal**, driver Vulkan para Android/KGSL
 construído a partir do Mesa 3D e orientado à compatibilidade em emuladores.
 
-> Status: `v4` em pré-release de validação comunitária; `v3` é a release
-> estável/latest. O perfil da Adreno 825 e a variante OneUI permanecem
-> experimentais.
+> Status: `v4` é a release estável/latest; `v3` permanece disponível como
+> fallback. O perfil da Adreno 825 e a variante OneUI continuam com escopo
+> experimental e isolado.
 
 ## Variantes da atualização v4
 
@@ -28,9 +28,8 @@ confirmou as duas extensões em runtime, nenhuma capacidade perdida,
 compatibilidade 100/100 e zero divergência em 116 comparações.
 
 O caminho de profundidade irrestrita quando explicitamente habilitado pelo
-aplicativo ainda precisa de validação em sessão real do Eden. Por isso a v4
-continua pré-release e a mudança permanece no degrau L0, sem alcançar outras
-GPUs A7xx/A8xx.
+aplicativo continua monitorado em sessões reais do Eden. A mudança permanece no
+degrau L0, sem alcançar outras GPUs A7xx/A8xx.
 
 ### Perfil experimental da Adreno 825
 
@@ -84,8 +83,8 @@ sintomas compatíveis com divergência UBWC em blits, escala ou texturas.
 | Exceção não upstream | Adreno 825, experimental e isolada por `chip_id` |
 
 O número `v4` é a revisão Amaral e avança enquanto a versão pública do Mesa
-permanece `26.3.0-devel`. A v3 é a release estável e continua disponível como
-fallback durante a validação da v4.
+permanece `26.3.0-devel`. A v4 é a release estável/latest e a v3 continua
+disponível como fallback.
 
 ## Compilar
 
