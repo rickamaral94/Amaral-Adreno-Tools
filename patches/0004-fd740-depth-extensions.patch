@@ -14,7 +14,7 @@ fluxo de comandos anterior.
 Origem:   Amaral Adreno Tools IA, patches 0010 e 0011
 Evidência: Amaral Driver Lab issue #69
 Licença:  MIT (mesmos arquivos do Mesa)
-Base:     Mesa dddaef6f8c970770cc60f6bab6ab5392f54e7679
+Base:     Mesa c363342a1130b8e00743337492055c71541724af
 Degrau:   L0, 0x43050a01 e 0xffff43050a01 (FD740 KGSL)
 
 diff --git a/src/freedreno/vulkan/tu_device.cc b/src/freedreno/vulkan/tu_device.cc
