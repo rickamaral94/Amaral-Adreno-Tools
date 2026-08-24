@@ -83,7 +83,6 @@ expected_source_files=(
   "src/freedreno/common/freedreno_devices.py"
   "src/freedreno/drm-shim/freedreno_noop.c"
   "src/freedreno/ir3/ir3_nir.c"
-  "src/freedreno/vulkan/00-turnip-defaults.conf"
   "src/freedreno/vulkan/tu_device.cc"
   "src/freedreno/vulkan/tu_pipeline.cc"
   "src/util/u_gralloc/u_gralloc_fallback.c"
