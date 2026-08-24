@@ -68,6 +68,7 @@ apply_patch_once() {
 apply_patch_once "${repo_root}/patches/0001-android-ndk-r29-compat.patch"
 apply_patch_once "${repo_root}/patches/0002-a825-experimental.patch"
 apply_patch_once "${repo_root}/patches/0004-fd740-depth-extensions.patch"
+apply_patch_once "${repo_root}/patches/0005-a740-aurora-performance.patch"
 if [[ "${driver_variant}" == "oneui" ]]; then
   apply_patch_once "${repo_root}/patches/0003-oneui-ubwc.patch"
 elif git -C "${mesa_src}" apply --reverse --check \
@@ -81,6 +82,8 @@ expected_source_files=(
   "include/android_stub/cutils/native_handle.h"
   "src/freedreno/common/freedreno_devices.py"
   "src/freedreno/drm-shim/freedreno_noop.c"
+  "src/freedreno/ir3/ir3_nir.c"
+  "src/freedreno/vulkan/00-turnip-defaults.conf"
   "src/freedreno/vulkan/tu_device.cc"
   "src/freedreno/vulkan/tu_pipeline.cc"
   "src/util/u_gralloc/u_gralloc_fallback.c"
@@ -150,7 +153,8 @@ meson setup "${build_dir}" "${mesa_src}" "${setup_mode[@]}" \
   -Dplatforms=android -Dvideo-codecs= -Dplatform-sdk-version=36 -Dandroid-stub=true \
   -Dgallium-drivers= -Dvulkan-drivers=freedreno -Dvulkan-beta=true \
   -Dfreedreno-kmds=kgsl -Degl=disabled -Dglx=disabled \
-  -Dandroid-libbacktrace=disabled -Dzstd=disabled
+  -Dandroid-libbacktrace=disabled -Dzstd=disabled \
+  -Dshader-cache=enabled -Dshader-cache-max-size=4G
 ninja -C "${build_dir}" install
 
 driver_path="${install_root}/lib/libvulkan_freedreno.so"
