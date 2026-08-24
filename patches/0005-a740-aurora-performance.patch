@@ -11,7 +11,7 @@ Enable the community-tested Aurora tuning used by the A740 release:
 The release build is the A740-targeted Amaral v4.2 profile.
 
 ---
- src/freedreno/ir3/ir3_nir.c                 | 2 +-
+ src/freedreno/ir3/ir3_nir.c                  | 2 +-
  src/freedreno/vulkan/00-turnip-defaults.conf | 4 ++++
  src/freedreno/vulkan/tu_device.cc            | 4 ++--
  3 files changed, 7 insertions(+), 3 deletions(-)
@@ -60,4 +60,3 @@ diff --git a/src/freedreno/vulkan/00-turnip-defaults.conf b/src/freedreno/vulkan
 +
  <!-- Up to DXVK version 2.3.0 -->
  <engine engine_name_match="DXVK" engine_versions="0:8400896">
-*** End Patch
