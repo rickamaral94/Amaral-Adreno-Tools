@@ -4,59 +4,31 @@ Date: Mon, 24 Aug 2026 00:00:00 +0000
 Subject: [PATCH] tu: A740 Aurora performance profile
 
 Enable the community-tested Aurora tuning used by the A740 release:
-- IR3 GCM enabled by default for A7XX compiler generation.
+- IR3 GCM enabled for A7XX compiler generation.
 - pipeline and KGSL profiling suballocators increased to 512 KiB.
-- Zelda compatibility workarounds enabled in Turnip driconf defaults.
 
-The release build is the A740-targeted Amaral v4.2 profile.
+The upstream Mesa 26.3 branch already carries the Zelda-related
+DONT_CARE/indirect-UBO workarounds in engine-specific driconf entries, so
+this patch intentionally does not duplicate or globalize those options.
 
 ---
- src/freedreno/ir3/ir3_nir.c                  | 2 +-
- src/freedreno/vulkan/00-turnip-defaults.conf | 4 ++++
- src/freedreno/vulkan/tu_device.cc            | 4 ++--
- 3 files changed, 7 insertions(+), 3 deletions(-)
+ src/freedreno/ir3/ir3_nir.c     | 2 +-
+ src/freedreno/vulkan/tu_device.cc | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/src/freedreno/ir3/ir3_nir.c b/src/freedreno/ir3/ir3_nir.c
 --- a/src/freedreno/ir3/ir3_nir.c
 +++ b/src/freedreno/ir3/ir3_nir.c
-@@ -320,7 +320,7 @@ ir3_optimize_loop(struct ir3_compiler *compiler,
+@@ -320 +320 @@ ir3_optimize_loop(struct ir3_compiler *compiler,
 -      static int gcm = -1;
 +      static int gcm = (compiler->gen == 7) ? 1 : 0;
-       if (gcm == -1)
-          gcm = debug_get_num_option("GCM", 0);
-       if (gcm == 1)
-          progress |= OPT(s, nir_opt_gcm, true);
-       else if (gcm == 2)
-          progress |= OPT(s, nir_opt_gcm, false);
 
 diff --git a/src/freedreno/vulkan/tu_device.cc b/src/freedreno/vulkan/tu_device.cc
 --- a/src/freedreno/vulkan/tu_device.cc
 +++ b/src/freedreno/vulkan/tu_device.cc
-@@ -2957,12 +2957,12 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
-    tu_bo_suballocator_init(
+@@ -1 +1 @@
 -      &device->pipeline_suballoc, device, 128 * 1024,
 +      &device->pipeline_suballoc, device, 512 * 1024,
-       (enum tu_bo_alloc_flags) (TU_BO_ALLOC_GPU_READ_ONLY |
-                                 TU_BO_ALLOC_ALLOW_DUMP |
-                                 TU_BO_ALLOC_INTERNAL_RESOURCE),
-       "pipeline_suballoc");
-    if (is_kgsl(physical_device->instance)) {
-       tu_bo_suballocator_init(&device->kgsl_profiling_suballoc, device,
+@@ -1 +1 @@
 -                              128 * 1024, TU_BO_ALLOC_INTERNAL_RESOURCE,
 +                              512 * 1024, TU_BO_ALLOC_INTERNAL_RESOURCE,
-                               "kgsl_profiling_suballoc");
-    }
-
-diff --git a/src/freedreno/vulkan/00-turnip-defaults.conf b/src/freedreno/vulkan/00-turnip-defaults.conf
---- a/src/freedreno/vulkan/00-turnip-defaults.conf
-+++ b/src/freedreno/vulkan/00-turnip-defaults.conf
-@@ -1,5 +1,9 @@
- <?xml version="1.0"?>
- <driconf>
- <device driver="turnip">
-+<!-- Amaral Turnip 26.3.0-devel v4.2 A740 Aurora profile. -->
-+<option name="tu_dont_care_as_load" value="true" />
-+<option name="tu_allow_oob_indirect_ubo_loads" value="true" />
-+
- <!-- Up to DXVK version 2.3.0 -->
- <engine engine_name_match="DXVK" engine_versions="0:8400896">
