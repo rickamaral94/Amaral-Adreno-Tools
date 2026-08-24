@@ -7,6 +7,7 @@ on:
       - ".github/workflows/publish-v4.2.yml"
       - "patches/0005-a740-aurora-performance.patch"
       - "scripts/build_universal.sh"
+      - "tools/validate_project.py"
       - "config/mesa-lock.json"
       - "docs/releases/mesa-26.3.0-devel-v4.2.md"
   workflow_dispatch:
