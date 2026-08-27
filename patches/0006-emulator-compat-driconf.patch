@@ -1,0 +1,106 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Amaral Driver Lab <rickamaral94@users.noreply.github.com>
+Date: Thu, 27 Aug 2026 00:00:00 +0000
+Subject: [PATCH] tu/driconf: perfil de compatibilidade para emuladores de Switch
+
+Adiciona uma secao <engine> em 00-turnip-defaults.conf casando "yuzu Emulator",
+que e' como o yuzu e seus forks - o Eden entre eles - se identificam em
+pApplicationName e pEngineName.
+
+Tres workarounds, todos ja existentes no Turnip, nenhum ligado por padrao para
+emulador pelo upstream:
+
+  tu_dont_care_as_load
+      Jogos de Switch foram escritos para hardware que nao descarta o conteudo
+      do tile. Quando usam DONT_CARE esperando que o conteudo anterior
+      sobreviva, um tiler descarta. Sintoma relatado em Breath of the Wild e
+      Tears of the Kingdom: blocos pretos, ceu piscando, artefatos de terreno.
+
+  tu_allow_oob_indirect_ubo_loads
+      Acesso indireto a UBO alem do limite declarado. Corrompe e, como o
+      upstream registra no caso da engine Clausewitz, pode gerar laco infinito
+      - ou seja, travamento.
+
+  tu_emulate_alpha_to_coverage
+      O upstream descreve o alpha-to-coverage do hardware como algo que
+      "produz resultados ruins de forma consistente comparado a outros
+      fabricantes", e ja liga a emulacao para DXVK e vkd3d-proton. Um emulador
+      e' camada de traducao pelo mesmo motivo. Afeta folhagem, grama, cabelo.
+
+ALCANCE: universal, e isso foi verificado no fonte, nao suposto. Nenhuma das
+tres tem teste de geracao:
+
+  dont_care_as_load        tu_pass.cc, attachment_set_ops()  - if direto
+  emulate_alpha_to_coverage tu_pipeline.cc                   - if direto
+  allow_oob_indirect_ubo_loads tu_device.cc -> compiler_options - if direto
+
+Valem para a6xx, a7xx e a8xx igualmente. O defeito esta no aplicativo e na
+natureza tiler do hardware, que toda Adreno tem - nao numa familia.
+
+CUSTO: as tres desativam uma otimizacao. E o alcance e' o emulador inteiro,
+nao um jogo: o driver so enxerga o nome do emulador. O custo do
+dont_care_as_load cresce com o numero de tiles, entao pesa mais onde a GMEM e'
+menor. A troca e' deliberada - compatibilidade e' prioridade 1 do projeto,
+desempenho e' a 4.
+
+NAO validado em aparelho por nos. A combinacao dont_care_as_load +
+allow_oob_indirect_ubo_loads e' relatada pelo Balemuni's Aurora como corretiva
+para BOTW/TOTK; o alpha_to_coverage e' acrescimo nosso, por analogia explicita
+com o que o upstream ja faz para camadas de traducao.
+
+---
+diff --git a/src/freedreno/vulkan/00-turnip-defaults.conf b/src/freedreno/vulkan/00-turnip-defaults.conf
+index 0596f6c..979bd7b 100644
+--- a/src/freedreno/vulkan/00-turnip-defaults.conf
++++ b/src/freedreno/vulkan/00-turnip-defaults.conf
+@@ -51,12 +51,50 @@
+         </engine>
+         <!-- Starting from Android 14, framework HWUI requires a second graphics
+              queue to avoid racing between webview and skiavk. -->
+         <engine engine_name_match="android framework">
+             <option name="tu_emulate_second_queue" value="true" />
+         </engine>
++        <!-- Emuladores de Nintendo Switch. O yuzu e seus forks, incluindo o
++             Eden, se identificam como "yuzu Emulator" tanto em
++             pApplicationName quanto em pEngineName.
++
++             Nenhuma das opcoes abaixo depende de geracao de Adreno: as tres
++             sao lidas direto do drirc, sem teste de chip. Valem para a6xx,
++             a7xx e a8xx igualmente, porque o defeito esta no aplicativo e na
++             natureza tiler do hardware, nao numa familia especifica. -->
++        <engine engine_name_match="yuzu Emulator">
++            <!-- Jogos de Switch foram escritos para um hardware que nao
++                 descarta o conteudo do tile. Quando usam DONT_CARE esperando
++                 que o conteudo anterior sobreviva, um tiler descarta - e o
++                 resultado sao blocos pretos, ceu piscando e artefatos de
++                 terreno. Relatado em Breath of the Wild e Tears of the
++                 Kingdom.
++
++                 Custo: forca o load do tile onde ele poderia ser pulado. O
++                 custo cresce com o numero de tiles, entao pesa mais em GMEM
++                 menor. -->
++            <option name="tu_dont_care_as_load" value="true" />
++            <!-- O recompilador de shader do emulador emite acesso indireto a
++                 UBO cujo limite declarado nao corresponde ao tamanho ligado em
++                 tempo de desenho. Fora dos limites, isso corrompe e - como o
++                 proprio upstream registra no caso da engine Clausewitz - pode
++                 gerar laco infinito, ou seja, travamento.
++
++                 Custo: impede baixar UBO acessado indiretamente para consts. -->
++            <option name="tu_allow_oob_indirect_ubo_loads" value="true" />
++            <!-- O upstream descreve o alpha-to-coverage do hardware como algo
++                 que "produz resultados ruins de forma consistente comparado a
++                 outros fabricantes", e ja liga a emulacao por padrao para DXVK
++                 e vkd3d-proton. Um emulador e' camada de traducao pelo mesmo
++                 motivo. Afeta folhagem, grama e cabelo.
++
++                 Custo: emulacao no shader, "alguma perda de desempenho" nas
++                 palavras do upstream. -->
++            <option name="tu_emulate_alpha_to_coverage" value="true" />
++        </engine>
+         <engine engine_name_match="Kex Engine">
+             <!-- https://gitlab.freedesktop.org/mesa/mesa/-/issues/5437 -->
+             <!-- Older Kex Engine based games that use Vulkan like "Forsaken Remastered",
+                  "Doom 64", "STAR WARS: Dark Forces Remaster" mistakingly use DONT_CARE
+                  as LOAD_OP. Newer games like "SiN Reloaded" or "The Thing: Remastered"
+                  don't have this issue, and they never use DONT_CARE.

@@ -1,15 +1,15 @@
-name: Publish Turnip Amaral 26.3.0-devel v4.2
+name: Publish Turnip Amaral 26.3.0-devel v4.3
 
 on:
   push:
     branches: [main]
     paths:
-      - ".github/workflows/publish-v4.2.yml"
+      - ".github/workflows/publish-v4.3.yml"
       - "patches/0005-a740-aurora-performance.patch"
       - "scripts/build_universal.sh"
       - "tools/validate_project.py"
       - "config/mesa-lock.json"
-      - "docs/releases/mesa-26.3.0-devel-v4.2.md"
+      - "docs/releases/mesa-26.3.0-devel-v4.3.md"
   workflow_dispatch:
 
 permissions:
@@ -21,9 +21,9 @@ jobs:
     timeout-minutes: 120
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: mesa-26.3.0-devel-v4.2
-      STANDARD_FILE: turnip_amaral_26.3.0-devel_v4.2.zip
-      ONEUI_FILE: turnip_amaral_26.3.0-devel_v4.2_oneUI.zip
+      RELEASE_TAG: mesa-26.3.0-devel-v4.3
+      STANDARD_FILE: turnip_amaral_26.3.0-devel_v4.3.zip
+      ONEUI_FILE: turnip_amaral_26.3.0-devel_v4.3_oneUI.zip
 
     steps:
       - name: Checkout release source
@@ -103,11 +103,11 @@ jobs:
           unzip -t "dist/${ONEUI_FILE}"
           (cd dist && sha256sum "${STANDARD_FILE}" "${ONEUI_FILE}" > SHA256SUMS.txt)
 
-      - name: Publish v4.2 release and mark latest
+      - name: Publish v4.3 release and mark latest
         run: |
           if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
             gh release upload "${RELEASE_TAG}" "dist/${STANDARD_FILE}" "dist/${ONEUI_FILE}" "dist/SHA256SUMS.txt" "dist/REPRODUCIBILITY_standard.txt" "dist/REPRODUCIBILITY_oneui.txt" --repo "${GITHUB_REPOSITORY}" --clobber
-            gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --title "Turnip Amaral 26.3.0-devel v4.2" --notes-file docs/releases/mesa-26.3.0-devel-v4.2.md --prerelease
+            gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --title "Turnip Amaral 26.3.0-devel v4.3" --notes-file docs/releases/mesa-26.3.0-devel-v4.3.md --prerelease
           else
-            gh release create "${RELEASE_TAG}" "dist/${STANDARD_FILE}" "dist/${ONEUI_FILE}" "dist/SHA256SUMS.txt" "dist/REPRODUCIBILITY_standard.txt" "dist/REPRODUCIBILITY_oneui.txt" --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" --title "Turnip Amaral 26.3.0-devel v4.2" --notes-file docs/releases/mesa-26.3.0-devel-v4.2.md --prerelease
+            gh release create "${RELEASE_TAG}" "dist/${STANDARD_FILE}" "dist/${ONEUI_FILE}" "dist/SHA256SUMS.txt" "dist/REPRODUCIBILITY_standard.txt" "dist/REPRODUCIBILITY_oneui.txt" --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" --title "Turnip Amaral 26.3.0-devel v4.3" --notes-file docs/releases/mesa-26.3.0-devel-v4.3.md --prerelease
           fi

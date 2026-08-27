@@ -14,15 +14,24 @@ fluxo de comandos anterior.
 Origem:   Amaral Adreno Tools IA, patches 0010 e 0011
 Evidência: Amaral Driver Lab issue #69
 Licença:  MIT (mesmos arquivos do Mesa)
-Base:     Mesa 6e41d819219d7f4025a95cbbaddfbe492d210ff3
+Base:     Mesa 451e4a4647886e7b989cc140bc81f81e89a86564
 Degrau:   L0, 0x43050a01 e 0xffff43050a01 (FD740 KGSL)
 
+Rebase 2026-08-27: o upstream inseriu tu_subgroup_size() entre
+tu_is_vk_1_1() e get_device_extensions(), deslocando as ancoras. O corpo do
+diff foi REGENERADO pelo git contra 451e4a46. Conferido: as linhas adicionadas
+e removidas sao identicas as da versao anterior (+47/-5), so as ancoras mudaram.
+
+---
 diff --git a/src/freedreno/vulkan/tu_device.cc b/src/freedreno/vulkan/tu_device.cc
-index 88eb56b1..1eab10fb 100644
+index 3ccc34c..b38b8cb 100644
 --- a/src/freedreno/vulkan/tu_device.cc
 +++ b/src/freedreno/vulkan/tu_device.cc
-@@ -205,6 +205,16 @@ static bool tu_is_vk_1_1(const struct tu_physical_device *device)
-    return tu_has_multiview(device);
+@@ -209,12 +209,22 @@ static uint32_t
+ tu_subgroup_size(const struct tu_physical_device *device)
+ {
+    return device->info->threadsize_base *
+           (device->expose_double_threadsize ? 2 : 1);
  }
  
 +/* Amaral L0 gate: these compatibility extensions were validated on the
@@ -38,7 +47,13 @@ index 88eb56b1..1eab10fb 100644
  static void
  get_device_extensions(const struct tu_physical_device *device,
                        struct vk_device_extension_table *ext)
-@@ -329,8 +339,10 @@ get_device_extensions(const struct tu_physical_device *device,
+ {
+    bool has_gralloc = vk_android_get_ugralloc() != NULL;
+    /* device->has_raytracing contains the value of the SW fuse. If the
+@@ -333,14 +343,16 @@ get_device_extensions(const struct tu_physical_device *device,
+       .EXT_color_write_enable = true,
+       .EXT_conditional_rendering = true,
+       .EXT_conservative_rasterization = device->info->chip >= 7,
        .EXT_custom_border_color = true,
        .EXT_custom_resolve = true,
        .EXT_debug_marker = true,
@@ -49,7 +64,13 @@ index 88eb56b1..1eab10fb 100644
        .EXT_depth_clip_control = true,
        .EXT_depth_clip_enable = true,
        .EXT_descriptor_buffer = true,
-@@ -707,6 +719,17 @@ tu_get_features(struct tu_physical_device *pdevice,
+       .EXT_descriptor_indexing = true,
+       .EXT_device_address_binding_report = true,
+       .EXT_device_memory_report = true,
+@@ -714,12 +726,23 @@ tu_get_features(struct tu_physical_device *pdevice,
+    /* VK_EXT_depth_clamp_control */
+    features->depthClampControl = true;
+ 
     /* VK_KHR_depth_clamp_zero_one */
     features->depthClampZeroOne = true;
  
@@ -67,11 +88,17 @@ index 88eb56b1..1eab10fb 100644
     /* VK_EXT_depth_clip_control */
     features->depthClipControl = true;
  
+    /* VK_EXT_depth_clip_enable */
+    features->depthClipEnable = true;
+ 
 diff --git a/src/freedreno/vulkan/tu_pipeline.cc b/src/freedreno/vulkan/tu_pipeline.cc
-index 6ccb868f..0fdf962c 100644
+index 14da376..c496f36 100644
 --- a/src/freedreno/vulkan/tu_pipeline.cc
 +++ b/src/freedreno/vulkan/tu_pipeline.cc
-@@ -2553,6 +2553,20 @@ static const enum mesa_vk_dynamic_graphics_state tu_viewport_state[] = {
+@@ -2550,12 +2550,26 @@ static const enum mesa_vk_dynamic_graphics_state tu_viewport_state[] = {
+    MESA_VK_DYNAMIC_VP_VIEWPORT_COUNT,
+    MESA_VK_DYNAMIC_VP_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE,
+    MESA_VK_DYNAMIC_VP_DEPTH_CLAMP_RANGE,
     MESA_VK_DYNAMIC_RS_DEPTH_CLAMP_ENABLE,
  };
  
@@ -92,7 +119,13 @@ index 6ccb868f..0fdf962c 100644
  template <chip CHIP>
  static unsigned
  tu6_viewport_nregs(const struct vk_viewport_state *vp)
-@@ -2651,7 +2665,8 @@ tu6_emit_viewport(struct tu_cs *cs,
+ {
+    if (CHIP >= A8XX) {
+       return 12 * vp->viewport_count + 1;
+@@ -2648,13 +2662,14 @@ tu6_emit_viewport(struct tu_cs *cs,
+    }
+ 
+    /* A7XX+ doesn't clamp to [0,1] with disabled depth clamp, to support
      * VK_EXT_depth_clamp_zero_one we have to always enable clamp and manually
      * set range to [0,1] when rs->depth_clamp_enable is false.
      */
@@ -102,7 +135,13 @@ index 6ccb868f..0fdf962c 100644
  
     for (uint32_t i = 0; i < vp->viewport_count; i++) {
        const VkViewport *viewport = &vp->viewports[i];
-@@ -3516,8 +3531,10 @@ tu6_emit_rast(struct tu_cs *cs,
+       float zmin, zmax;
+ 
+       if (vp->depth_clamp_mode == VK_DEPTH_CLAMP_MODE_USER_DEFINED_RANGE_EXT) {
+@@ -3513,14 +3528,16 @@ tu6_emit_rast(struct tu_cs *cs,
+    bool depth_clip_enable = vk_rasterization_state_depth_clip_enable(rs);
+ 
+    tu_cs_emit_regs(cs,
                     GRAS_CL_CNTL(CHIP,
                       .znear_clip_disable = !depth_clip_enable,
                       .zfar_clip_disable = !depth_clip_enable,
@@ -115,7 +154,13 @@ index 6ccb868f..0fdf962c 100644
                       .zero_gb_scale_z = vp->depth_clip_negative_one_to_one ? 0 : 1,
                       .vp_clip_code_ignore = 1));
  
-@@ -3720,8 +3737,10 @@ tu6_emit_rb_depth_cntl(struct tu_cs *cs,
+    enum a6xx_polygon_mode polygon_mode = tu6_polygon_mode(rs->polygon_mode);
+ 
+    tu_cs_emit_regs(cs, VPC_RAST_CNTL(CHIP, polygon_mode));
+@@ -3717,14 +3734,16 @@ tu6_emit_rb_depth_cntl(struct tu_cs *cs,
+       }
+ 
+       tu_cs_emit_regs(cs, A6XX_RB_DEPTH_CNTL(
           .z_test_enable = depth_test,
           .z_write_enable = ds->depth.test_enable && ds->depth.write_enable,
           .zfunc = zfunc,
@@ -128,3 +173,6 @@ index 6ccb868f..0fdf962c 100644
           .z_read_enable =
              (ds->depth.test_enable && (zfunc != FUNC_NEVER && zfunc != FUNC_ALWAYS)) ||
              ds->depth.bounds_test.enable,
+          .z_bounds_enable = ds->depth.bounds_test.enable,
+          .o_depth_01_clamp_en = CHIP >= A8XX,
+       ));

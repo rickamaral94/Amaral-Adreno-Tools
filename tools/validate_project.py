@@ -24,7 +24,7 @@ def main():
     commit = lock["mesa"]["commit"]
     assert re.fullmatch(r"[0-9a-f]{40}", commit), "Mesa commit must be a full SHA"
     assert isinstance(lock["amaral_revision"], str)
-    assert lock["amaral_revision"] == "4.2"
+    assert lock["amaral_revision"] == "4.3"
     assert lock["build"]["cpu"] == "armv8-a"
     assert lock["build"]["kmd"] == "kgsl"
     assert sources["primary"][0]["name"] == "Mesa 3D"

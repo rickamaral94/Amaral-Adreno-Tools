@@ -1,38 +1,57 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Amaral Driver Lab <rickamaral94@users.noreply.github.com>
 Date: Thu, 27 Aug 2026 00:00:00 +0000
-Subject: [PATCH] tu, ir3: afinacao Aurora restrita ao a7xx+
+Subject: [PATCH] tu, ir3: afinacao Aurora, com os gates re-derivados
 
-Traz para o driver universal a afinacao que a comunidade usa na linha A740,
-sem alterar o comportamento das geracoes anteriores. As duas mudancas sao
-condicionadas a geracao do adreno em tempo de execucao:
+Traz a afinacao que a comunidade usa na linha A740 (Balemuni's Aurora) para o
+driver universal. Os limites de aplicacao NAO sao os do Aurora: foram
+re-derivados da dependencia real de cada mudanca.
 
-1. ir3: GCM (global code motion) passa a ser ligado por padrao no a7xx+.
-   Upstream mantem GCM desligado para todas as geracoes e so oferece o
-   override por ambiente (GCM=1/2). O padrao continua desligado no a6xx.
+1. ir3: GCM (global code motion) ligado por padrao onde o banco de
+   registradores comporta.
 
-   O override por ambiente segue funcionando e tem precedencia: GCM=0
-   desliga mesmo no a7xx, que e' o caminho para isolar o efeito num A/B.
+   GCM e' um passe de NIR e nao tem dependencia de hardware. O que o limita e'
+   pressao de registrador: mover codigo para fora do laco alonga intervalos de
+   vida e pode forcar spill para memoria privada, que custa mais do que o passe
+   economiza.
 
-   Nota de implementacao: o valor final NAO pode viver num "static". A
-   funcao e' chamada por qualquer dispositivo do processo, entao um static
-   fixaria a escolha do primeiro que compilasse um shader. So o override de
-   ambiente, que e' por processo, fica em cache.
+   O banco vem de dev_info->props.reg_size_vec4 (ir3_compiler.c) e varia por
+   DISPOSITIVO, nao por familia:
 
-2. tu: os suballocadores de pipeline e de profiling KGSL passam de blocos de
-   128 KiB para 512 KiB no a7xx+. Blocos maiores significam menos alocacoes
-   de BO ao custo de mais desperdicio por bloco - troca que so se justifica
-   onde ha memoria e largura de banda sobrando.
+       a8xx_gen2                       128
+       a6xx_gen1, a6xx_gen2             96
+       a7xx inteira, FD740 incluida     96
+       a8xx_base, a8xx_gen1             96
+       a6xx_gen3, a6xx_gen4             64
+       a6xx_gen1_low                48 (uma variante 32)
 
-NAO validado em aparelho. Ambas as mudancas sao de desempenho, prioridade 4
-do projeto, com mecanismo defensavel e magnitude nao medida.
+   Gatear por "gen >= 7" deixaria de fora a6xx_gen1 e a6xx_gen2, que tem
+   exatamente o mesmo orcamento de registrador do alvo onde a afinacao foi
+   testada, e nao incluiria nada a mais. O gate correto e' reg_size_vec4 >= 96.
+
+   Fica de fora, e o motivo e' tecnico: a6xx_gen3, a6xx_gen4 e a6xx_gen1_low
+   tem de um terco a metade menos registrador. Ali o passe tende a virar spill.
+
+   O override por ambiente continua com precedencia: GCM=0 desliga, GCM=1 liga
+   em qualquer familia. E' o caminho para medir nas familias excluidas.
+
+2. tu: suballocadores de pipeline e de profiling KGSL de 128 para 512 KiB, em
+   TODAS as familias.
+
+   Sem dependencia de hardware e com custo limitado: a alocacao e' preguicosa
+   (suballoc->bo = NULL no init), o tamanho e' MAX2(pedido, default_size) e o
+   alocador segura no maximo dois BOs - o corrente e um em cache. O pior caso
+   e' 2 x (512-128) KiB x 2 suballocadores, cerca de 1,5 MiB.
+
+NAO validado em aparelho. Ambas sao mudancas de desempenho, prioridade 4 do
+projeto, com mecanismo defensavel e magnitude nao medida.
 
 ---
 diff --git a/src/freedreno/ir3/ir3_nir.c b/src/freedreno/ir3/ir3_nir.c
-index 55503cf..e33f584 100644
+index a4e6582..9817ed2 100644
 --- a/src/freedreno/ir3/ir3_nir.c
 +++ b/src/freedreno/ir3/ir3_nir.c
-@@ -314,15 +314,24 @@ ir3_optimize_loop(struct ir3_compiler *compiler,
+@@ -315,15 +315,35 @@ ir3_optimize_loop(struct ir3_compiler *compiler,
        progress |= OPT(s, nir_opt_copy_prop_vars);
        progress |= OPT(s, nir_opt_dead_write_vars);
        progress |= OPT(s, nir_split_struct_vars, nir_var_function_temp);
@@ -42,18 +61,29 @@ index 55503cf..e33f584 100644
 -      static int gcm = -1;
 -      if (gcm == -1)
 -         gcm = debug_get_num_option("GCM", 0);
-+      /* O override por ambiente vale para o processo inteiro, entao pode ser
-+       * lido uma vez e guardado. Ja o padrao depende da geracao do Adreno e
-+       * por isso e' decidido a cada chamada: guardar o valor final num
++      /* GCM nao tem dependencia de hardware: e' um passe de NIR. O que o
++       * limita e' pressao de registrador, porque mover codigo para fora do
++       * laco alonga os intervalos de vida e pode forcar spill para memoria
++       * privada - que custa muito mais do que o passe economiza.
++       *
++       * Por isso o gate e' o tamanho do banco, nao a geracao. O banco vem de
++       * dev_info->props.reg_size_vec4 e varia por dispositivo, nao por
++       * familia: a7xx inteira (FD740 incluida) tem 96, igual a a6xx_gen1 e
++       * a6xx_gen2; ja a6xx_gen3/gen4 tem 64 e a6xx_gen1_low tem 48. Ligar por
++       * "gen >= 7" deixaria de fora a6xx com o mesmo orcamento de registrador
++       * que o alvo onde isto foi testado, e nao incluiria nada a mais.
++       *
++       * O override por ambiente vale para o processo inteiro e fica em cache;
++       * o padrao e' decidido a cada chamada, porque guardar o valor final num
 +       * "static" fixaria a escolha do primeiro dispositivo que compilasse um
-+       * shader, o que quebraria um driver universal.
++       * shader - o que quebraria um driver universal.
 +       * -1 = ainda nao consultado; -2 = sem override no ambiente.
 +       */
 +      static int gcm_env = -1;
 +      if (gcm_env == -1)
 +         gcm_env = debug_get_num_option("GCM", -2);
 +      const int gcm = (gcm_env != -2) ? gcm_env
-+                                      : (compiler->gen >= 7 ? 1 : 0);
++                                      : (compiler->reg_size_vec4 >= 96 ? 1 : 0);
        if (gcm == 1)
           progress |= OPT(s, nir_opt_gcm, true, true);
        else if (gcm == 2)
@@ -61,10 +91,10 @@ index 55503cf..e33f584 100644
        nir_opt_peephole_select_options peephole_select_options = {
           .limit = 16,
 diff --git a/src/freedreno/vulkan/tu_device.cc b/src/freedreno/vulkan/tu_device.cc
-index 88eb56b..5b7b8f4 100644
+index 3ccc34c..adf5377 100644
 --- a/src/freedreno/vulkan/tu_device.cc
 +++ b/src/freedreno/vulkan/tu_device.cc
-@@ -3033,20 +3033,23 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
+@@ -3040,21 +3040,21 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
     device->vsc_prim_strm_pitch = 0x4000 + VSC_PAD;
  
     if (device->vk.enabled_features.customBorderColors)
@@ -72,18 +102,16 @@ index 88eb56b..5b7b8f4 100644
  
     tu_bo_suballocator_init(
 -      &device->pipeline_suballoc, device, 128 * 1024,
-+      &device->pipeline_suballoc, device,
-+      (physical_device->info->chip >= 7) ? 512 * 1024 : 128 * 1024,
++      &device->pipeline_suballoc, device, 512 * 1024,
        (enum tu_bo_alloc_flags) (TU_BO_ALLOC_GPU_READ_ONLY |
                                  TU_BO_ALLOC_ALLOW_DUMP |
-                                 TU_BO_ALLOC_INTERNAL_RESOURCE),
+                                 TU_BO_ALLOC_INTERNAL_RESOURCE |
+                                 tu_bo_ib_flags(device)),
        "pipeline_suballoc");
     if (is_kgsl(physical_device->instance)) {
        tu_bo_suballocator_init(&device->kgsl_profiling_suballoc, device,
 -                              128 * 1024, TU_BO_ALLOC_INTERNAL_RESOURCE,
-+                              (physical_device->info->chip >= 7) ? 512 * 1024
-+                                                                : 128 * 1024,
-+                              TU_BO_ALLOC_INTERNAL_RESOURCE,
++                              512 * 1024, TU_BO_ALLOC_INTERNAL_RESOURCE,
                                "kgsl_profiling_suballoc");
     }
  
