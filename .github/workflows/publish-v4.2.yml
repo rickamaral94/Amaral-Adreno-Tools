@@ -35,6 +35,26 @@ jobs:
           bash -n scripts/*.sh
           test -x scripts/build_universal.sh
 
+      # Um patch com cabecalho de hunk errado so falhava depois de clonar o
+      # Mesa e baixar o NDK. Conferir aqui custa segundos e da' a mensagem
+      # exata de qual patch nao aplica.
+      - name: Verify patches apply to the pinned Mesa
+        run: |
+          set -euo pipefail
+          commit="$(python3 -c "import json;print(json.load(open('config/mesa-lock.json'))['mesa']['commit'])")"
+          git init -q work/mesa-check
+          git -C work/mesa-check fetch -q --depth 1 https://gitlab.freedesktop.org/mesa/mesa.git "${commit}"
+          git -C work/mesa-check checkout -q FETCH_HEAD
+          for p in patches/*.patch; do
+            if [ "$(basename "${p}")" = "0003-oneui-ubwc.patch" ]; then continue; fi
+            echo "--- ${p}"
+            git -C work/mesa-check apply --check "${GITHUB_WORKSPACE}/${p}"
+            git -C work/mesa-check apply "${GITHUB_WORKSPACE}/${p}"
+          done
+          echo "--- patches/0003-oneui-ubwc.patch (variante OneUI)"
+          git -C work/mesa-check apply --check "${GITHUB_WORKSPACE}/patches/0003-oneui-ubwc.patch"
+          rm -rf work/mesa-check
+
       - name: Install host tools
         run: |
           sudo apt-get update
@@ -87,8 +107,7 @@ jobs:
         run: |
           if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
             gh release upload "${RELEASE_TAG}" "dist/${STANDARD_FILE}" "dist/${ONEUI_FILE}" "dist/SHA256SUMS.txt" "dist/REPRODUCIBILITY_standard.txt" "dist/REPRODUCIBILITY_oneui.txt" --repo "${GITHUB_REPOSITORY}" --clobber
-            gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --title "Turnip Amaral 26.3.0-devel v4.2" --notes-file docs/releases/mesa-26.3.0-devel-v4.2.md --prerelease=false --latest
+            gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --title "Turnip Amaral 26.3.0-devel v4.2" --notes-file docs/releases/mesa-26.3.0-devel-v4.2.md --prerelease
           else
-            gh release create "${RELEASE_TAG}" "dist/${STANDARD_FILE}" "dist/${ONEUI_FILE}" "dist/SHA256SUMS.txt" "dist/REPRODUCIBILITY_standard.txt" "dist/REPRODUCIBILITY_oneui.txt" --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" --title "Turnip Amaral 26.3.0-devel v4.2" --notes-file docs/releases/mesa-26.3.0-devel-v4.2.md
-            gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --prerelease=false --latest
+            gh release create "${RELEASE_TAG}" "dist/${STANDARD_FILE}" "dist/${ONEUI_FILE}" "dist/SHA256SUMS.txt" "dist/REPRODUCIBILITY_standard.txt" "dist/REPRODUCIBILITY_oneui.txt" --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" --title "Turnip Amaral 26.3.0-devel v4.2" --notes-file docs/releases/mesa-26.3.0-devel-v4.2.md --prerelease
           fi

@@ -1,34 +1,92 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Amaral Driver Lab <rickamaral94@users.noreply.github.com>
-Date: Mon, 24 Aug 2026 00:00:00 +0000
-Subject: [PATCH] tu: A740 Aurora performance profile
+Date: Thu, 27 Aug 2026 00:00:00 +0000
+Subject: [PATCH] tu, ir3: afinacao Aurora restrita ao a7xx+
 
-Enable the community-tested Aurora tuning used by the A740 release:
-- IR3 GCM enabled for A7XX compiler generation.
-- pipeline and KGSL profiling suballocators increased to 512 KiB.
+Traz para o driver universal a afinacao que a comunidade usa na linha A740,
+sem alterar o comportamento das geracoes anteriores. As duas mudancas sao
+condicionadas a geracao do adreno em tempo de execucao:
 
-The upstream Mesa 26.3 branch already carries the Zelda-related
-DONT_CARE/indirect-UBO workarounds in engine-specific driconf entries, so
-this patch intentionally does not duplicate or globalize those options.
+1. ir3: GCM (global code motion) passa a ser ligado por padrao no a7xx+.
+   Upstream mantem GCM desligado para todas as geracoes e so oferece o
+   override por ambiente (GCM=1/2). O padrao continua desligado no a6xx.
+
+   O override por ambiente segue funcionando e tem precedencia: GCM=0
+   desliga mesmo no a7xx, que e' o caminho para isolar o efeito num A/B.
+
+   Nota de implementacao: o valor final NAO pode viver num "static". A
+   funcao e' chamada por qualquer dispositivo do processo, entao um static
+   fixaria a escolha do primeiro que compilasse um shader. So o override de
+   ambiente, que e' por processo, fica em cache.
+
+2. tu: os suballocadores de pipeline e de profiling KGSL passam de blocos de
+   128 KiB para 512 KiB no a7xx+. Blocos maiores significam menos alocacoes
+   de BO ao custo de mais desperdicio por bloco - troca que so se justifica
+   onde ha memoria e largura de banda sobrando.
+
+NAO validado em aparelho. Ambas as mudancas sao de desempenho, prioridade 4
+do projeto, com mecanismo defensavel e magnitude nao medida.
 
 ---
- src/freedreno/ir3/ir3_nir.c     | 2 +-
- src/freedreno/vulkan/tu_device.cc | 4 ++--
- 2 files changed, 3 insertions(+), 3 deletions(-)
-
 diff --git a/src/freedreno/ir3/ir3_nir.c b/src/freedreno/ir3/ir3_nir.c
+index 55503cf..e33f584 100644
 --- a/src/freedreno/ir3/ir3_nir.c
 +++ b/src/freedreno/ir3/ir3_nir.c
-@@ -320 +320 @@ ir3_optimize_loop(struct ir3_compiler *compiler,
+@@ -314,15 +314,24 @@ ir3_optimize_loop(struct ir3_compiler *compiler,
+       progress |= OPT(s, nir_opt_copy_prop_vars);
+       progress |= OPT(s, nir_opt_dead_write_vars);
+       progress |= OPT(s, nir_split_struct_vars, nir_var_function_temp);
+       progress |= OPT(s, nir_opt_shrink_stores, true);
+       progress |= OPT(s, nir_shrink_vec_array_vars, nir_var_function_temp | nir_var_mem_shared);
+ 
 -      static int gcm = -1;
-+      static int gcm = (compiler->gen == 7) ? 1 : 0;
-
+-      if (gcm == -1)
+-         gcm = debug_get_num_option("GCM", 0);
++      /* O override por ambiente vale para o processo inteiro, entao pode ser
++       * lido uma vez e guardado. Ja o padrao depende da geracao do Adreno e
++       * por isso e' decidido a cada chamada: guardar o valor final num
++       * "static" fixaria a escolha do primeiro dispositivo que compilasse um
++       * shader, o que quebraria um driver universal.
++       * -1 = ainda nao consultado; -2 = sem override no ambiente.
++       */
++      static int gcm_env = -1;
++      if (gcm_env == -1)
++         gcm_env = debug_get_num_option("GCM", -2);
++      const int gcm = (gcm_env != -2) ? gcm_env
++                                      : (compiler->gen >= 7 ? 1 : 0);
+       if (gcm == 1)
+          progress |= OPT(s, nir_opt_gcm, true, true);
+       else if (gcm == 2)
+          progress |= OPT(s, nir_opt_gcm, false, true);
+       nir_opt_peephole_select_options peephole_select_options = {
+          .limit = 16,
 diff --git a/src/freedreno/vulkan/tu_device.cc b/src/freedreno/vulkan/tu_device.cc
+index 88eb56b..5b7b8f4 100644
 --- a/src/freedreno/vulkan/tu_device.cc
 +++ b/src/freedreno/vulkan/tu_device.cc
-@@ -1 +1 @@
+@@ -3033,20 +3033,23 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
+    device->vsc_prim_strm_pitch = 0x4000 + VSC_PAD;
+ 
+    if (device->vk.enabled_features.customBorderColors)
+       global_size += TU_BORDER_COLOR_COUNT * sizeof(struct bcolor_entry);
+ 
+    tu_bo_suballocator_init(
 -      &device->pipeline_suballoc, device, 128 * 1024,
-+      &device->pipeline_suballoc, device, 512 * 1024,
-@@ -1 +1 @@
++      &device->pipeline_suballoc, device,
++      (physical_device->info->chip >= 7) ? 512 * 1024 : 128 * 1024,
+       (enum tu_bo_alloc_flags) (TU_BO_ALLOC_GPU_READ_ONLY |
+                                 TU_BO_ALLOC_ALLOW_DUMP |
+                                 TU_BO_ALLOC_INTERNAL_RESOURCE),
+       "pipeline_suballoc");
+    if (is_kgsl(physical_device->instance)) {
+       tu_bo_suballocator_init(&device->kgsl_profiling_suballoc, device,
 -                              128 * 1024, TU_BO_ALLOC_INTERNAL_RESOURCE,
-+                              512 * 1024, TU_BO_ALLOC_INTERNAL_RESOURCE,
++                              (physical_device->info->chip >= 7) ? 512 * 1024
++                                                                : 128 * 1024,
++                              TU_BO_ALLOC_INTERNAL_RESOURCE,
+                               "kgsl_profiling_suballoc");
+    }
+ 
+    tu_bo_suballocator_init(&device->event_suballoc, device,
+       getpagesize(), TU_BO_ALLOC_INTERNAL_RESOURCE,
+       "event_suballoc");

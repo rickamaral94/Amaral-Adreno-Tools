@@ -153,7 +153,7 @@ meson setup "${build_dir}" "${mesa_src}" "${setup_mode[@]}" \
   -Dgallium-drivers= -Dvulkan-drivers=freedreno -Dvulkan-beta=true \
   -Dfreedreno-kmds=kgsl -Degl=disabled -Dglx=disabled \
   -Dandroid-libbacktrace=disabled -Dzstd=disabled \
-  -Dshader-cache=enabled -Dshader-cache-max-size=4G
+  -Dshader-cache=enabled
 ninja -C "${build_dir}" install
 
 driver_path="${install_root}/lib/libvulkan_freedreno.so"
