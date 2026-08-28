@@ -1,3 +1,17 @@
+> ## ⚠️ Substituída pela v4.3
+>
+> **Esta versão não é a recomendada.** Use a
+> [v4.3](https://github.com/rickamaral94/Amaral-Adreno-Tools/releases/tag/mesa-26.3.0-devel-v4.3),
+> que é a `latest`.
+>
+> A v4.3 traz, sobre esta: base do Mesa mais nova (`451e4a46` contra
+> `6e41d819`), um perfil de compatibilidade para emuladores de Switch, e os
+> limites do GCM e dos suballocadores re-derivados — nesta versão eles ficavam
+> restritos a a7xx+ sem motivo técnico.
+>
+> Fica publicada por procedência, não por recomendação. O texto abaixo é o da
+> publicação original e continua valendo **como descrição da v4.2**.
+
 # Turnip Amaral 26.3.0-devel v4.2
 
 ## Afinação A740 no driver universal

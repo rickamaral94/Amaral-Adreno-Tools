@@ -1,0 +1,51 @@
+name: Aposentar uma release
+
+# Marca uma release como substituida: reescreve o corpo a partir de
+# docs/releases/<tag>.md e a rebaixa para pre-lancamento, tirando o rotulo
+# "latest" se ela o tiver.
+#
+# Existe porque o workflow de publicacao de cada versao e' substituido pelo da
+# versao seguinte - entao, depois de promover a nova, nao sobra mecanismo para
+# atualizar o texto da antiga. Este e' generico e serve para qualquer tag.
+#
+# NAO apaga nada: a release, os anexos e a tag continuam. So deixam de ser a
+# recomendada.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag da release a aposentar (ex.: mesa-26.3.0-devel-v4.2)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  retire:
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Conferir que a release e as notas existem
+        run: |
+          set -euo pipefail
+          test -f "docs/releases/${TAG}.md" \
+            || { echo "notas ausentes: docs/releases/${TAG}.md" >&2; exit 1; }
+          gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null \
+            || { echo "release inexistente: ${TAG}" >&2; exit 1; }
+          grep -qi "substitu" "docs/releases/${TAG}.md" \
+            || { echo "as notas de ${TAG} nao dizem que ela foi substituida" >&2; exit 1; }
+
+      - name: Rebaixar a release
+        run: |
+          set -euo pipefail
+          gh release edit "${TAG}" --repo "${GITHUB_REPOSITORY}" \
+            --notes-file "docs/releases/${TAG}.md" \
+            --prerelease --latest=false
+          echo "--- estado final ---"
+          gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" \
+            --json tagName,isPrerelease,isLatest
