@@ -24,7 +24,7 @@ def main():
     commit = lock["mesa"]["commit"]
     assert re.fullmatch(r"[0-9a-f]{40}", commit), "Mesa commit must be a full SHA"
     assert isinstance(lock["amaral_revision"], str)
-    assert lock["amaral_revision"] == "4.3"
+    assert lock["amaral_revision"] == "4.4"
     assert lock["build"]["cpu"] == "armv8-a"
     assert lock["build"]["kmd"] == "kgsl"
     assert sources["primary"][0]["name"] == "Mesa 3D"
@@ -71,13 +71,33 @@ def main():
     assert "0xffff43050c01" in oneui_patch
     assert "restrito às entradas KGSL da FD740" in oneui_patch
 
-    depth_patch = read_text("patches/0004-fd740-depth-extensions.patch")
-    assert depth_patch.count("device->dev_id.chip_id == 0x43050a01") == 1
-    assert depth_patch.count("device->dev_id.chip_id == 0xffff43050a01") == 1
-    assert "EXT_depth_range_unrestricted = tu_is_fd740_kgsl(device)" in depth_patch
-    assert "EXT_depth_bias_control = tu_is_fd740_kgsl(device)" in depth_patch
-    assert "features->depthBiasExact = has_depth_bias_control" in depth_patch
-    assert "EXT_depth_range_unrestricted = device->info->chip >= 7" not in depth_patch
+    # v4.4: o gate por chip_id saiu. Ele marcava onde estava a evidencia, nao
+    # uma dependencia tecnica. Cada extensao passou a ser gateada pela sua
+    # dependencia real, e sao diferentes - por isso as duas sao afirmadas
+    # separadamente aqui.
+    depth_patch = read_text("patches/0004-depth-extensions.patch")
+
+    # depth_bias_control: sem gate. O runtime do Vulkan faz o trabalho e
+    # tu6_emit_depth_bias() nao tem ramificacao por chip.
+    assert "EXT_depth_bias_control = true" in depth_patch
+    assert "features->depthBiasControl = true" in depth_patch
+    assert "features->depthBiasExact = true" in depth_patch
+    # Suporte parcial continua declarado como parcial. Ligar qualquer uma
+    # destas seria afirmar controle que o Adreno nao tem.
+    assert "features->leastRepresentableValueForceUnormRepresentation = false" in depth_patch
+    assert "features->floatRepresentation = false" in depth_patch
+
+    # depth_range_unrestricted: a7xx+, e este gate e' de silicio. No a6xx o
+    # hardware clampa sozinho e a extensao nao teria como ser honrada, entao
+    # declara-la sem condicao seria mentir. Esta guarda existe para impedir
+    # exatamente isso.
+    assert "EXT_depth_range_unrestricted = device->info->chip >= 7" in depth_patch
+    assert "EXT_depth_range_unrestricted = true" not in depth_patch
+
+    # O predicado por chip_id nao deve voltar por descuido.
+    assert "tu_is_fd740_kgsl" not in depth_patch
+    assert "0x43050a01" not in depth_patch
+
     assert "force_sysmem" not in depth_patch
     assert "0008-android-shader-cache" not in depth_patch
 

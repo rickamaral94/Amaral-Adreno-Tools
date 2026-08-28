@@ -73,18 +73,19 @@
       "verified_on_mesa": "6e41d819219d7f4025a95cbbaddfbe492d210ff3"
     },
     {
-      "id": "fd740-depth-extensions-l0",
-      "kind": "device-compatibility",
+      "id": "depth-extensions",
+      "kind": "compatibility",
       "status": "testing",
       "default": true,
-      "patch": "patches/0004-fd740-depth-extensions.patch",
-      "reason": "Expõe VK_EXT_depth_range_unrestricted e o subconjunto honesto de VK_EXT_depth_bias_control somente nas duas entradas KGSL da FD740. O Driver Lab #69 confirmou as duas extensões, nenhuma perda e compatibilidade 100/100 com zero divergência em 116 comparações. O caminho irrestrito habilitado pelo Eden continua experimental.",
-      "source": "Amaral Adreno Tools IA, patches 0010 e 0011, reduzidos ao degrau L0",
+      "patch": "patches/0004-depth-extensions.patch",
+      "reason": "Expõe VK_EXT_depth_bias_control (subconjunto honesto: depthBiasControl e depthBiasExact; as duas features de representação ficam false, porque o Adreno não tem chave para forçar UNORM em D32_SFLOAT) e VK_EXT_depth_range_unrestricted. Alcance por dependência real, não por chip_id: bias_control em todas as famílias, porque o runtime do Vulkan faz o trabalho e tu6_emit_depth_bias() não ramifica por chip; range_unrestricted em a7xx+ (device->info->chip >= 7), porque no a6xx o hardware clampa sozinho e a extensão não teria como ser honrada. Até a v4.3 as duas ficavam em dois chip_id da FD740 — gate que marcava onde estava a evidência, não uma dependência técnica.",
+      "source": "Amaral Adreno Tools IA, patches 0010 e 0011; gates re-derivados na v4.4",
       "license_review": "compatible",
-      "verified_on_mesa": "6e41d819219d7f4025a95cbbaddfbe492d210ff3",
+      "verified_on_mesa": "451e4a4647886e7b989cc140bc81f81e89a86564",
       "evidence": [
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/69"
-      ]
+      ],
+      "evidence_scope": "Medição em UM modelo (FD740, Driver Lab #69): capability_diff +2/-0, compatibilidade 100/100, zero divergência de pixel em 116 comparações. Isso prova que o driver renderiza idêntico para quem NÃO habilita a extensão. O caminho com a extensão habilitada nunca foi exercitado, e a generalização de um chip_id para uma família é passo no mecanismo, não na medição."
     },
     {
       "id": "a825-community-pipeline-hacks",

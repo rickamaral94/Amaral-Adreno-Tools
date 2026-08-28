@@ -67,7 +67,7 @@ apply_patch_once() {
 
 apply_patch_once "${repo_root}/patches/0001-android-ndk-r29-compat.patch"
 apply_patch_once "${repo_root}/patches/0002-a825-experimental.patch"
-apply_patch_once "${repo_root}/patches/0004-fd740-depth-extensions.patch"
+apply_patch_once "${repo_root}/patches/0004-depth-extensions.patch"
 apply_patch_once "${repo_root}/patches/0005-a740-aurora-performance.patch"
 apply_patch_once "${repo_root}/patches/0006-emulator-compat-driconf.patch"
 if [[ "${driver_variant}" == "oneui" ]]; then

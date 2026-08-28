@@ -1,13 +1,13 @@
 {
   "schema": 1,
-  "amaral_revision": "4.3",
+  "amaral_revision": "4.4",
   "mesa": {
     "repository": "https://gitlab.freedesktop.org/mesa/mesa.git",
     "branch": "main",
     "commit": "451e4a4647886e7b989cc140bc81f81e89a86564",
     "version": "26.3.0-devel",
     "commit_date_utc": "2026-08-27T00:00:00Z",
-    "checked_at_utc": "2026-08-27T18:00:00Z"
+    "checked_at_utc": "2026-08-28T02:00:00Z"
   },
   "build": {
     "ndk": "r29",

@@ -1,3 +1,13 @@
+> ## ⚠️ Substituída pela v4.4
+>
+> Use a [v4.4](https://github.com/rickamaral94/Amaral-Adreno-Tools/releases/tag/mesa-26.3.0-devel-v4.4),
+> que é a `latest`. A v4.4 solta as extensões de profundidade do gate por
+> `chip_id`: `VK_EXT_depth_bias_control` passa a valer em **todas** as famílias
+> e `VK_EXT_depth_range_unrestricted` em **a7xx+**. Nesta v4.3 as duas só
+> ligavam em dois `chip_id` da FD740.
+>
+> Fica publicada por procedência, não por recomendação.
+
 # Turnip Amaral 26.3.0-devel v4.3
 
 ## Compatibilidade primeiro, e para todas as famílias
@@ -140,7 +150,8 @@ coisas não são a mesma, e ficam ditas separadamente:
   anexado a esta release;
 - **o que não está:** nenhum quadro foi renderizado num Adreno por nós.
 
-Ela substitui a v4.2, que foi retirada de circulação.
+Ela substitui a v4.2, que continua publicada como pré-lançamento e
+marcada como substituída — fica por procedência, não por recomendação.
 
 Se algo regredir em relação à v4.2, o suspeito tem ordem: primeiro o perfil do
 emulador (`0006`), depois o GCM — que agora liga também em a6xx_gen1 e
