@@ -47,5 +47,12 @@ jobs:
             --notes-file "docs/releases/${TAG}.md" \
             --prerelease --latest=false
           echo "--- estado final ---"
+          # isLatest nao existe em "gh release view --json" - o rotulo "Latest"
+          # e' propriedade do repositorio, nao da release. Perguntar por ele ali
+          # fazia o passo falhar DEPOIS de a edicao ja ter dado certo, e uma
+          # operacao bem-sucedida se reportava como falha.
           gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" \
-            --json tagName,isPrerelease,isLatest
+            --json tagName,isPrerelease,isDraft
+          echo "--- qual release o repositorio serve como Latest agora ---"
+          gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq .tag_name \
+            || echo "(nenhuma marcada como Latest)"
