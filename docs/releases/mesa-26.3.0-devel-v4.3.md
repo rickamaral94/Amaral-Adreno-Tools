@@ -130,7 +130,22 @@ entre `tu_is_vk_1_1()` e `get_device_extensions()`, deslocando as âncoras.
 Conferido que as linhas adicionadas e removidas são idênticas às da v4.2
 (+47/−5) — só as âncoras mudaram.
 
-Por isso esta release sai como **pré-lançamento**, não como `latest`.
+Esta release é publicada como **`latest`** — a versão recomendada — por decisão
+do mantenedor, e não porque a validação em aparelho tenha sido feita. As duas
+coisas não são a mesma, e ficam ditas separadamente:
+
+- **o que está verificado:** cada opção foi lida no fonte do Mesa no commit
+  travado; os seis patches aplicam nas duas variantes; cada variante foi
+  compilada **duas vezes** e o `.so` saiu byte a byte idêntico, com o relatório
+  anexado a esta release;
+- **o que não está:** nenhum quadro foi renderizado num Adreno por nós.
+
+Ela substitui a v4.2, que foi retirada de circulação.
+
+Se algo regredir em relação à v4.2, o suspeito tem ordem: primeiro o perfil do
+emulador (`0006`), depois o GCM — que agora liga também em a6xx_gen1 e
+a6xx_gen2, onde antes não ligava. `GCM=0` no ambiente isola o segundo sem
+precisar trocar de driver.
 
 | mudança | teste que a promove |
 |---|---|

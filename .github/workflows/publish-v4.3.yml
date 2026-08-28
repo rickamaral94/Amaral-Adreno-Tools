@@ -107,7 +107,7 @@ jobs:
         run: |
           if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
             gh release upload "${RELEASE_TAG}" "dist/${STANDARD_FILE}" "dist/${ONEUI_FILE}" "dist/SHA256SUMS.txt" "dist/REPRODUCIBILITY_standard.txt" "dist/REPRODUCIBILITY_oneui.txt" --repo "${GITHUB_REPOSITORY}" --clobber
-            gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --title "Turnip Amaral 26.3.0-devel v4.3" --notes-file docs/releases/mesa-26.3.0-devel-v4.3.md --prerelease
+            gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --title "Turnip Amaral 26.3.0-devel v4.3" --notes-file docs/releases/mesa-26.3.0-devel-v4.3.md --latest --prerelease=false
           else
-            gh release create "${RELEASE_TAG}" "dist/${STANDARD_FILE}" "dist/${ONEUI_FILE}" "dist/SHA256SUMS.txt" "dist/REPRODUCIBILITY_standard.txt" "dist/REPRODUCIBILITY_oneui.txt" --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" --title "Turnip Amaral 26.3.0-devel v4.3" --notes-file docs/releases/mesa-26.3.0-devel-v4.3.md --prerelease
+            gh release create "${RELEASE_TAG}" "dist/${STANDARD_FILE}" "dist/${ONEUI_FILE}" "dist/SHA256SUMS.txt" "dist/REPRODUCIBILITY_standard.txt" "dist/REPRODUCIBILITY_oneui.txt" --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" --title "Turnip Amaral 26.3.0-devel v4.3" --notes-file docs/releases/mesa-26.3.0-devel-v4.3.md --latest --prerelease=false
           fi
