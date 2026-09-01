@@ -1,10 +1,24 @@
-name: Publish Turnip Amaral 26.3.0-devel v4.4
+name: Publish Turnip Amaral 26.3.0-devel v4.5 Candidate
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-v4.5.yml"
+      - "patches/**"
+      - "scripts/build_universal.sh"
+      - "tools/validate_project.py"
+      - "config/mesa-lock.json"
+      - "evidence/**"
+      - "docs/releases/mesa-26.3.0-devel-v4.5.md"
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: publish-v4.5
+  cancel-in-progress: true
 
 jobs:
   build-verify-publish:
@@ -12,12 +26,12 @@ jobs:
     timeout-minutes: 120
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: mesa-26.3.0-devel-v4.4
-      STANDARD_FILE: turnip_amaral_26.3.0-devel_v4.4.zip
-      ONEUI_FILE: turnip_amaral_26.3.0-devel_v4.4_oneUI.zip
+      RELEASE_TAG: mesa-26.3.0-devel-v4.5
+      STANDARD_FILE: turnip_amaral_26.3.0-devel_v4.5.zip
+      ONEUI_FILE: turnip_amaral_26.3.0-devel_v4.5_oneUI.zip
 
     steps:
-      - name: Checkout release source
+      - name: Checkout candidate source
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.4.1
 
       - name: Validate project metadata
@@ -26,9 +40,6 @@ jobs:
           bash -n scripts/*.sh
           test -x scripts/build_universal.sh
 
-      # Um patch com cabecalho de hunk errado so falhava depois de clonar o
-      # Mesa e baixar o NDK. Conferir aqui custa segundos e da' a mensagem
-      # exata de qual patch nao aplica.
       - name: Verify patches apply to the pinned Mesa
         run: |
           set -euo pipefail
@@ -36,15 +47,17 @@ jobs:
           git init -q work/mesa-check
           git -C work/mesa-check fetch -q --depth 1 https://gitlab.freedesktop.org/mesa/mesa.git "${commit}"
           git -C work/mesa-check checkout -q FETCH_HEAD
-          for p in patches/*.patch; do
-            if [ "$(basename "${p}")" = "0003-oneui-ubwc.patch" ]; then continue; fi
+          for p in patches/0001-android-ndk-r29-compat.patch \
+                   patches/0002-a825-experimental.patch \
+                   patches/0004-depth-extensions.patch \
+                   patches/0005-a740-aurora-performance.patch \
+                   patches/0006-emulator-compat-driconf.patch; do
             echo "--- ${p}"
             git -C work/mesa-check apply --check "${GITHUB_WORKSPACE}/${p}"
             git -C work/mesa-check apply "${GITHUB_WORKSPACE}/${p}"
           done
-          echo "--- patches/0003-oneui-ubwc.patch (variante OneUI)"
+          echo "--- patches/0003-oneui-ubwc.patch"
           git -C work/mesa-check apply --check "${GITHUB_WORKSPACE}/patches/0003-oneui-ubwc.patch"
-          rm -rf work/mesa-check
 
       - name: Install host tools
         run: |
@@ -76,7 +89,7 @@ jobs:
           DRIVER_VARIANT: oneui
         run: ./scripts/check_reproducibility.sh
 
-      - name: Verify reproducible release bytes
+      - name: Verify reproducible candidate bytes
         run: |
           standard_sha="$(sha256sum "dist/${STANDARD_FILE}" | cut -d' ' -f1)"
           oneui_sha="$(sha256sum "dist/${ONEUI_FILE}" | cut -d' ' -f1)"
@@ -94,11 +107,12 @@ jobs:
           unzip -t "dist/${ONEUI_FILE}"
           (cd dist && sha256sum "${STANDARD_FILE}" "${ONEUI_FILE}" > SHA256SUMS.txt)
 
-      - name: Publish v4.4 release and mark latest
+      - name: Publish v4.5 as pre-release
         run: |
+          assets=("dist/${STANDARD_FILE}" "dist/${ONEUI_FILE}" "dist/SHA256SUMS.txt" "dist/REPRODUCIBILITY_standard.txt" "dist/REPRODUCIBILITY_oneui.txt")
           if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-            gh release upload "${RELEASE_TAG}" "dist/${STANDARD_FILE}" "dist/${ONEUI_FILE}" "dist/SHA256SUMS.txt" "dist/REPRODUCIBILITY_standard.txt" "dist/REPRODUCIBILITY_oneui.txt" --repo "${GITHUB_REPOSITORY}" --clobber
-            gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --title "Turnip Amaral 26.3.0-devel v4.4" --notes-file docs/releases/mesa-26.3.0-devel-v4.4.md --latest --prerelease=false
+            gh release upload "${RELEASE_TAG}" "${assets[@]}" --repo "${GITHUB_REPOSITORY}" --clobber
+            gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --title "Turnip Amaral 26.3.0-devel v4.5 Candidate" --notes-file docs/releases/mesa-26.3.0-devel-v4.5.md --prerelease --latest=false
           else
-            gh release create "${RELEASE_TAG}" "dist/${STANDARD_FILE}" "dist/${ONEUI_FILE}" "dist/SHA256SUMS.txt" "dist/REPRODUCIBILITY_standard.txt" "dist/REPRODUCIBILITY_oneui.txt" --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" --title "Turnip Amaral 26.3.0-devel v4.4" --notes-file docs/releases/mesa-26.3.0-devel-v4.4.md --latest --prerelease=false
+            gh release create "${RELEASE_TAG}" "${assets[@]}" --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" --title "Turnip Amaral 26.3.0-devel v4.5 Candidate" --notes-file docs/releases/mesa-26.3.0-devel-v4.5.md --prerelease --latest=false
           fi

@@ -94,9 +94,7 @@ diff --git a/src/freedreno/vulkan/tu_device.cc b/src/freedreno/vulkan/tu_device.
 index 3ccc34c..adf5377 100644
 --- a/src/freedreno/vulkan/tu_device.cc
 +++ b/src/freedreno/vulkan/tu_device.cc
-@@ -3040,21 +3040,21 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
-    device->vsc_prim_strm_pitch = 0x4000 + VSC_PAD;
- 
+@@ -3063,19 +3063,19 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
     if (device->vk.enabled_features.customBorderColors)
        global_size += TU_BORDER_COLOR_COUNT * sizeof(struct bcolor_entry);
  

@@ -10,7 +10,7 @@
       "reason": "Compatibiliza os tipos de native_handle do Mesa com o NDK r29; não altera a política de execução do Turnip.",
       "source": "Repositórios Amaral 6xx/7xx/8xx",
       "license_review": "compatible",
-      "verified_on_mesa": "6e41d819219d7f4025a95cbbaddfbe492d210ff3"
+      "verified_on_mesa": "eaa8cb690243d25c9b5ccc40e11a0d0d5a836d0f"
     },
     {
       "id": "force-gmem-or-sysmem-global",
@@ -51,7 +51,7 @@
       "reason": "Adiciona o ID KGSL e o perfil A825 refinado após evidência comunitária em hardware real nos modos GMEM e SYSMEM: color/depth cache GMEM em HALF/128 KiB, tile 64x32, shared memory de 64 KiB e offsets VPC preservados, sem forçar o modo de memória.",
       "source": "Mesa A830 gen1 + whitebelyash/mesa-unified + DiskDVD/A8XX-Y; propriedades revisadas e isoladas para A825",
       "license_review": "compatible",
-      "verified_on_mesa": "6e41d819219d7f4025a95cbbaddfbe492d210ff3",
+      "verified_on_mesa": "eaa8cb690243d25c9b5ccc40e11a0d0d5a836d0f",
       "evidence": [
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/37",
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/38",
@@ -70,7 +70,7 @@
       "reason": "Gera uma variante separada que ativa TP_UBWC_FLAG_HINT somente nas duas entradas KGSL da FD740, sem afetar o ID legado ou a Adreno X1-85.",
       "source": "Mesa 3D e builds comunitários OneUI",
       "license_review": "compatible",
-      "verified_on_mesa": "6e41d819219d7f4025a95cbbaddfbe492d210ff3"
+      "verified_on_mesa": "eaa8cb690243d25c9b5ccc40e11a0d0d5a836d0f"
     },
     {
       "id": "depth-extensions",
@@ -81,11 +81,57 @@
       "reason": "Expõe VK_EXT_depth_bias_control (subconjunto honesto: depthBiasControl e depthBiasExact; as duas features de representação ficam false, porque o Adreno não tem chave para forçar UNORM em D32_SFLOAT) e VK_EXT_depth_range_unrestricted. Alcance por dependência real, não por chip_id: bias_control em todas as famílias, porque o runtime do Vulkan faz o trabalho e tu6_emit_depth_bias() não ramifica por chip; range_unrestricted em a7xx+ (device->info->chip >= 7), porque no a6xx o hardware clampa sozinho e a extensão não teria como ser honrada. Até a v4.3 as duas ficavam em dois chip_id da FD740 — gate que marcava onde estava a evidência, não uma dependência técnica.",
       "source": "Amaral Adreno Tools IA, patches 0010 e 0011; gates re-derivados na v4.4",
       "license_review": "compatible",
-      "verified_on_mesa": "451e4a4647886e7b989cc140bc81f81e89a86564",
+      "verified_on_mesa": "eaa8cb690243d25c9b5ccc40e11a0d0d5a836d0f",
       "evidence": [
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/69"
       ],
       "evidence_scope": "Medição em UM modelo (FD740, Driver Lab #69): capability_diff +2/-0, compatibilidade 100/100, zero divergência de pixel em 116 comparações. Isso prova que o driver renderiza idêntico para quem NÃO habilita a extensão. O caminho com a extensão habilitada nunca foi exercitado, e a generalização de um chip_id para uma família é passo no mecanismo, não na medição."
+    },
+    {
+      "id": "aurora-gcm-and-suballocators",
+      "kind": "runtime-performance",
+      "status": "testing",
+      "default": true,
+      "patch": "patches/0005-a740-aurora-performance.patch",
+      "reason": "Porta a hipótese Aurora pelo mecanismo real, não pelo nome A740: GCM somente onde reg_size_vec4 >= 96 e suballocadores de 512 KiB em todas as famílias. Continua candidato porque Driver Lab #64/#68 não demonstrou ganho global conclusivo.",
+      "source": "Balemuni/Balemunis-Aurora; mecanismo re-derivado no Mesa/IR3",
+      "license_review": "clean-room-mechanism-review",
+      "verified_on_mesa": "eaa8cb690243d25c9b5ccc40e11a0d0d5a836d0f",
+      "evidence": [
+        "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/64",
+        "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/68"
+      ]
+    },
+    {
+      "id": "zelda-botw-totk-title-profile",
+      "kind": "runtime-compatibility",
+      "status": "testing",
+      "default": true,
+      "patch": "patches/0006-emulator-compat-driconf.patch",
+      "reason": "Reconstrói do ELF oficial Apex V2 as opções BOTW/TOTK, mas as prende ao nome do título. O alcance é portável entre A6xx/A7xx/A8xx porque os caminhos não testam chip; o frontend precisa expor botw/totk em pApplicationName. Sem isso, a regra não ativa.",
+      "source": "Balemuni Apex V2 official binaries; static driconf audited on 2026-09-01",
+      "license_review": "configuration-values-reimplemented",
+      "verified_on_mesa": "eaa8cb690243d25c9b5ccc40e11a0d0d5a836d0f",
+      "evidence": [
+        "https://github.com/Balemuni/Balemunis-Aurora/releases",
+        "https://github.com/Balemuni/Balemunis-Aurora/issues/4",
+        "https://github.com/Balemuni/Balemunis-Aurora/issues/8"
+      ],
+      "evidence_scope": "Mecanismo presente no binário, mas sem confirmação independente nas issues públicas. Requer A/B visual e frametime por título e família antes de promoção."
+    },
+    {
+      "id": "broad-emulator-driconf",
+      "kind": "runtime-hack",
+      "status": "rejected",
+      "default": false,
+      "reason": "Aplicar OOB UBO, DONT_CARE-as-LOAD, round-even e fast border color a uma lista inteira de emuladores muda todos os jogos, não identifica BOTW/TOTK e amplia o risco de regressão. Driver Lab #66 não comprovou promoção de driconf amplo."
+    },
+    {
+      "id": "community-4gb-shader-cache",
+      "kind": "runtime-performance",
+      "status": "rejected",
+      "default": false,
+      "reason": "Aumentar o limite para 4 GiB não evita compilação inicial de shaders, consome armazenamento e não veio acompanhado de A/B reproduzível de eviction/stutter."
     },
     {
       "id": "a825-community-pipeline-hacks",

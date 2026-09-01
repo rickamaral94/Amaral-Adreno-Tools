@@ -1,94 +1,72 @@
 # Amaral Adreno Tools
 
 Projeto do **Amaral Turnip Universal**, driver Vulkan para Android/KGSL
-construído a partir do Mesa 3D e orientado à compatibilidade em emuladores.
+construído a partir do Mesa 3D. A ordem de decisão é: compatibilidade gráfica,
+estabilidade, frametimes consistentes e desempenho.
 
-> Status: `v4.1` é a release estável/latest; `v4` permanece disponível como
-> fallback. O perfil da Adreno 825 e a variante OneUI continuam com escopo
-> experimental e isolado dentro do pacote universal.
+> Status: `v4.5` é candidata/pré-release para testes; `v4.4` continua a
+> release estável e marcada como Latest.
 
-## Variantes da atualização v4.1
+## Variantes v4.5
 
 | Variante | Arquivo | Uso |
 |---|---|---|
-| Padrão | `turnip_amaral_26.3.0-devel_v4.1.zip` | Recomendada como ponto de partida |
-| OneUI | `turnip_amaral_26.3.0-devel_v4.1_oneUI.zip` | Para sistemas cujo driver proprietário exige o mesmo `TP_UBWC_FLAG_HINT` |
+| Standard | `turnip_amaral_26.3.0-devel_v4.5.zip` | Ponto de partida para Android/KGSL |
+| OneUI | `turnip_amaral_26.3.0-devel_v4.5_oneUI.zip` | Somente quando o firmware OneUI precisar do ajuste UBWC da FD740 |
 
-As duas variantes usam o snapshot Mesa e o perfil A825 idênticos. A OneUI
-acrescenta somente o ajuste UBWC nas duas entradas KGSL da FD740, sem alcançar
-o ID legado `GPUId(740)` nem a Adreno X1-85.
+As variantes têm a mesma base Mesa, suporte às famílias e perfis por
+aplicativo. A OneUI acrescenta apenas `TP_UBWC_FLAG_HINT` nas duas entradas
+KGSL da FD740; o ID legado `GPUId(740)`, a A825 e a X1-85 não são alterados.
 
-### Compatibilidade FD740 validada no Driver Lab
+## O que muda na v4.5
 
-As duas variantes expõem `VK_EXT_depth_range_unrestricted` e o subconjunto
-suportado de `VK_EXT_depth_bias_control` somente nas entradas KGSL
-`0x43050a01` e `0xffff43050a01` da FD740. No
-[#69](https://github.com/rickamaral94/Amaral-Driver-Lab/issues/69), o Driver Lab
-confirmou as duas extensões em runtime, nenhuma capacidade perdida,
-compatibilidade 100/100 e zero divergência em 116 comparações.
+- Mesa `26.3.0-devel` atualizado para o commit `eaa8cb690243`, de 1º de
+  setembro de 2026.
+- Correções upstream novas no pipeline cache, graphics pipeline libraries,
+  formatos esparsos D32S8, compilador IR3, autotune e contagem de tempo da GPU.
+- Perfis experimentais BOTW/TOTK reconstruídos do binário Balemuni Apex V2,
+  isolados por título e disponíveis para A6xx/A7xx/A8xx quando o frontend expõe
+  `botw` ou `totk` em `pApplicationName`.
+- Remoção do perfil amplo que alterava todos os jogos identificados como
+  `yuzu Emulator`; esse alcance não tinha validação A/B e podia causar
+  regressões fora de Zelda.
 
-O caminho de profundidade irrestrita quando explicitamente habilitado pelo
-aplicativo continua monitorado em sessões reais do Eden. A mudança permanece no
-degrau L0, sem alcançar outras GPUs A7xx/A8xx.
+Os perfis Zelda continuam experimentais. Não são promessa de ganho de FPS e
+não ativam se o emulador esconder o nome do jogo do Vulkan. A v4.4 é o controle
+obrigatório para o A/B.
 
-### Perfil experimental da Adreno 825 — atualizado na v4.1
+## Universal não significa forçar tudo em todas as GPUs
 
-A v4.1 reconhece a A825 pelo `chip_id` KGSL `0x44030000` e mantém sua topologia
-real: 4 CCUs, 2 slices e 2 MiB de GMEM. A atualização incorpora ao perfil
-isolado as propriedades observadas nos builds comunitários testados em hardware
-A825 real, tanto em GMEM quanto em SYSMEM.
+Cada mudança é gateada pela dependência real:
 
-Com base nos resultados reproduzidos nos issues
-[#37](https://github.com/rickamaral94/Amaral-Driver-Lab/issues/37) e
-[#38](https://github.com/rickamaral94/Amaral-Driver-Lab/issues/38), somados à
-evidência do [DiskDVD/TurniptoolsA8XX](https://github.com/DiskDVD/TurniptoolsA8XX/releases/tag/tu_A8XX-Y2.5),
-o perfil passa a usar:
+| Mudança | Alcance |
+|---|---|
+| Mesa upstream | GPUs reconhecidas pelo snapshot |
+| GCM Aurora | dispositivos com `reg_size_vec4 >= 96` |
+| suballocadores de 512 KiB | A6xx/A7xx/A8xx |
+| `VK_EXT_depth_bias_control` | todas as famílias |
+| `VK_EXT_depth_range_unrestricted` | A7xx+ |
+| BOTW/TOTK | aplicação, sem gate por GPU |
+| perfil A825 | somente `chip_id 0x44030000` |
+| UBWC OneUI | somente FD740/KGSL na variante OneUI |
 
-- color cache GMEM: `HALF / 128 KiB`;
-- depth cache GMEM: `HALF / 128 KiB`;
-- tile alignment: `64 x 32`;
-- shared memory: `64 KiB`;
-- caches sysmem e buffers VPC preservados nos limites conhecidos da A825.
-
-As mudanças alcançam somente a A825. O autotuner continua escolhendo GMEM ou
-SYSMEM, sem variável forçada. Os hacks comunitários de FDM/sample interpolation,
-UBWC global e a afirmação não validada de correspondência VRS/Vulkan não entram.
-
-### Variante OneUI
-
-A OneUI ativa `enable_tp_ubwc_flag_hint` somente na entrada FD740. Use primeiro
-a variante padrão e teste a OneUI apenas quando o firmware do sistema apresentar
-sintomas compatíveis com divergência UBWC em blits, escala ou texturas.
-
-## Direção do projeto
-
-- **Fonte principal:** Mesa 3D/Freedreno/Turnip, fixado por commit.
-- **Alvo:** A6xx, A7xx e A8xx reconhecidas pelo snapshot, mais A825 experimental.
-- **Perfil público:** AArch64 `armv8-a`, KGSL e decisões upstream como padrão.
-- **Sem atalhos globais:** sem spoof de GPU/Vulkan, `TU_DEBUG` forçado,
-  capabilities inventadas ou hacks específicos de jogo.
-- **Prioridade obrigatória:** compatibilidade gráfica, estabilidade, frametimes
-  consistentes e, por último, desempenho/FPS.
-- **Evidência antes do padrão:** otimizações da comunidade, inclusive
-  experimentais, só avançam após A/B reproduzível com qualidade visual, crash,
-  stutter, temperatura e consumo; mudanças específicas ficam isoladas e
-  reversíveis por GPU, família ou aplicativo.
+Uma otimização A740 só alcança outras GPUs quando o código demonstra a mesma
+capacidade. Ajustes de UBWC, cache, tile, FDM/MSAA ou registradores ligados ao
+silício permanecem isolados.
 
 ## Baseline
 
 | Item | Valor |
 |---|---|
-| Revisão Amaral | `v4.1` |
+| Revisão candidata | `v4.5` |
+| Release estável/Latest | `v4.4` |
 | Mesa | `26.3.0-devel` |
-| Commit fixado | `6e41d819219d7f4025a95cbbaddfbe492d210ff3` |
+| Commit fixado | `eaa8cb690243d25c9b5ccc40e11a0d0d5a836d0f` |
+| Vulkan headers | `1.4.359` |
 | Backend | Turnip/Freedreno + KGSL |
 | ABI | Android AArch64, `armv8-a` |
 | API mínima proposta | Android 10 / API 29 |
-| Exceção não upstream | Adreno 825, experimental e isolada por `chip_id` |
-
-O número `v4.1` é a revisão Amaral e avança enquanto a versão pública do Mesa
-permanece `26.3.0-devel`. A v4.1 é a release estável/latest e a v4 continua
-disponível como fallback.
+| Exceção não upstream | A825 experimental, isolada por `chip_id` |
 
 ## Compilar
 
@@ -106,26 +84,20 @@ NDK_ROOT=/caminho/android-ndk-r29 \
   DRIVER_VARIANT=oneui ./scripts/build_universal.sh
 ```
 
-O workflow compila cada variante duas vezes e só mantém candidatos quando ZIP e
-ELF são idênticos byte a byte.
+O pipeline compila cada variante duas vezes e exige ZIP e ELF idênticos byte a
+byte antes de publicar.
 
 ## Como uma ideia entra no driver
 
-1. Registrar fonte e hipótese em `evidence/candidates.json`.
-2. Reproduzir o problema no driver de referência e no candidato.
-3. Isolar a mudança em patch pequeno, reversível e licenciado.
-4. Executar o Driver Lab com checagem visual antes da velocidade.
-5. Promover somente sem corrupção, crash ou regressão relevante.
+1. Registrar fonte, licença e hipótese em `evidence/`.
+2. Ler o código/patch real; texto de release não basta.
+3. Separar dependência de hardware, família e aplicativo.
+4. Fazer A/B reproduzível com imagem, crash, FPS, frametime/P99, stutter,
+   temperatura e consumo.
+5. Promover ao padrão somente com ganho comprovado e baixo risco.
 
-Consulte [a política de evidências](docs/EVIDENCE-POLICY.md) e o
-[processo de atualização upstream](docs/UPSTREAM-UPDATES.md).
-
-## Referências
-
-- [Mesa 3D](https://gitlab.freedesktop.org/mesa/mesa)
-- [whitebelyash/mesa-tu8](https://github.com/whitebelyash/mesa-tu8)
-- [Amaral Driver Lab](https://github.com/rickamaral94/Amaral-Driver-Lab)
-- [Banners-Turnip](https://github.com/The412Banner/Banners-Turnip)
-- [freedreno_turnip-CI](https://github.com/s1mptom/freedreno_turnip-CI)
+Consulte a [política de evidências](docs/EVIDENCE-POLICY.md), a
+[auditoria comunitária de 01/09](docs/audits/2026-09-01-community-source-audit.md)
+e o [processo upstream](docs/UPSTREAM-UPDATES.md).
 
 Este projeto não é afiliado à Qualcomm, Mesa ou aos projetos de emulação.

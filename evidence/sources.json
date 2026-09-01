@@ -26,6 +26,26 @@
   ],
   "community": [
     {
+      "name": "Balemuni/Balemunis-Aurora",
+      "url": "https://github.com/Balemuni/Balemunis-Aurora",
+      "use": "Referência dos perfis Apex V2 para BOTW/TOTK; repositório não publica fonte de build, portanto somente configuração observável no ELF foi reimplementada e mantida experimental"
+    },
+    {
+      "name": "StevenMXZ/Adreno-Tools-Drivers",
+      "url": "https://github.com/StevenMXZ/Adreno-Tools-Drivers",
+      "use": "Baseline de distribuição: A6xx/A7xx acompanha Mesa main; Gen8 empacota o ramo whitebelyash e não é tratado como fonte independente de patches"
+    },
+    {
+      "name": "MrPurple666/purple-turnip",
+      "url": "https://github.com/MrPurple666/purple-turnip",
+      "use": "Comparação A/B de binários e compatibilidade; sem fonte/workflow público correspondente ao T30, não fornece patch importável"
+    },
+    {
+      "name": "whitebelyash/AdrenoToolsDrivers",
+      "url": "https://github.com/whitebelyash/AdrenoToolsDrivers",
+      "use": "Distribuição e documentação experimental A8xx; alterações são verificadas no mesa-unified antes de qualquer decisão"
+    },
+    {
       "name": "whitebelyash/mesa-unified",
       "url": "https://github.com/whitebelyash/mesa-unified/tree/turnip/gen8",
       "use": "Fonte do suporte comunitário experimental à Adreno 825; somente mudanças isoladas e revisadas são portadas"

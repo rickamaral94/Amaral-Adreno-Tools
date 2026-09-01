@@ -24,7 +24,7 @@ def main():
     commit = lock["mesa"]["commit"]
     assert re.fullmatch(r"[0-9a-f]{40}", commit), "Mesa commit must be a full SHA"
     assert isinstance(lock["amaral_revision"], str)
-    assert lock["amaral_revision"] == "4.4"
+    assert lock["amaral_revision"] == "4.5"
     assert lock["build"]["cpu"] == "armv8-a"
     assert lock["build"]["kmd"] == "kgsl"
     assert sources["primary"][0]["name"] == "Mesa 3D"
@@ -100,6 +100,26 @@ def main():
 
     assert "force_sysmem" not in depth_patch
     assert "0008-android-shader-cache" not in depth_patch
+
+    aurora_patch = read_text("patches/0005-a740-aurora-performance.patch")
+    assert "compiler->reg_size_vec4 >= 96" in aurora_patch
+    assert aurora_patch.count("512 * 1024") == 2
+    assert "compiler->gen >= 7" not in aurora_patch
+
+    zelda_patch = read_text("patches/0006-emulator-compat-driconf.patch")
+    assert 'application_name_match=".*(botw).*"' in zelda_patch
+    assert 'application_name_match=".*(totk).*"' in zelda_patch
+    assert zelda_patch.count('tu_autotune_algorithm" value="prefer_gmem') == 2
+    # Uma linha e' contexto upstream (Sons of the Forest), a outra e' TOTK.
+    assert zelda_patch.count('tu_ignore_frag_depth_direction" value="true') == 2
+    assert '<option name="tu_emulate_alpha_to_coverage"' not in zelda_patch
+    assert "engine_name_match=\"yuzu Emulator\"" not in zelda_patch
+    assert "TU_DEBUG=gmem" in zelda_patch  # só comentário explícito de não uso
+
+    candidate_ids = {item["id"] for item in evidence["candidates"]}
+    assert "aurora-gcm-and-suballocators" in candidate_ids
+    assert "zelda-botw-totk-title-profile" in candidate_ids
+    assert "broad-emulator-driconf" in candidate_ids
 
     print("Project metadata and evidence gates are valid.")
     return 0
