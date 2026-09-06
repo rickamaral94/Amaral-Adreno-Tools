@@ -5,7 +5,7 @@ body:
   - type: input
     id: source
     attributes:
-      label: Fonte original e licença
+      label: Fonte original, commit/patch exato e licença
     validations:
       required: true
   - type: textarea
@@ -21,9 +21,22 @@ body:
     validations:
       required: true
   - type: textarea
+    id: isolation
+    attributes:
+      label: Gate, isolamento e reversão
+      description: Explique se depende de chip, capacidade, família ou aplicativo e como desativar sem atingir os demais.
+    validations:
+      required: true
+  - type: textarea
     id: results
     attributes:
       label: Resultados A/B, rodadas, visuais, estabilidade e logs
     validations:
       required: true
-
+  - type: textarea
+    id: risks
+    attributes:
+      label: Riscos conhecidos e casos de controle
+      description: Liste regressões possíveis, GPUs/emuladores ainda não testados e o baseline usado.
+    validations:
+      required: true

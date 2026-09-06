@@ -55,3 +55,29 @@ do patch OneUI para o pacote Standard.
 - sem spoof de GPU ou versão Vulkan.
 - hacks A8xx globais de FDM/MSAA, NOCB, UBWC e shared memory não entram.
 - ZIP Adreno Tools contém `libvulkan_freedreno.so` e `meta.json`.
+
+## Estrutura do repositório
+
+| Caminho | Responsabilidade |
+|---|---|
+| `config/` | lock reproduzível do Mesa e estado do versionamento |
+| `patches/` | alterações aplicadas ao Mesa, em ordem explícita |
+| `evidence/` | origem, estado e compatibilidade de cada candidato |
+| `scripts/` | build, reprodução e validação dos artefatos |
+| `tools/` | decisão de versão e validação estrutural do projeto |
+| `tests/` | testes unitários da automação de release |
+| `docs/releases/` | notas históricas; não controlam builds atuais |
+| `docs/reference/` | material histórico que não é carregado pelo driver |
+
+## Workflows ativos
+
+- `ci.yml`: valida metadados, testes, scripts e aplicação dos patches.
+- `build-candidate.yml`: build manual e reproduzível de uma revisão informada.
+- `publish-upstream.yml`: atualiza Mesa sobre o patch set aprovado e publica
+  Standard/OneUI como `Latest`.
+- `publish-candidate.yml`: cria uma pre-release quando muda o patch set Amaral.
+- `promote-candidate.yml`: promove exatamente os binários aprovados no A/B.
+- `retire-release.yml`: retira uma release sem apagar seu histórico.
+
+Publicadores específicos de versões antigas foram removidos do ramo principal.
+As tags e releases históricas continuam sendo a fonte imutável dessas versões.

@@ -4,7 +4,8 @@ Projeto do **Amaral Turnip Universal**, driver Vulkan para Android/KGSL
 construído a partir do Mesa 3D. A ordem de decisão é: compatibilidade gráfica,
 estabilidade, frametimes consistentes e desempenho.
 
-> Status: a release marcada como **Latest** no GitHub é a referência estável.
+> Status: a [release marcada como Latest](https://github.com/rickamaral94/Amaral-Adreno-Tools/releases/latest)
+> é a referência estável.
 > Atualizações puras do Mesa podem avançar automaticamente; mudanças próprias
 > do Amaral continuam em pre-release até aprovação A/B.
 
@@ -19,22 +20,21 @@ As variantes têm a mesma base Mesa, suporte às famílias e perfis por
 aplicativo. A OneUI acrescenta apenas `TP_UBWC_FLAG_HINT` nas duas entradas
 KGSL da FD740; o ID legado `GPUId(740)`, a A825 e a X1-85 não são alterados.
 
-## O que muda na v4.5
+## Base funcional atual
 
-- Mesa `26.3.0-devel` atualizado para o commit `eaa8cb690243`, de 1º de
-  setembro de 2026.
-- Correções upstream novas no pipeline cache, graphics pipeline libraries,
-  formatos esparsos D32S8, compilador IR3, autotune e contagem de tempo da GPU.
-- Perfis experimentais BOTW/TOTK reconstruídos do binário Balemuni Apex V2,
+- Mesa `main` fixado por SHA completo em `config/mesa-lock.json`.
+- Correções upstream de Turnip, Freedreno, NIR e runtime Vulkan incorporadas
+  somente quando alcançam a superfície usada pelo driver.
+- Perfis BOTW/TOTK reconstruídos do binário Balemuni Apex V2,
   isolados por título e disponíveis para A6xx/A7xx/A8xx quando o frontend expõe
   `botw` ou `totk` em `pApplicationName`.
 - Remoção do perfil amplo que alterava todos os jogos identificados como
   `yuzu Emulator`; esse alcance não tinha validação A/B e podia causar
   regressões fora de Zelda.
 
-Os perfis Zelda continuam experimentais. Não são promessa de ganho de FPS e
-não ativam se o emulador esconder o nome do jogo do Vulkan. A v4.4 é o controle
-obrigatório para o A/B.
+Os perfis Zelda não forçam GMEM ou SYSMEM, não são promessa de ganho de FPS e
+não ativam se o emulador esconder o nome do jogo do Vulkan. Novas alterações
+devem ser comparadas com a `Latest` imediatamente anterior.
 
 ## Universal não significa forçar tudo em todas as GPUs
 
@@ -68,11 +68,11 @@ Mesa upstream sobre o patch set aprovado é publicado como `Latest`. Qualquer
 mudança própria aumenta o terceiro campo e permanece como pre-release até os
 testes A/B. Consulte o [processo upstream](docs/UPSTREAM-UPDATES.md).
 
-## Baseline de migração
+## Estado rastreável
 
 | Item | Valor |
 |---|---|
-| Esquema inicial | `v4.5.1.0` (o primeiro Mesa novo gera `.1`) |
+| Versão atual | `config/version-state.json` |
 | Estado exato | `config/mesa-lock.json` e `config/version-state.json` |
 | Backend | Turnip/Freedreno + KGSL |
 | ABI | Android AArch64, `armv8-a` |
@@ -109,6 +109,8 @@ byte antes de publicar.
 
 Consulte a [política de evidências](docs/EVIDENCE-POLICY.md), a
 [auditoria comunitária de 01/09](docs/audits/2026-09-01-community-source-audit.md)
-e o [processo upstream](docs/UPSTREAM-UPDATES.md).
+e o [processo upstream](docs/UPSTREAM-UPDATES.md). A
+[arquitetura](docs/ARCHITECTURE.md) documenta a divisão entre configuração,
+patches, evidências, testes e os workflows ativos.
 
 Este projeto não é afiliado à Qualcomm, Mesa ou aos projetos de emulação.

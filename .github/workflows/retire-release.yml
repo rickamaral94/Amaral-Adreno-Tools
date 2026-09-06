@@ -4,9 +4,8 @@ name: Aposentar uma release
 # docs/releases/<tag>.md e a rebaixa para pre-lancamento, tirando o rotulo
 # "latest" se ela o tiver.
 #
-# Existe porque o workflow de publicacao de cada versao e' substituido pelo da
-# versao seguinte - entao, depois de promover a nova, nao sobra mecanismo para
-# atualizar o texto da antiga. Este e' generico e serve para qualquer tag.
+# O publicador atual nunca reconstroi tags historicas. Este workflow generico
+# permite atualizar o estado de qualquer release antiga de forma explicita.
 #
 # NAO apaga nada: a release, os anexos e a tag continuam. So deixam de ser a
 # recomendada.
@@ -24,11 +23,12 @@ permissions:
 jobs:
   retire:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
       TAG: ${{ inputs.tag }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Conferir que a release e as notas existem
         run: |

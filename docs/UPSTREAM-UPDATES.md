@@ -56,10 +56,14 @@ também aceita disparo manual.
 6. exige ZIP e ELF reproduzíveis byte a byte;
 7. valida os pacotes, metadados, ABI e hashes;
 8. publica uma tag imutável e a marca como `Latest`;
-9. só então persiste o lock e o estado da versão.
+9. só então persiste o lock, a compatibilidade dos patches e o estado da versão.
 
 Qualquer conflito de patch, falha de compilação ou divergência de hashes
 interrompe o fluxo sem publicar.
+
+Se existir um candidato Amaral ainda não promovido, a execução upstream termina
+sem erro e registra que foi adiada. Isso mantém o monitoramento saudável sem
+misturar uma atualização confiável do Mesa com uma alteração própria pendente.
 
 ## Mudanças Amaral e promoção
 
@@ -71,3 +75,7 @@ Depois da validação gráfica, estabilidade, frametimes, desempenho, temperatur
 e consumo, execute `Promote A/B-approved candidate`. A promoção apenas muda o
 canal do artefato já testado e registra seu fingerprint como novo patch set
 estável; não recompila o driver.
+
+Não existem publicadores separados por versão antiga no ramo principal. Tags
+históricas permanecem disponíveis, mas nunca são reconstruídas a partir do HEAD
+atual.

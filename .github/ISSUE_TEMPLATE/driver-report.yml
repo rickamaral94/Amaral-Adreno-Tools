@@ -5,19 +5,34 @@ body:
   - type: input
     id: device
     attributes:
-      label: Aparelho, SoC e GPU
+      label: Aparelho, SoC, GPU e chip ID (se disponível)
     validations:
       required: true
   - type: input
     id: software
     attributes:
-      label: Android, emulador e versão
+      label: Android, emulador, versão e canal
+      description: "Exemplo: Android 14, Eden Nightly, commit/data da build."
     validations:
       required: true
   - type: input
     id: driver
     attributes:
       label: Nome do ZIP e SHA-256 do driver
+    validations:
+      required: true
+  - type: textarea
+    id: workload
+    attributes:
+      label: Jogo, versão, cena e estado do cache
+      description: Informe save/local, duração, cache frio ou aquecido e se a cena é repetível.
+    validations:
+      required: true
+  - type: textarea
+    id: settings
+    attributes:
+      label: Configurações relevantes
+      description: Resolução, modo portátil/dock, precisão, hacks, variáveis e limite de FPS.
     validations:
       required: true
   - type: textarea
@@ -35,8 +50,7 @@ body:
   - type: textarea
     id: evidence
     attributes:
-      label: Logs, capturas e comparação com referência
-      description: Remova dados pessoais antes de anexar.
+      label: Logs, capturas, métricas e comparação A/B
+      description: Inclua referência, número de rodadas, FPS, P95/P99, stutter, temperatura e consumo quando disponíveis. Remova dados pessoais.
     validations:
       required: true
-

@@ -62,9 +62,9 @@ emulador inteiro custaria desempenho em **todos** os jogos dele, porque as duas
 desativam otimização, e não há medição que justifique a troca. Ficam de fora
 até haver corrida no aparelho.
 
-**`profiles/a740/aurora-4.2.conf` não é lido por nada.** Nenhum script de build,
-workflow ou o driver consultam `profiles/`. O arquivo foi mantido como registro
-de intenção, com o estado real de cada linha anotado nele.
+**`docs/reference/aurora-4.2.conf` não é lido por nada.** Ele foi movido para a
+área de referência para deixar explícito que é apenas um registro histórico,
+não uma configuração executável.
 
 ## Estado da validação
 

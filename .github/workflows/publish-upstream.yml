@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout stable Amaral source
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.4.1
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
@@ -46,6 +46,12 @@ jobs:
             --mesa-src work/mesa-version \
             --github-output "${GITHUB_OUTPUT}" \
             --write
+
+      - name: Explain candidate block
+        if: steps.release.outputs.blocked_by_candidate == 'true'
+        run: |
+          echo "### Mesa update paused" >> "${GITHUB_STEP_SUMMARY}"
+          echo "The current Amaral patch set must pass A/B and be promoted before another Latest upstream build." >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Validate metadata and patch policy
         if: steps.release.outputs.update_available == 'true'
@@ -131,6 +137,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add config/mesa-lock.json config/version-state.json "${NOTES_FILE}"
+          git add config/mesa-lock.json config/version-state.json evidence/candidates.json "${NOTES_FILE}"
           git commit -m "release: registra snapshot upstream v${VERSION}"
           git push origin HEAD:main

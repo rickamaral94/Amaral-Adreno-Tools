@@ -4,6 +4,11 @@ Uma dica da comunidade é uma hipótese, não uma correção. Para entrar no dri
 universal, um hack precisa ter fonte rastreável, licença compatível, mudança
 isolada, mecanismo técnico explicável e resultado reproduzível.
 
+Commits puros do Mesa são a exceção de canal: depois de passar build duplo,
+reprodutibilidade e validação estrutural, podem ser publicados como `Latest`.
+Esse tratamento não transforma patches comunitários ou Amaral em upstream;
+qualquer mudança própria continua exigindo pre-release e A/B.
+
 A decisão segue sempre esta ordem: compatibilidade gráfica, estabilidade,
 frametimes consistentes e desempenho. Ganho de FPS não compensa artefato,
 travamento, piora de P95/P99 ou comportamento térmico/energético inadequado.
@@ -21,6 +26,10 @@ travamento, piora de P95/P99 ou comportamento térmico/energético inadequado.
 - confiança média ou alta no Driver Lab;
 - cobertura de ao menos uma A6xx, uma A7xx e uma A8xx antes de tornar padrão;
 - teste nos emuladores afetados e um conjunto de controle.
+
+Cada registro deve distinguir validação mecânica do patch (aplicou e compilou
+naquele SHA do Mesa) de validação funcional (foi testado em aparelho real). Uma
+não substitui a outra.
 
 Resultado específico de jogo pode justificar documentação ou opção de diagnóstico,
 mas não um comportamento global. Otimizações específicas devem ficar isoladas

@@ -4,7 +4,11 @@ import pathlib
 import re
 import sys
 
-from release_version import patchset_fingerprint
+from release_version import (
+    compose_version,
+    normalize_mesa_version,
+    patchset_fingerprint,
+)
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
@@ -37,11 +41,23 @@ def main():
     assert re.fullmatch(r"\d+\.\d+\.\d+", version_state["vulkan"]["version"])
     assert version_state["amaral_revision"] >= 1
     assert version_state["upstream_revision"] >= 0
+    assert version_state["current_version"] == compose_version(
+        version_state
+    ), "current_version does not match M.V.A.U components"
+    assert (
+        normalize_mesa_version(lock["mesa"]["version"])
+        == version_state["mesa"]["normalized_version"]
+    ), "Mesa lock and version state disagree"
+    assert (
+        commit == version_state["last_released_mesa_commit"]
+    ), "Mesa lock is not the last released commit"
     assert re.fullmatch(r"[0-9a-f]{64}", version_state["stable_patchset_sha256"])
     candidate = version_state.get("candidate")
     current_fingerprint = patchset_fingerprint()
     if candidate is None:
-        assert current_fingerprint == version_state["stable_patchset_sha256"]
+        assert (
+            current_fingerprint == version_state["stable_patchset_sha256"]
+        ), "working patch set differs from the approved stable fingerprint"
     else:
         assert candidate["version"] == version_state["current_version"]
         assert candidate["patchset_sha256"] == current_fingerprint
@@ -65,6 +81,9 @@ def main():
             assert gate.get("families") == ["A6xx", "A7xx", "A8xx"]
         if item.get("patch"):
             assert (ROOT / item["patch"]).is_file(), item["patch"]
+            assert (
+                item["patch_apply_verified_on_mesa"] == commit
+            ), f"{item['id']} was not apply-checked on the locked Mesa commit"
 
     a825_patch = read_text("patches/0002-a825-experimental.patch")
     assert 'GPUId(chip_id=0x44030000, name="Adreno (TM) 825")' in a825_patch
@@ -136,6 +155,23 @@ def main():
     assert "engine_name_match=\"yuzu Emulator\"" not in zelda_patch
     assert "TU_DEBUG=gmem" in zelda_patch  # só comentário explícito de não uso
     assert "TU_DEBUG=sysmem" not in zelda_patch
+
+    meta_template = read_text("build-aux/meta.json.in")
+    assert "@VK_VERSION@" in meta_template
+    assert "Vulkan 1.4.@VK_HEADER_VERSION@" not in meta_template
+
+    obsolete_paths = (
+        ".github/workflows/mesa-watch.yml",
+        ".github/workflows/publish-v1.yml",
+        ".github/workflows/publish-v2.yml",
+        ".github/workflows/publish-v3.yml",
+        ".github/workflows/publish-v4.yml",
+        ".github/workflows/publish-v4.4.yml",
+        ".github/workflows/publish-v4.5.yml",
+        "tools/check_mesa_update.py",
+        "profiles/a740/aurora-4.2.conf",
+    )
+    assert not any((ROOT / path).exists() for path in obsolete_paths)
 
     candidate_ids = {item["id"] for item in evidence["candidates"]}
     assert "aurora-gcm-and-suballocators" in candidate_ids

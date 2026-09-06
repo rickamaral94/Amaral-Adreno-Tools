@@ -13,6 +13,6 @@
   "amaral_revision": 1,
   "upstream_revision": 1,
   "last_released_mesa_commit": "86158b8c7467cadcd24f8a8cf02aa3bc748f7e3f",
-  "stable_patchset_sha256": "4daae5eb173b0d0a72751f4a0d2fdb651467b7b2d1e3b746ade1264f6d6d5eb1",
+  "stable_patchset_sha256": "198ef0210ca65caebd2e08e16db2eaf4943fdbc133e4f0cea4c2a430ef8e20a0",
   "candidate": null
 }

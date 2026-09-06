@@ -161,7 +161,24 @@ ninja -C "${build_dir}" install
 driver_path="${install_root}/lib/libvulkan_freedreno.so"
 test -f "${driver_path}"
 mesa_version="$(tr -d '\r\n' < "${mesa_src}/VERSION")"
-vk_header_version="$(sed -n 's/^#define VK_HEADER_VERSION \([0-9][0-9]*\)$/\1/p' "${mesa_src}/include/vulkan/vulkan_core.h")"
+vk_version="$(python3 - "${mesa_src}/include/vulkan/vulkan_core.h" <<'PY'
+import pathlib
+import re
+import sys
+
+header = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+patch = re.search(r"^#define VK_HEADER_VERSION (\d+)$", header, re.MULTILINE)
+complete = re.search(
+    r"#define VK_HEADER_VERSION_COMPLETE\s+"
+    r"VK_MAKE_API_VERSION\(\s*0,\s*(\d+),\s*(\d+),\s*VK_HEADER_VERSION\s*\)",
+    header,
+    re.MULTILINE,
+)
+if not patch or not complete:
+    raise SystemExit("Não foi possível determinar a versão Vulkan dos headers")
+print(f"{complete.group(1)}.{complete.group(2)}.{patch.group(1)}")
+PY
+)"
 package_basename="turnip_amaral_${mesa_version}_v${amaral_revision}${artifact_suffix}"
 artifact_path="${output_root}/${package_basename}.zip"
 
@@ -172,7 +189,7 @@ cp "${driver_path}" "${package_dir}/libvulkan_freedreno.so"
 sed -e "s|@AMARAL_REVISION@|${amaral_revision}|g" -e "s|@ANDROID_API@|${android_api}|g" \
   -e "s|@MESA_VERSION@|${mesa_version}|g" \
   -e "s|@DRIVER_NAME_SUFFIX@|${driver_name_suffix}|g" \
-  -e "s|@VK_HEADER_VERSION@|${vk_header_version}|g" \
+  -e "s|@VK_VERSION@|${vk_version}|g" \
   "${repo_root}/build-aux/meta.json.in" > "${package_dir}/meta.json"
 touch -d "@${SOURCE_DATE_EPOCH}" "${package_dir}/libvulkan_freedreno.so" "${package_dir}/meta.json"
 (cd "${package_dir}" && zip -X -9 -q "${artifact_path}" libvulkan_freedreno.so meta.json)

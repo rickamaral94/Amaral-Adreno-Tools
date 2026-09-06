@@ -8,13 +8,19 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: project-checks-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Validate metadata and evidence gates
-        run: python3 tools/validate_project.py
+        run: |
+          python3 tools/validate_project.py
+          python3 -m unittest discover -s tests -v
       - name: Check shell syntax
         run: bash -n scripts/*.sh
       - name: Verify driver patches against pinned Mesa

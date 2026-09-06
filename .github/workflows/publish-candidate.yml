@@ -27,9 +27,10 @@ jobs:
       GH_TOKEN: ${{ github.token }}
 
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.4.1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
+          ref: main
 
       - name: Fetch pinned Mesa
         run: |
@@ -100,12 +101,13 @@ jobs:
           STANDARD_FILE: ${{ steps.release.outputs.standard_file }}
           ONEUI_FILE: ${{ steps.release.outputs.oneui_file }}
         run: |
+          release_target="$(git rev-parse HEAD)"
           assets=("dist/${STANDARD_FILE}" "dist/${ONEUI_FILE}" "dist/SHA256SUMS.txt" "dist/REPRODUCIBILITY_standard.txt" "dist/REPRODUCIBILITY_oneui.txt")
           if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
             gh release upload "${RELEASE_TAG}" "${assets[@]}" --repo "${GITHUB_REPOSITORY}" --clobber
             gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --title "${RELEASE_TITLE}" --notes-file "${NOTES_FILE}" --prerelease --latest=false
           else
-            gh release create "${RELEASE_TAG}" "${assets[@]}" --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" --title "${RELEASE_TITLE}" --notes-file "${NOTES_FILE}" --prerelease --latest=false
+            gh release create "${RELEASE_TAG}" "${assets[@]}" --repo "${GITHUB_REPOSITORY}" --target "${release_target}" --title "${RELEASE_TITLE}" --notes-file "${NOTES_FILE}" --prerelease --latest=false
           fi
 
       - name: Persist candidate version
