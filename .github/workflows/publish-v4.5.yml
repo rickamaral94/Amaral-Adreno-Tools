@@ -1,16 +1,7 @@
 name: Publish Turnip Amaral 26.3.0-devel v4.5 Candidate
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/publish-v4.5.yml"
-      - "patches/**"
-      - "scripts/build_universal.sh"
-      - "tools/validate_project.py"
-      - "config/mesa-lock.json"
-      - "evidence/**"
-      - "docs/releases/mesa-26.3.0-devel-v4.5.md"
+  # Fluxo legado mantido apenas para reconstrução manual da v4.5 original.
   workflow_dispatch:
 
 permissions:

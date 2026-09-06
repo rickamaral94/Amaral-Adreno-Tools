@@ -1,0 +1,136 @@
+name: Publish Mesa upstream as Latest
+
+on:
+  schedule:
+    # 07:07 BRT (America/Sao_Paulo)
+    - cron: "7 10 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-upstream.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: amaral-release
+  cancel-in-progress: false
+
+jobs:
+  build-verify-publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout stable Amaral source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.4.1
+        with:
+          fetch-depth: 0
+
+      - name: Fetch current Mesa main
+        run: |
+          previous="$(python3 -c 'import json; print(json.load(open("config/version-state.json"))["last_released_mesa_commit"])')"
+          git init -q work/mesa-version
+          git -C work/mesa-version fetch -q --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git main
+          latest="$(git -C work/mesa-version rev-parse FETCH_HEAD)"
+          git -C work/mesa-version fetch -q --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git "${previous}"
+          git -C work/mesa-version checkout -q --detach "${latest}"
+
+      - id: release
+        name: Resolve upstream version
+        run: |
+          python3 tools/release_version.py upstream \
+            --mesa-src work/mesa-version \
+            --github-output "${GITHUB_OUTPUT}" \
+            --write
+
+      - name: Validate metadata and patch policy
+        if: steps.release.outputs.update_available == 'true'
+        run: |
+          python3 tools/validate_project.py
+          bash -n scripts/*.sh
+
+      - name: Install host tools
+        if: steps.release.outputs.update_available == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bison build-essential file flex glslang-tools pkg-config python3-venv unzip zip
+
+      - name: Install pinned Python build tools
+        if: steps.release.outputs.update_available == 'true'
+        run: |
+          python3 -m venv work/venv
+          work/venv/bin/pip install --requirement requirements-build.txt
+          echo "${GITHUB_WORKSPACE}/work/venv/bin" >> "${GITHUB_PATH}"
+
+      - name: Download verified Android NDK r29
+        if: steps.release.outputs.update_available == 'true'
+        run: |
+          mkdir -p work/toolchains
+          curl --fail --location --output work/android-ndk-r29-linux.zip https://dl.google.com/android/repository/android-ndk-r29-linux.zip
+          echo "87e2bb7e9be5d6a1c6cdf5ec40dd4e0c6d07c30b  work/android-ndk-r29-linux.zip" | sha1sum --check
+          unzip -q work/android-ndk-r29-linux.zip -d work/toolchains
+
+      - name: Build Standard twice
+        if: steps.release.outputs.update_available == 'true'
+        env:
+          NDK_ROOT: ${{ github.workspace }}/work/toolchains/android-ndk-r29
+          DRIVER_VARIANT: standard
+        run: ./scripts/check_reproducibility.sh
+
+      - name: Build OneUI twice
+        if: steps.release.outputs.update_available == 'true'
+        env:
+          NDK_ROOT: ${{ github.workspace }}/work/toolchains/android-ndk-r29
+          DRIVER_VARIANT: oneui
+        run: ./scripts/check_reproducibility.sh
+
+      - name: Verify release assets
+        if: steps.release.outputs.update_available == 'true'
+        env:
+          STANDARD_FILE: ${{ steps.release.outputs.standard_file }}
+          ONEUI_FILE: ${{ steps.release.outputs.oneui_file }}
+        run: |
+          standard_sha="$(sha256sum "dist/${STANDARD_FILE}" | cut -d' ' -f1)"
+          oneui_sha="$(sha256sum "dist/${ONEUI_FILE}" | cut -d' ' -f1)"
+          standard_elf_sha="$(unzip -p "dist/${STANDARD_FILE}" libvulkan_freedreno.so | sha256sum | cut -d' ' -f1)"
+          oneui_elf_sha="$(unzip -p "dist/${ONEUI_FILE}" libvulkan_freedreno.so | sha256sum | cut -d' ' -f1)"
+          grep -Fq "artifact_sha256=${standard_sha}" dist/REPRODUCIBILITY_standard.txt
+          grep -Fq "elf_sha256=${standard_elf_sha}" dist/REPRODUCIBILITY_standard.txt
+          grep -Fq "artifact_sha256=${oneui_sha}" dist/REPRODUCIBILITY_oneui.txt
+          grep -Fq "elf_sha256=${oneui_elf_sha}" dist/REPRODUCIBILITY_oneui.txt
+          unzip -t "dist/${STANDARD_FILE}"
+          unzip -t "dist/${ONEUI_FILE}"
+          (cd dist && sha256sum "${STANDARD_FILE}" "${ONEUI_FILE}" > SHA256SUMS.txt)
+
+      - name: Publish immutable Latest release
+        if: steps.release.outputs.update_available == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
+          RELEASE_TITLE: ${{ steps.release.outputs.release_title }}
+          NOTES_FILE: ${{ steps.release.outputs.notes_file }}
+          STANDARD_FILE: ${{ steps.release.outputs.standard_file }}
+          ONEUI_FILE: ${{ steps.release.outputs.oneui_file }}
+        run: |
+          assets=("dist/${STANDARD_FILE}" "dist/${ONEUI_FILE}" "dist/SHA256SUMS.txt" "dist/REPRODUCIBILITY_standard.txt" "dist/REPRODUCIBILITY_oneui.txt")
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release upload "${RELEASE_TAG}" "${assets[@]}" --repo "${GITHUB_REPOSITORY}" --clobber
+            gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --title "${RELEASE_TITLE}" --notes-file "${NOTES_FILE}" --prerelease=false --latest
+          else
+            gh release create "${RELEASE_TAG}" "${assets[@]}" --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" --title "${RELEASE_TITLE}" --notes-file "${NOTES_FILE}" --latest
+          fi
+
+      - name: Persist released Mesa lock and version
+        if: steps.release.outputs.update_available == 'true'
+        env:
+          NOTES_FILE: ${{ steps.release.outputs.notes_file }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add config/mesa-lock.json config/version-state.json "${NOTES_FILE}"
+          git commit -m "release: registra snapshot upstream v${VERSION}"
+          git push origin HEAD:main

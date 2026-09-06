@@ -30,6 +30,10 @@ jobs:
           git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0002-a825-experimental.patch"
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0004-depth-extensions.patch"
           git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0004-depth-extensions.patch"
+          git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0005-a740-aurora-performance.patch"
+          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0005-a740-aurora-performance.patch"
+          git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0006-emulator-compat-driconf.patch"
+          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0006-emulator-compat-driconf.patch"
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0003-oneui-ubwc.patch"
           git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0003-oneui-ubwc.patch"
           git -C work/mesa diff --check

@@ -4,6 +4,8 @@ import pathlib
 import re
 import sys
 
+from release_version import patchset_fingerprint
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
@@ -18,13 +20,31 @@ def read_text(relative):
 
 def main():
     lock = load("config/mesa-lock.json")
+    version_state = load("config/version-state.json")
     evidence = load("evidence/candidates.json")
     sources = load("evidence/sources.json")
 
     commit = lock["mesa"]["commit"]
     assert re.fullmatch(r"[0-9a-f]{40}", commit), "Mesa commit must be a full SHA"
     assert isinstance(lock["amaral_revision"], str)
-    assert lock["amaral_revision"] == "4.5"
+    assert re.fullmatch(r"\d+\.\d+\.\d+\.\d+", lock["amaral_revision"])
+    assert version_state["schema"] == 1
+    assert version_state["current_version"] == lock["amaral_revision"]
+    assert re.fullmatch(r"\d+\.\d+\.\d+\.\d+", version_state["stable_version"])
+    assert version_state["mesa"]["generation"] >= 1
+    assert re.fullmatch(r"\d+\.\d+\.\d+", version_state["mesa"]["normalized_version"])
+    assert version_state["vulkan"]["generation"] >= 1
+    assert re.fullmatch(r"\d+\.\d+\.\d+", version_state["vulkan"]["version"])
+    assert version_state["amaral_revision"] >= 1
+    assert version_state["upstream_revision"] >= 0
+    assert re.fullmatch(r"[0-9a-f]{64}", version_state["stable_patchset_sha256"])
+    candidate = version_state.get("candidate")
+    current_fingerprint = patchset_fingerprint()
+    if candidate is None:
+        assert current_fingerprint == version_state["stable_patchset_sha256"]
+    else:
+        assert candidate["version"] == version_state["current_version"]
+        assert candidate["patchset_sha256"] == current_fingerprint
     assert lock["build"]["cpu"] == "armv8-a"
     assert lock["build"]["kmd"] == "kgsl"
     assert sources["primary"][0]["name"] == "Mesa 3D"
@@ -115,6 +135,7 @@ def main():
     assert '<option name="tu_emulate_alpha_to_coverage"' not in zelda_patch
     assert "engine_name_match=\"yuzu Emulator\"" not in zelda_patch
     assert "TU_DEBUG=gmem" in zelda_patch  # só comentário explícito de não uso
+    assert "TU_DEBUG=sysmem" not in zelda_patch
 
     candidate_ids = {item["id"] for item in evidence["candidates"]}
     assert "aurora-gcm-and-suballocators" in candidate_ids

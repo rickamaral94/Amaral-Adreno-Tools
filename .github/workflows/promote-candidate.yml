@@ -1,0 +1,46 @@
+name: Promote A/B-approved candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_ab_approved:
+        description: "Confirm that the candidate passed the required A/B tests"
+        required: true
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: amaral-release
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    if: inputs.confirm_ab_approved == true
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.4.1
+        with:
+          fetch-depth: 0
+      - id: candidate
+        run: python3 tools/release_version.py promote --github-output "${GITHUB_OUTPUT}"
+      - name: Promote the exact tested release
+        env:
+          VERSION: ${{ steps.candidate.outputs.version }}
+        run: |
+          mesa_version="$(python3 -c 'import json; print(json.load(open("config/mesa-lock.json"))["mesa"]["version"])')"
+          tag="mesa-${mesa_version}-v${VERSION}"
+          gh release edit "${tag}" --repo "${GITHUB_REPOSITORY}" --prerelease=false --latest
+      - name: Record stable patch set
+        env:
+          VERSION: ${{ steps.candidate.outputs.version }}
+        run: |
+          python3 tools/release_version.py promote --write
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add config/version-state.json
+          git commit -m "release: promove v${VERSION} após A/B"
+          git push origin HEAD:main

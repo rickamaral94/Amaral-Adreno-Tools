@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "current_version": "4.5.1.0",
+  "stable_version": "4.5.1.0",
+  "mesa": {
+    "generation": 4,
+    "normalized_version": "26.3.0"
+  },
+  "vulkan": {
+    "generation": 5,
+    "version": "1.4.359"
+  },
+  "amaral_revision": 1,
+  "upstream_revision": 0,
+  "last_released_mesa_commit": "eaa8cb690243d25c9b5ccc40e11a0d0d5a836d0f",
+  "stable_patchset_sha256": "4daae5eb173b0d0a72751f4a0d2fdb651467b7b2d1e3b746ade1264f6d6d5eb1",
+  "candidate": null
+}

@@ -1,33 +1,73 @@
-# Atualizações do Mesa
+# Atualizações do Mesa e canais de release
 
-O `main` do Mesa é monitorado, mas nunca consumido automaticamente em uma
-release. O processo de atualização é:
+O Mesa `main` é o upstream técnico do projeto. O código upstream e as mudanças
+próprias do Amaral seguem canais diferentes.
 
-1. detectar a nova cabeça upstream;
-2. abrir uma branch e atualizar somente `config/mesa-lock.json`;
-3. auditar todos os commits entre o lock antigo e o novo, com atenção a
-   `src/freedreno`, Vulkan runtime, Android, WSI, compiler, NIR e build system;
-4. reaplicar cada patch com `git apply --check` e revisar o diff resultante;
-5. gerar duas builds independentes e exigir SHA-256 idêntico;
-6. validar ELF, ABI, dependências, hardening e `meta.json`;
-7. executar Driver Lab contra a release anterior em A6xx/A7xx/A8xx;
-8. publicar primeiro alpha/RC; promover apenas após retorno suficiente.
+## Regra de publicação
 
-A release prévia nunca substitui automaticamente a estável/latest. A promoção
-é uma decisão explícita depois da validação comunitária; enquanto isso, a
-release estável anterior permanece destacada como fallback.
+- **Mesa puro sobre o patch set estável:** build validado e publicado como
+  `Latest`.
+- **Patch, hack, configuração ou toolchain Amaral:** publicado como
+  `pre-release`; só vira `Latest` depois dos testes A/B e da promoção manual do
+  mesmo binário.
+- **Patch set diferente do estável:** bloqueia a automação upstream. Isso evita
+  que uma atualização do Mesa promova indiretamente um hack ainda não testado.
 
-## Versionamento curto
+Os dois canais sempre geram Standard e OneUI. Nenhum perfil Zelda força
+`TU_DEBUG=sysmem`.
 
-O nome público usa `Turnip Amaral <Mesa> v<revisão>`. A revisão Amaral começa em
-`v1`, avança enquanto a versão Mesa permanecer igual e volta para `v1` quando a
-versão Mesa mudar. O commit upstream completo permanece no lock e no registro
-da release para garantir rastreabilidade sem alongar o nome do driver.
+## Versionamento Amaral
 
-## Atualização v4.1
+O formato público é `M.V.A.U`, por exemplo `4.5.1.3`.
 
-O snapshot avançou de `c363342a1130b8e00743337492055c71541724af` para
-`6e41d819219d7f4025a95cbbaddfbe492d210ff3`. Os oito commits intermediários
-tratam de documentação, CI/CTS, Broadcom, VC4 e Panfrost/PanVK; não alteram o
-Turnip. A subida mantém o projeto sincronizado com o `mesa/main` sem atribuir a
-ela ganho de desempenho no Adreno.
+| Campo | Significado | Regra |
+|---|---|---|
+| `M` | geração Mesa | aumenta quando a versão numérica do Mesa muda |
+| `V` | geração Vulkan | aumenta quando a versão dos headers Vulkan muda |
+| `A` | revisão Amaral | aumenta quando muda patch/configuração própria |
+| `U` | snapshot upstream | aumenta a cada Mesa HEAD publicado |
+
+O sufixo `-devel` não cria sozinho uma geração Mesa nova. A comparação usa a
+parte numérica completa: `26.3.0`. Quando `M`, `V` ou `A` muda, `U` reinicia em
+`1`.
+
+Exemplos:
+
+- `4.5.1.1` → primeiro snapshot upstream no esquema novo;
+- `4.5.1.2` → novo Mesa, mesmos Vulkan e patch set Amaral;
+- `4.5.2.1` → alteração própria, publicada inicialmente como pre-release;
+- `4.6.2.1` → nova revisão dos headers Vulkan;
+- `5.6.2.1` → nova versão numérica do Mesa.
+
+O estado fica em `config/version-state.json`. O lock completo do Mesa continua
+em `config/mesa-lock.json`, garantindo a rastreabilidade pelo SHA de 40
+caracteres.
+
+## Automação upstream
+
+`.github/workflows/publish-upstream.yml` executa diariamente às 07:07 BRT e
+também aceita disparo manual.
+
+1. busca o `mesa/main` atual;
+2. confirma que o patch set é exatamente o último aprovado em A/B;
+3. resolve as quatro partes da versão;
+4. reaplica os patches e valida o diff;
+5. compila Standard e OneUI duas vezes;
+6. exige ZIP e ELF reproduzíveis byte a byte;
+7. valida os pacotes, metadados, ABI e hashes;
+8. publica uma tag imutável e a marca como `Latest`;
+9. só então persiste o lock e o estado da versão.
+
+Qualquer conflito de patch, falha de compilação ou divergência de hashes
+interrompe o fluxo sem publicar.
+
+## Mudanças Amaral e promoção
+
+Alterações em patches, templates, configuração de build ou empacotamento
+acionam `.github/workflows/publish-candidate.yml`. O terceiro campo aumenta e a
+release nasce como pre-release.
+
+Depois da validação gráfica, estabilidade, frametimes, desempenho, temperatura
+e consumo, execute `Promote A/B-approved candidate`. A promoção apenas muda o
+canal do artefato já testado e registra seu fingerprint como novo patch set
+estável; não recompila o driver.

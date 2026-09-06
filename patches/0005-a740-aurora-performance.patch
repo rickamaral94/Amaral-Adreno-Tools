@@ -85,9 +85,9 @@ index a4e6582..9817ed2 100644
 +      const int gcm = (gcm_env != -2) ? gcm_env
 +                                      : (compiler->reg_size_vec4 >= 96 ? 1 : 0);
        if (gcm == 1)
-          progress |= OPT(s, nir_opt_gcm, true, true);
+          progress |= OPT(s, nir_opt_gcm, true);
        else if (gcm == 2)
-          progress |= OPT(s, nir_opt_gcm, false, true);
+          progress |= OPT(s, nir_opt_gcm, false);
        nir_opt_peephole_select_options peephole_select_options = {
           .limit = 16,
 diff --git a/src/freedreno/vulkan/tu_device.cc b/src/freedreno/vulkan/tu_device.cc

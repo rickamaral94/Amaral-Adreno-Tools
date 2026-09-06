@@ -4,15 +4,16 @@ Projeto do **Amaral Turnip Universal**, driver Vulkan para Android/KGSL
 construído a partir do Mesa 3D. A ordem de decisão é: compatibilidade gráfica,
 estabilidade, frametimes consistentes e desempenho.
 
-> Status: `v4.5` é candidata/pré-release para testes; `v4.4` continua a
-> release estável e marcada como Latest.
+> Status: a release marcada como **Latest** no GitHub é a referência estável.
+> Atualizações puras do Mesa podem avançar automaticamente; mudanças próprias
+> do Amaral continuam em pre-release até aprovação A/B.
 
-## Variantes v4.5
+## Variantes
 
 | Variante | Arquivo | Uso |
 |---|---|---|
-| Standard | `turnip_amaral_26.3.0-devel_v4.5.zip` | Ponto de partida para Android/KGSL |
-| OneUI | `turnip_amaral_26.3.0-devel_v4.5_oneUI.zip` | Somente quando o firmware OneUI precisar do ajuste UBWC da FD740 |
+| Standard | `turnip_amaral_<mesa>_v<M.V.A.U>.zip` | Ponto de partida para Android/KGSL |
+| OneUI | `turnip_amaral_<mesa>_v<M.V.A.U>_oneUI.zip` | Somente quando o firmware OneUI precisar do ajuste UBWC da FD740 |
 
 As variantes têm a mesma base Mesa, suporte às famílias e perfis por
 aplicativo. A OneUI acrescenta apenas `TP_UBWC_FLAG_HINT` nas duas entradas
@@ -54,15 +55,25 @@ Uma otimização A740 só alcança outras GPUs quando o código demonstra a mesm
 capacidade. Ajustes de UBWC, cache, tile, FDM/MSAA ou registradores ligados ao
 silício permanecem isolados.
 
-## Baseline
+## Versionamento e canais
+
+O formato novo é `Mesa.Vulkan.Amaral.Upstream`, por exemplo `4.5.1.3`:
+
+- primeiro campo: geração da versão numérica Mesa;
+- segundo: geração da versão dos headers Vulkan;
+- terceiro: revisão de patches/ajustes próprios;
+- quarto: snapshot automático do Mesa upstream.
+
+Mesa upstream sobre o patch set aprovado é publicado como `Latest`. Qualquer
+mudança própria aumenta o terceiro campo e permanece como pre-release até os
+testes A/B. Consulte o [processo upstream](docs/UPSTREAM-UPDATES.md).
+
+## Baseline de migração
 
 | Item | Valor |
 |---|---|
-| Revisão candidata | `v4.5` |
-| Release estável/Latest | `v4.4` |
-| Mesa | `26.3.0-devel` |
-| Commit fixado | `eaa8cb690243d25c9b5ccc40e11a0d0d5a836d0f` |
-| Vulkan headers | `1.4.359` |
+| Esquema inicial | `v4.5.1.0` (o primeiro Mesa novo gera `.1`) |
+| Estado exato | `config/mesa-lock.json` e `config/version-state.json` |
 | Backend | Turnip/Freedreno + KGSL |
 | ABI | Android AArch64, `armv8-a` |
 | API mínima proposta | Android 10 / API 29 |
