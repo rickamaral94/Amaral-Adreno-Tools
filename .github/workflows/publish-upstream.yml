@@ -9,6 +9,11 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/publish-upstream.yml"
+      # Revalida imediatamente o lock persistido por uma publicação. A segunda
+      # execução é idempotente: confirma que o commit do Mesa já foi lançado e
+      # encerra sem recompilar nem criar outra versão.
+      - "config/mesa-lock.json"
+      - "config/version-state.json"
 
 permissions:
   contents: write
