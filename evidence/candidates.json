@@ -10,7 +10,7 @@
       "reason": "Compatibiliza os tipos de native_handle do Mesa com o NDK r29; não altera a política de execução do Turnip.",
       "source": "Repositórios Amaral 6xx/7xx/8xx",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "cab1821ef75f20338424b8d2c66cdae87b345454"
+      "patch_apply_verified_on_mesa": "8355a57771bc94b7dbea6b496805a40751056508"
     },
     {
       "id": "force-gmem-or-sysmem-global",
@@ -51,7 +51,7 @@
       "reason": "Adiciona o ID KGSL e o perfil A825 refinado após evidência comunitária em hardware real nos modos GMEM e SYSMEM: color/depth cache GMEM em HALF/128 KiB, tile 64x32, shared memory de 64 KiB e offsets VPC preservados, sem forçar o modo de memória.",
       "source": "Mesa A830 gen1 + whitebelyash/mesa-unified + DiskDVD/A8XX-Y; propriedades revisadas e isoladas para A825",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "cab1821ef75f20338424b8d2c66cdae87b345454",
+      "patch_apply_verified_on_mesa": "8355a57771bc94b7dbea6b496805a40751056508",
       "evidence": [
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/37",
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/38",
@@ -70,7 +70,7 @@
       "reason": "Gera uma variante separada que ativa TP_UBWC_FLAG_HINT somente nas duas entradas KGSL da FD740, sem afetar o ID legado ou a Adreno X1-85.",
       "source": "Mesa 3D e builds comunitários OneUI",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "cab1821ef75f20338424b8d2c66cdae87b345454"
+      "patch_apply_verified_on_mesa": "8355a57771bc94b7dbea6b496805a40751056508"
     },
     {
       "id": "depth-extensions",
@@ -81,7 +81,7 @@
       "reason": "Expõe VK_EXT_depth_bias_control (subconjunto honesto: depthBiasControl e depthBiasExact; as duas features de representação ficam false, porque o Adreno não tem chave para forçar UNORM em D32_SFLOAT) e VK_EXT_depth_range_unrestricted. Alcance por dependência real, não por chip_id: bias_control em todas as famílias, porque o runtime do Vulkan faz o trabalho e tu6_emit_depth_bias() não ramifica por chip; range_unrestricted em a7xx+ (device->info->chip >= 7), porque no a6xx o hardware clampa sozinho e a extensão não teria como ser honrada. Até a v4.3 as duas ficavam em dois chip_id da FD740 — gate que marcava onde estava a evidência, não uma dependência técnica.",
       "source": "Amaral Adreno Tools IA, patches 0010 e 0011; gates re-derivados na v4.4",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "cab1821ef75f20338424b8d2c66cdae87b345454",
+      "patch_apply_verified_on_mesa": "8355a57771bc94b7dbea6b496805a40751056508",
       "evidence": [
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/69"
       ],
@@ -96,7 +96,7 @@
       "reason": "Porta a hipótese Aurora pelo mecanismo real, não pelo nome A740: GCM somente onde reg_size_vec4 >= 96 e suballocadores de 512 KiB em todas as famílias. Continua candidato porque Driver Lab #64/#68 não demonstrou ganho global conclusivo.",
       "source": "Balemuni/Balemunis-Aurora; mecanismo re-derivado no Mesa/IR3",
       "license_review": "clean-room-mechanism-review",
-      "patch_apply_verified_on_mesa": "cab1821ef75f20338424b8d2c66cdae87b345454",
+      "patch_apply_verified_on_mesa": "8355a57771bc94b7dbea6b496805a40751056508",
       "evidence": [
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/64",
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/68"
@@ -111,7 +111,7 @@
       "reason": "Reconstrói do ELF oficial Apex V2 as opções BOTW/TOTK, mas as prende ao nome do título. O alcance é portável entre A6xx/A7xx/A8xx porque os caminhos não testam chip; o frontend precisa expor botw/totk em pApplicationName. Sem isso, a regra não ativa.",
       "source": "Balemuni Apex V2 official binaries; static driconf audited on 2026-09-01",
       "license_review": "configuration-values-reimplemented",
-      "patch_apply_verified_on_mesa": "cab1821ef75f20338424b8d2c66cdae87b345454",
+      "patch_apply_verified_on_mesa": "8355a57771bc94b7dbea6b496805a40751056508",
       "evidence": [
         "https://github.com/Balemuni/Balemunis-Aurora/releases",
         "https://github.com/Balemuni/Balemunis-Aurora/issues/4",
