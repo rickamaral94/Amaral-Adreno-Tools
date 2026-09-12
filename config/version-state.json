@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "current_version": "4.6.1.3",
-  "stable_version": "4.6.1.3",
+  "current_version": "4.6.1.4",
+  "stable_version": "4.6.1.4",
   "mesa": {
     "generation": 4,
     "normalized_version": "26.3.0"
@@ -11,8 +11,8 @@
     "version": "1.4.362"
   },
   "amaral_revision": 1,
-  "upstream_revision": 3,
-  "last_released_mesa_commit": "a64d13cf4061514a98ee7492c5c9e3f0bee36902",
+  "upstream_revision": 4,
+  "last_released_mesa_commit": "7cda7850edd103ace21aac37d416d2fdf7a282e1",
   "stable_patchset_sha256": "198ef0210ca65caebd2e08e16db2eaf4943fdbc133e4f0cea4c2a430ef8e20a0",
   "candidate": null
 }
