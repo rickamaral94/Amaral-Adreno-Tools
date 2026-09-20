@@ -7,6 +7,10 @@ on:
         description: "Confirm that the candidate passed the required A/B tests"
         required: true
         type: boolean
+  push:
+    branches: [main]
+    paths:
+      - "evidence/promotions/**"
 
 permissions:
   contents: write
@@ -17,7 +21,7 @@ concurrency:
 
 jobs:
   promote:
-    if: inputs.confirm_ab_approved == true
+    if: github.event_name == 'push' || inputs.confirm_ab_approved == true
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:

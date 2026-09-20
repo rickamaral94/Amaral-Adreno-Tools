@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "version": "4.7.2.1",
+  "decision": "promote-latest",
+  "reason": "Cinco correções comunitárias estritas de estabilidade/correctness, já distribuídas e sem correção posterior conhecida; revisão de código, aplicação Standard/OneUI, build duplo e reprodutibilidade aprovados.",
+  "source": "https://github.com/whitebelyash/mesa-unified/pull/12",
+  "excluded": [
+    "duplicate MSAA register-emission optimization",
+    "latent suballocator hardening"
+  ]
+}
