@@ -17,6 +17,17 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Fetch pinned Mesa
+        run: |
+          commit="$(python3 -c 'import json; print(json.load(open("config/mesa-lock.json"))["mesa"]["commit"])')"
+          git init work/mesa
+          git -C work/mesa remote add origin https://gitlab.freedesktop.org/mesa/mesa.git
+          git -C work/mesa fetch --depth=1 origin "${commit}"
+          git -C work/mesa checkout --detach FETCH_HEAD
+      - name: Resolve patch-set state for validation
+        run: |
+          python3 tools/release_version.py candidate \
+            --mesa-src work/mesa --write
       - name: Validate metadata and evidence gates
         run: |
           python3 tools/validate_project.py
@@ -25,11 +36,6 @@ jobs:
         run: bash -n scripts/*.sh
       - name: Verify driver patches against pinned Mesa
         run: |
-          commit="$(python3 -c 'import json; print(json.load(open("config/mesa-lock.json"))["mesa"]["commit"])')"
-          git init work/mesa
-          git -C work/mesa remote add origin https://gitlab.freedesktop.org/mesa/mesa.git
-          git -C work/mesa fetch --depth=1 origin "${commit}"
-          git -C work/mesa checkout --detach FETCH_HEAD
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0001-android-ndk-r29-compat.patch"
           git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0001-android-ndk-r29-compat.patch"
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0002-a825-experimental.patch"
@@ -40,6 +46,8 @@ jobs:
           git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0005-a740-aurora-performance.patch"
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0006-emulator-compat-driconf.patch"
           git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0006-emulator-compat-driconf.patch"
+          git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0007-community-turnip-stability-fixes.patch"
+          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0007-community-turnip-stability-fixes.patch"
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0003-oneui-ubwc.patch"
           git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0003-oneui-ubwc.patch"
           git -C work/mesa diff --check
