@@ -70,6 +70,7 @@ apply_patch_once "${repo_root}/patches/0002-a825-experimental.patch"
 apply_patch_once "${repo_root}/patches/0004-depth-extensions.patch"
 apply_patch_once "${repo_root}/patches/0005-a740-aurora-performance.patch"
 apply_patch_once "${repo_root}/patches/0006-emulator-compat-driconf.patch"
+apply_patch_once "${repo_root}/patches/0007-community-turnip-stability-fixes.patch"
 if [[ "${driver_variant}" == "oneui" ]]; then
   apply_patch_once "${repo_root}/patches/0003-oneui-ubwc.patch"
 elif git -C "${mesa_src}" apply --reverse --check \
@@ -85,8 +86,12 @@ expected_source_files=(
   "src/freedreno/drm-shim/freedreno_noop.c"
   "src/freedreno/ir3/ir3_nir.c"
   "src/freedreno/vulkan/00-turnip-defaults.conf"
+  "src/freedreno/vulkan/tu_buffer.cc"
   "src/freedreno/vulkan/tu_device.cc"
+  "src/freedreno/vulkan/tu_knl_kgsl.cc"
   "src/freedreno/vulkan/tu_pipeline.cc"
+  "src/freedreno/vulkan/tu_query_pool.cc"
+  "src/freedreno/vulkan/tu_shader.cc"
   "src/util/u_gralloc/u_gralloc_fallback.c"
   "src/vulkan/runtime/vk_android.c"
 )

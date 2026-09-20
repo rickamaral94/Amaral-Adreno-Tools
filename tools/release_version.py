@@ -189,8 +189,10 @@ def write_release_notes(
 
 Atualizações exclusivas do Mesa upstream podem avançar para Latest depois dos
 gates de compilação, aplicação dos patches, validação do pacote e
-reprodutibilidade byte a byte. Mudanças próprias do Amaral permanecem como
-pré-release até aprovação em testes A/B.
+reprodutibilidade byte a byte. Correções comunitárias estritas de estabilidade
+também podem ser promovidas após revisão de código e esses mesmos gates quando
+já são distribuídas em outro driver e permanecem sem correção posterior
+conhecida. Tuning, performance e workarounds continuam exigindo testes A/B.
 
 Não há `TU_DEBUG=sysmem` forçado nos perfis Zelda. O autotuner continua livre
 para escolher GMEM/SYSMEM, com a preferência por GMEM já validada na v4.5.
@@ -344,6 +346,17 @@ def promote_candidate(args):
         raise RuntimeError("Current patch set differs from the published candidate")
     emit_output(args.github_output, {"version": candidate["version"]})
     if args.write:
+        lock = load_json(LOCK_PATH)
+        note_path = release_note_path(
+            {"version": lock["mesa"]["version"]}, candidate["version"]
+        )
+        note = note_path.read_text(encoding="utf-8")
+        prerelease = "**Pré-release para A/B.**"
+        if prerelease not in note:
+            raise RuntimeError(f"Candidate classification not found in {note_path}")
+        note_path.write_text(
+            note.replace(prerelease, "**Latest estável.**", 1), encoding="utf-8"
+        )
         state["stable_patchset_sha256"] = candidate["patchset_sha256"]
         state["stable_version"] = candidate["version"]
         state["candidate"] = None

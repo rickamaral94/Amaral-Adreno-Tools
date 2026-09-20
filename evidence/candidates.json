@@ -127,6 +127,21 @@
       "reason": "Aplicar OOB UBO, DONT_CARE-as-LOAD, round-even e fast border color a uma lista inteira de emuladores muda todos os jogos, não identifica BOTW/TOTK e amplia o risco de regressão. Driver Lab #66 não comprovou promoção de driconf amplo."
     },
     {
+      "id": "community-turnip-stability-fixes",
+      "kind": "correctness-stability",
+      "status": "active",
+      "default": true,
+      "patch": "patches/0007-community-turnip-stability-fixes.patch",
+      "reason": "Cinco correções isoladas de lifetime e tratamento de erro: cleanup de pipeline/OOM, proteção do binding com memória nula, liberação de objetos KGSL, liberação de contadores derivados e destruição correta de variantes de shader. Não altera tuning, registradores, GMEM/SYSMEM nem identificação de GPU.",
+      "source": "whitebelyash/mesa-unified PR #12; commits individuais revisados contra o Mesa fixado",
+      "license_review": "compatible-mit",
+      "patch_apply_verified_on_mesa": "590bf21d918c86908d96d1f4590ecd25b9657171",
+      "evidence": [
+        "https://github.com/whitebelyash/mesa-unified/pull/12"
+      ],
+      "evidence_scope": "O autor reporta smoke test determinístico de 140 mil frames em A830. A adoção como estável segue a política do projeto para correções já distribuídas em driver comunitário e que permanecem sem correção posterior; a aplicação limpa nas variantes Standard e OneUI e os gates reprodutíveis de build continuam obrigatórios. A otimização de emissão MSAA e o hardening latente do suballocator do mesmo PR foram excluídos."
+    },
+    {
       "id": "community-4gb-shader-cache",
       "kind": "runtime-performance",
       "status": "rejected",

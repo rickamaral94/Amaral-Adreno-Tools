@@ -7,7 +7,10 @@ estabilidade, frametimes consistentes e desempenho.
 > Status: a [release marcada como Latest](https://github.com/rickamaral94/Amaral-Adreno-Tools/releases/latest)
 > é a referência estável.
 > Atualizações puras do Mesa podem avançar automaticamente; mudanças próprias
-> do Amaral continuam em pre-release até aprovação A/B.
+> do Amaral continuam em pre-release até aprovação A/B. Correções comunitárias
+> estritamente de estabilidade podem ser promovidas após revisão de código,
+> aplicação limpa e gates de build quando já são distribuídas em outro driver
+> e permanecem sem correção posterior conhecida.
 
 ## Variantes
 
@@ -31,6 +34,8 @@ KGSL da FD740; o ID legado `GPUId(740)`, a A825 e a X1-85 não são alterados.
 - Remoção do perfil amplo que alterava todos os jogos identificados como
   `yuzu Emulator`; esse alcance não tinha validação A/B e podia causar
   regressões fora de Zelda.
+- Correções comunitárias de lifetime e tratamento de erro em pipeline, binding
+  de memória, submissão KGSL, performance queries e variantes de shader.
 
 Os perfis Zelda não forçam GMEM ou SYSMEM, não são promessa de ganho de FPS e
 não ativam se o emulador esconder o nome do jogo do Vulkan. Novas alterações
@@ -66,7 +71,8 @@ O formato novo é `Mesa.Vulkan.Amaral.Upstream`, por exemplo `4.5.1.3`:
 
 Mesa upstream sobre o patch set aprovado é publicado como `Latest`. Qualquer
 mudança própria aumenta o terceiro campo e permanece como pre-release até os
-testes A/B. Consulte o [processo upstream](docs/UPSTREAM-UPDATES.md).
+testes A/B, salvo correção estrita de estabilidade aceita pela regra acima.
+Consulte o [processo upstream](docs/UPSTREAM-UPDATES.md).
 
 ## Estado rastreável
 

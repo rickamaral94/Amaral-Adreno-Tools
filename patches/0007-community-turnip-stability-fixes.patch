@@ -1,0 +1,130 @@
+From: Amaral Adreno Tools
+Subject: turnip: incorporate validated community stability fixes
+
+Source: https://github.com/whitebelyash/mesa-unified/pull/12
+Upstream commits reviewed:
+  8b682bc176c7f595860255dd8266824fb411650d
+  5375e79c92b93b61bb41abce8958dd0f34761edd
+  fb1bee8541595f46f9ddf2507f8a3ee94e354f69
+  20318c51998b3d4f9388b66302e370a458b8a3ac
+  a06667fa8bdecd73d22fc27cb00b12d54fa734b2
+
+This patch contains only correctness and resource-lifetime fixes:
+
+* propagate command-stream allocation failure and release the pipeline object;
+* avoid dereferencing a NULL BO for VK_NULL_HANDLE buffer bindings;
+* release KGSL profiling command objects after queue submission;
+* release derived performance counters when destroying their query pool;
+* destroy shader variants when shader upload fails.
+
+It deliberately excludes the duplicate MSAA register-emission optimization and
+the latent suballocator hardening from the source pull request.
+
+diff --git a/src/freedreno/vulkan/tu_pipeline.cc b/src/freedreno/vulkan/tu_pipeline.cc
+index f528e546e5f..fc798d5e2f3 100644
+--- a/src/freedreno/vulkan/tu_pipeline.cc
++++ b/src/freedreno/vulkan/tu_pipeline.cc
+@@ -4566,16 +4566,15 @@ tu_pipeline_builder_build(struct tu_pipeline_builder *builder,
+ 
+    result = tu_pipeline_allocate_cs(builder->device, *pipeline,
+                                     &builder->layout, builder, NULL);
+-
++   if (result != VK_SUCCESS) {
++      tu_pipeline_finish(*pipeline, builder->device, builder->alloc);
++      vk_object_free(&builder->device->vk, builder->alloc, *pipeline);
++      return result;
++   }
+ 
+    if (set_combined_state(builder, *pipeline,
+                           VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+                           VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT)) {
+-      if (result != VK_SUCCESS) {
+-         vk_object_free(&builder->device->vk, builder->alloc, *pipeline);
+-         return result;
+-      }
+-
+       tu_emit_program_state<CHIP>(&(*pipeline)->cs, &(*pipeline)->program,
+                                   (*pipeline)->shaders);
+ 
+@@ -4614,6 +4613,7 @@ tu_pipeline_builder_build(struct tu_pipeline_builder *builder,
+                                                &library->state_data);
+       if (result != VK_SUCCESS) {
+          tu_pipeline_finish(*pipeline, builder->device, builder->alloc);
++         vk_object_free(&builder->device->vk, builder->alloc, *pipeline);
+          return result;
+       }
+    } else {
+diff --git a/src/freedreno/vulkan/tu_buffer.cc b/src/freedreno/vulkan/tu_buffer.cc
+index e7f6a549d56..cf2d0b512d8 100644
+--- a/src/freedreno/vulkan/tu_buffer.cc
++++ b/src/freedreno/vulkan/tu_buffer.cc
+@@ -213,15 +213,15 @@ tu_BindBufferMemory2(VkDevice device,
+          tu_perfetto_log_bind_buffer(dev, buffer);
+ #endif
+          buffer->bo_size = mem->bo->size;
++
++         TU_RMV(buffer_bind, dev, buffer);
++
++         vk_address_binding_report(&instance->vk, &buffer->vk.base,
++                                   buffer->bo->iova, buffer->bo->size,
++                                   VK_DEVICE_ADDRESS_BINDING_TYPE_BIND_EXT);
+       } else {
+          buffer->bo = NULL;
+       }
+-
+-      TU_RMV(buffer_bind, dev, buffer);
+-
+-      vk_address_binding_report(&instance->vk, &buffer->vk.base,
+-                                buffer->bo->iova, buffer->bo->size,
+-                                VK_DEVICE_ADDRESS_BINDING_TYPE_BIND_EXT);
+    }
+    return VK_SUCCESS;
+ }
+diff --git a/src/freedreno/vulkan/tu_knl_kgsl.cc b/src/freedreno/vulkan/tu_knl_kgsl.cc
+index 8b51fa27f68..5458a3104de 100644
+--- a/src/freedreno/vulkan/tu_knl_kgsl.cc
++++ b/src/freedreno/vulkan/tu_knl_kgsl.cc
+@@ -1686,6 +1686,8 @@ fail_submit:
+       mtx_unlock(&queue->device->kgsl_profiling_mutex);
+    }
+ 
++   vk_free(&queue->device->vk.alloc, objs);
++
+    return result;
+ }
+ 
+diff --git a/src/freedreno/vulkan/tu_query_pool.cc b/src/freedreno/vulkan/tu_query_pool.cc
+index 6b18c12e26e..a42eca64aa7 100644
+--- a/src/freedreno/vulkan/tu_query_pool.cc
++++ b/src/freedreno/vulkan/tu_query_pool.cc
+@@ -301,7 +301,7 @@ tu_query_pool_destroy(struct tu_device *device, struct tu_query_pool *pool,
+          if (perf_query->data[i].pass == 0)
+             fd_perfcntr_release(device->perfcntrs, perf_query->data[i].counter);
+       }
+-   } else if (is_perf_query_raw(pool)) {
++   } else if (is_perf_query_derived(pool)) {
+       struct tu_perf_query_derived *perf_query = &pool->perf_query.derived;
+       struct fd_derived_counter_collection *collection = perf_query->collection;
+ 
+diff --git a/src/freedreno/vulkan/tu_shader.cc b/src/freedreno/vulkan/tu_shader.cc
+index 910c44c086c..2b350beca12 100644
+--- a/src/freedreno/vulkan/tu_shader.cc
++++ b/src/freedreno/vulkan/tu_shader.cc
+@@ -3345,7 +3345,7 @@ tu_shader_deserialize(struct vk_pipeline_cache *cache,
+ 
+    VkResult result = tu_upload_shader(dev, shader);
+    if (result != VK_SUCCESS) {
+-      vk_free(&dev->vk.alloc, shader);
++      tu_shader_destroy(dev, shader);
+       return NULL;
+    }
+ 
+@@ -3669,7 +3669,7 @@ tu_shader_create(struct tu_device *dev,
+ 
+    VkResult result = tu_upload_shader(dev, shader);
+    if (result != VK_SUCCESS) {
+-      vk_free(&dev->vk.alloc, shader);
++      tu_shader_destroy(dev, shader);
+       return result;
+    }
+ 

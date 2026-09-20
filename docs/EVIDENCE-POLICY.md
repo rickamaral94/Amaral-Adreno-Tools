@@ -7,7 +7,12 @@ isolada, mecanismo técnico explicável e resultado reproduzível.
 Commits puros do Mesa são a exceção de canal: depois de passar build duplo,
 reprodutibilidade e validação estrutural, podem ser publicados como `Latest`.
 Esse tratamento não transforma patches comunitários ou Amaral em upstream;
-qualquer mudança própria continua exigindo pre-release e A/B.
+qualquer mudança própria continua exigindo pre-release e A/B. A exceção são
+correções estritas de estabilidade/correctness já distribuídas em outro driver
+e sem correção posterior conhecida: após revisão do código, isolamento do
+efeito, aplicação limpa e todos os gates de build/reprodutibilidade, elas podem
+ser promovidas diretamente. A exceção não cobre tuning, performance, recursos
+expostos, registradores ou workarounds específicos de GPU/aplicativo.
 
 A decisão segue sempre esta ordem: compatibilidade gráfica, estabilidade,
 frametimes consistentes e desempenho. Ganho de FPS não compensa artefato,

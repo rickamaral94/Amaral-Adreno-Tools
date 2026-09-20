@@ -156,6 +156,16 @@ def main():
     assert "TU_DEBUG=gmem" in zelda_patch  # só comentário explícito de não uso
     assert "TU_DEBUG=sysmem" not in zelda_patch
 
+    stability_patch = read_text("patches/0007-community-turnip-stability-fixes.patch")
+    assert "tu_pipeline_finish(*pipeline" in stability_patch
+    assert "vk_object_free(&builder->device->vk" in stability_patch
+    assert "buffer->bo = NULL" in stability_patch
+    assert "vk_free(&queue->device->vk.alloc, objs)" in stability_patch
+    assert "is_perf_query_derived(pool)" in stability_patch
+    assert stability_patch.count("tu_shader_destroy(dev, shader)") == 2
+    assert "tu6_emit_msaa" not in stability_patch
+    assert "tu_suballoc_bo_finish" not in stability_patch
+
     meta_template = read_text("build-aux/meta.json.in")
     assert "@VK_VERSION@" in meta_template
     assert "Vulkan 1.4.@VK_HEADER_VERSION@" not in meta_template
@@ -177,6 +187,7 @@ def main():
     assert "aurora-gcm-and-suballocators" in candidate_ids
     assert "zelda-botw-totk-title-profile" in candidate_ids
     assert "broad-emulator-driconf" in candidate_ids
+    assert "community-turnip-stability-fixes" in candidate_ids
 
     print("Project metadata and evidence gates are valid.")
     return 0

@@ -10,6 +10,10 @@ próprias do Amaral seguem canais diferentes.
 - **Patch, hack, configuração ou toolchain Amaral:** publicado como
   `pre-release`; só vira `Latest` depois dos testes A/B e da promoção manual do
   mesmo binário.
+- **Correção comunitária estrita de estabilidade:** pode ser promovida após
+  revisão de código e os gates reproduzíveis quando já é distribuída em outro
+  driver e não existe correção posterior conhecida. A exceção não inclui
+  tuning, performance, registradores ou workaround específico.
 - **Patch set diferente do estável:** bloqueia a automação upstream. Isso evita
   que uma atualização do Mesa promova indiretamente um hack ainda não testado.
 
@@ -75,6 +79,10 @@ Depois da validação gráfica, estabilidade, frametimes, desempenho, temperatur
 e consumo, execute `Promote A/B-approved candidate`. A promoção apenas muda o
 canal do artefato já testado e registra seu fingerprint como novo patch set
 estável; não recompila o driver.
+
+Para a exceção de estabilidade documentada acima, o mesmo workflow promove o
+artefato imediatamente depois dos gates de build e reprodutibilidade. Assim, a
+publicação continua atômica e usa exatamente os binários que foram validados.
 
 Não existem publicadores separados por versão antiga no ramo principal. Tags
 históricas permanecem disponíveis, mas nunca são reconstruídas a partir do HEAD
