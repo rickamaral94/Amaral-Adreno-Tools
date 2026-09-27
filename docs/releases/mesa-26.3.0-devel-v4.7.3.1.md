@@ -2,7 +2,7 @@
 
 ## Classificação
 
-**Pré-release para A/B.**
+**Latest estável.**
 
 ## Base rastreável
 
