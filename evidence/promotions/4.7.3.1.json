@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "version": "4.7.3.1",
+  "decision": "promote-latest",
+  "reason": "Suporte Android A810/A812 já distribuído no whitebelyash V32 e atualizado pelo commit comunitário mais recente. A integração Amaral é isolada pelos chip IDs, reaproveita o perfil A810 do Mesa atual, remove a dependência incompatível de GPUProps.gmem_size e passou aplicação limpa, validação estrutural, build duplo Standard/OneUI e reprodutibilidade.",
+  "source": "https://github.com/whitebelyash/AdrenoToolsDrivers/releases/tag/tu_v32",
+  "community_commit": "https://github.com/whitebelyash/mesa-unified/commit/9c7e022677dfa3abb356c2b6732cbd2e25783d01",
+  "excluded": [
+    "GPUProps.gmem_size legado",
+    "tuning global de cache A8xx",
+    "aumento global de shared memory",
+    "UBWC global A8xx"
+  ]
+}
