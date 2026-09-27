@@ -15,7 +15,7 @@ O Mesa identifica a GPU e consulta a device database. O Amaral não escolhe um
 perfil global “A6/A7/A8”; ele usa o menor gate que representa a dependência
 real:
 
-- chip: configuração A825 e UBWC OneUI da FD740;
+- chip: aliases Android A810/A812, configuração A825 e UBWC OneUI da FD740;
 - capacidade: GCM quando `reg_size_vec4 >= 96`;
 - geração: depth range irrestrito em A7xx+;
 - aplicativo: perfis BOTW/TOTK;
@@ -27,7 +27,7 @@ analogia de nome de família não é permitido.
 
 ## Variantes
 
-- `standard`: Mesa fixado + NDK r29 + A825 + extensões + candidatos portáveis;
+- `standard`: Mesa fixado + NDK r29 + A810/A812/A825 experimentais + extensões + candidatos portáveis;
 - `oneui`: conteúdo Standard + `TP_UBWC_FLAG_HINT` somente nas entradas KGSL
   FD740 `0x43050a01` e `0xffff43050a01`.
 
@@ -43,6 +43,8 @@ do patch OneUI para o pacote Standard.
 | GCM | `reg_size_vec4 >= 96` | limita pressão e spill de registradores |
 | suballocadores 512 KiB | todos | alocação preguiçosa, sem dependência de chip |
 | BOTW/TOTK | nome do aplicativo | problema/tuning é do workload |
+| A810 Android | `0x44010000` | alias KGSL do perfil A810 já upstream |
+| A812 | `0xffff44010200` / `0x44010200` | perfil comunitário equivalente ao A810, isolado por chip ID |
 | A825 | `0x44030000` | propriedades de silício ainda fora do upstream |
 | OneUI UBWC | FD740/KGSL | valor deve coincidir com drivers do sistema |
 

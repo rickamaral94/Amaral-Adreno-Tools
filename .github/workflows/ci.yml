@@ -38,8 +38,8 @@ jobs:
         run: |
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0001-android-ndk-r29-compat.patch"
           git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0001-android-ndk-r29-compat.patch"
-          git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0002-a825-experimental.patch"
-          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0002-a825-experimental.patch"
+          git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0002-a8xx-experimental-device-support.patch"
+          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0002-a8xx-experimental-device-support.patch"
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0004-depth-extensions.patch"
           git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0004-depth-extensions.patch"
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0005-a740-aurora-performance.patch"

@@ -31,6 +31,9 @@ KGSL da FD740; o ID legado `GPUId(740)`, a A825 e a X1-85 não são alterados.
 - Perfis BOTW/TOTK reconstruídos do binário Balemuni Apex V2,
   isolados por título e disponíveis para A6xx/A7xx/A8xx quando o frontend expõe
   `botw` ou `totk` em `pApplicationName`.
+- Identificação Android experimental para A810/A812, usando o perfil A810
+  conservador do Mesa e sem carregar o campo `gmem_size` removido de
+  `GPUProps`; o tamanho de GMEM continua vindo do kernel KGSL.
 - Remoção do perfil amplo que alterava todos os jogos identificados como
   `yuzu Emulator`; esse alcance não tinha validação A/B e podia causar
   regressões fora de Zelda.
@@ -53,7 +56,7 @@ Cada mudança é gateada pela dependência real:
 | `VK_EXT_depth_bias_control` | todas as famílias |
 | `VK_EXT_depth_range_unrestricted` | A7xx+ |
 | BOTW/TOTK | aplicação, sem gate por GPU |
-| perfil A825 | somente `chip_id 0x44030000` |
+| perfis A8xx experimentais | A810 KGSL `0x44010000`, A812 `0x44010200` e A825 `0x44030000` |
 | UBWC OneUI | somente FD740/KGSL na variante OneUI |
 
 Uma otimização A740 só alcança outras GPUs quando o código demonstra a mesma
@@ -83,7 +86,7 @@ Consulte o [processo upstream](docs/UPSTREAM-UPDATES.md).
 | Backend | Turnip/Freedreno + KGSL |
 | ABI | Android AArch64, `armv8-a` |
 | API mínima proposta | Android 10 / API 29 |
-| Exceção não upstream | A825 experimental, isolada por `chip_id` |
+| Exceções não upstream | aliases Android A810/A812 e perfil A825, isolados por `chip_id` |
 
 ## Compilar
 

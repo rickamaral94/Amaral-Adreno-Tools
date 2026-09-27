@@ -43,11 +43,27 @@
       ]
     },
     {
+      "id": "a810-a812-android-support",
+      "kind": "device-support",
+      "status": "testing",
+      "default": true,
+      "patch": "patches/0002-a8xx-experimental-device-support.patch",
+      "reason": "Adiciona o alias KGSL 0x44010000 ao perfil A810 já upstream e reconhece a A812 pelos IDs 0xffff44010200 e 0x44010200. A A812 reutiliza deliberadamente o perfil conservador A810 do Mesa fixado; não importa gmem_size para GPUProps, caches comunitários, UBWC global nem aumento de shared memory.",
+      "source": "Mesa A810 upstream + whitebelyash/mesa-unified turnip/gen8 V32",
+      "license_review": "compatible",
+      "patch_apply_verified_on_mesa": "82d4f86a0a1e9f76b2de4fa77c6c8e6acaf06aa9",
+      "evidence": [
+        "https://github.com/whitebelyash/mesa-unified/commit/9c7e022677dfa3abb356c2b6732cbd2e25783d01",
+        "https://github.com/whitebelyash/AdrenoToolsDrivers/releases/tag/tu_v32"
+      ],
+      "evidence_scope": "Suporte comunitário distribuído para A810/A812 na V32. A integração Amaral porta apenas identificação e seleção do perfil; a validação funcional em hardware A812 continua pendente."
+    },
+    {
       "id": "a825-community-support",
       "kind": "device-support",
       "status": "testing",
       "default": true,
-      "patch": "patches/0002-a825-experimental.patch",
+      "patch": "patches/0002-a8xx-experimental-device-support.patch",
       "reason": "Adiciona o ID KGSL e o perfil A825 refinado após evidência comunitária em hardware real nos modos GMEM e SYSMEM: color/depth cache GMEM em HALF/128 KiB, tile 64x32, shared memory de 64 KiB e offsets VPC preservados, sem forçar o modo de memória.",
       "source": "Mesa A830 gen1 + whitebelyash/mesa-unified + DiskDVD/A8XX-Y; propriedades revisadas e isoladas para A825",
       "license_review": "compatible",

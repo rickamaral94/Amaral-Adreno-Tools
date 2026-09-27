@@ -85,21 +85,30 @@ def main():
                 item["patch_apply_verified_on_mesa"] == commit
             ), f"{item['id']} was not apply-checked on the locked Mesa commit"
 
-    a825_patch = read_text("patches/0002-a825-experimental.patch")
-    assert 'GPUId(chip_id=0x44030000, name="Adreno (TM) 825")' in a825_patch
-    assert "gmem_ccu_color_cache_fraction = CCUColorCacheFraction.HALF.value" in a825_patch
-    assert "gmem_per_ccu_color_cache_size = 128 * 1024" in a825_patch
-    assert "gmem_ccu_depth_cache_fraction = CCUColorCacheFraction.HALF.value" in a825_patch
-    assert "gmem_per_ccu_depth_cache_size = 128 * 1024" in a825_patch
-    assert "tile_align_w = 64" in a825_patch
-    assert "shading_rate_matches_vk = True" not in a825_patch
-    assert "tu_pipeline.cc" not in a825_patch
-    assert "is_target_gpu" not in a825_patch
-    assert "cs_shared_mem_size = 64 * 1024" in a825_patch
-    assert "const bool is_a810" not in a825_patch
-    assert "const bool is_a829" not in a825_patch
-    assert "const bool is_a830" not in a825_patch
-    assert "const bool is_a840" not in a825_patch
+    a8xx_patch = read_text("patches/0002-a8xx-experimental-device-support.patch")
+    assert 'GPUId(chip_id=0x44010000, name="Adreno (TM) 810")' in a8xx_patch
+    assert 'GPUId(chip_id=0xffff44010200, name="Adreno (TM) 812")' in a8xx_patch
+    assert 'GPUId(chip_id=0x44010200, name="Adreno (TM) 812")' in a8xx_patch
+    assert ".gpu_id = 812" in a8xx_patch
+    assert ".chip_id = 0x44010200" in a8xx_patch
+    assert 'GPUId(chip_id=0x44030000, name="Adreno (TM) 825")' in a8xx_patch
+    assert "gmem_ccu_color_cache_fraction = CCUColorCacheFraction.HALF.value" in a8xx_patch
+    assert "gmem_per_ccu_color_cache_size = 128 * 1024" in a8xx_patch
+    assert "gmem_ccu_depth_cache_fraction = CCUColorCacheFraction.HALF.value" in a8xx_patch
+    assert "gmem_per_ccu_depth_cache_size = 128 * 1024" in a8xx_patch
+    assert "tile_align_w = 64" in a8xx_patch
+    assert "shading_rate_matches_vk = True" not in a8xx_patch
+    assert "tu_pipeline.cc" not in a8xx_patch
+    assert "is_target_gpu" not in a8xx_patch
+    assert "cs_shared_mem_size = 64 * 1024" in a8xx_patch
+    device_profile_patch = a8xx_patch.split(
+        "diff --git a/src/freedreno/drm-shim/freedreno_noop.c", 1
+    )[0]
+    assert "gmem_size =" not in device_profile_patch
+    assert "const bool is_a810" not in a8xx_patch
+    assert "const bool is_a829" not in a8xx_patch
+    assert "const bool is_a830" not in a8xx_patch
+    assert "const bool is_a840" not in a8xx_patch
 
     oneui_patch = read_text("patches/0003-oneui-ubwc.patch")
     assert oneui_patch.count("enable_tp_ubwc_flag_hint = True") == 1
