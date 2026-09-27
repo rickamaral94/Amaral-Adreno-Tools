@@ -59,11 +59,17 @@ também aceita disparo manual.
 5. compila Standard e OneUI duas vezes;
 6. exige ZIP e ELF reproduzíveis byte a byte;
 7. valida os pacotes, metadados, ABI e hashes;
-8. publica uma tag imutável e a marca como `Latest`;
-9. só então persiste o lock, a compatibilidade dos patches e o estado da versão.
+8. grava no `main` o lock, a evidência dos patches, o estado e as notas;
+9. cria a tag no SHA desse commit e publica os mesmos ZIPs como `Latest`.
 
 Qualquer conflito de patch, falha de compilação ou divergência de hashes
 interrompe o fluxo sem publicar.
+
+Se a execução parar após o commit e antes de concluir a release, a próxima
+execução recompila a versão gravada no lock e completa apenas os anexos ausentes.
+Uma tag com SHA diferente ou um anexo com hash diferente causa erro, sem
+substituição. A tag `v4.7.3.2` foi publicada pelo fluxo anterior e continua
+histórica; a regra nova vale para as próximas tags.
 
 Se existir um candidato Amaral ainda não promovido, a execução upstream termina
 sem erro e registra que foi adiada. Isso mantém o monitoramento saudável sem

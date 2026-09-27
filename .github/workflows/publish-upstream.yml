@@ -35,22 +35,54 @@ jobs:
         with:
           fetch-depth: 0
 
+      - id: recovery
+        name: Detect interrupted publication
+        run: |
+          pending="$(mktemp)"
+          python3 tools/release_version.py resume upstream --github-output "${pending}"
+          if grep -Fxq 'resume_available=true' "${pending}"; then
+            tag="$(sed -n 's/^release_tag=//p' "${pending}")"
+            standard="$(sed -n 's/^standard_file=//p' "${pending}")"
+            oneui="$(sed -n 's/^oneui_file=//p' "${pending}")"
+            status="$(python3 tools/publish_release.py status --tag "${tag}" \
+              --source-sha "$(git rev-parse HEAD)" --standard "${standard}" \
+              --oneui "${oneui}")"
+            if [ "${status}" = incomplete ]; then
+              version="$(sed -n 's/^version=//p' "${pending}")"
+              source_sha="$(git log -1 --format=%H --fixed-strings \
+                --grep="release: registra snapshot upstream v${version}")"
+              test -n "${source_sha}"
+              git checkout --detach "${source_sha}"
+              python3 tools/release_version.py resume upstream
+              echo 'resume=true' >> "${GITHUB_OUTPUT}"
+            fi
+          fi
+
       - name: Fetch current Mesa main
         run: |
           previous="$(python3 -c 'import json; print(json.load(open("config/version-state.json"))["last_released_mesa_commit"])')"
           git init -q work/mesa-version
-          git -C work/mesa-version fetch -q --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git main
-          latest="$(git -C work/mesa-version rev-parse FETCH_HEAD)"
+          if [ "${{ steps.recovery.outputs.resume }}" = true ]; then
+            latest="${previous}"
+          else
+            git -C work/mesa-version fetch -q --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git main
+            latest="$(git -C work/mesa-version rev-parse FETCH_HEAD)"
+          fi
           git -C work/mesa-version fetch -q --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git "${previous}"
           git -C work/mesa-version checkout -q --detach "${latest}"
 
       - id: release
         name: Resolve upstream version
         run: |
-          python3 tools/release_version.py upstream \
-            --mesa-src work/mesa-version \
-            --github-output "${GITHUB_OUTPUT}" \
-            --write
+          if [ "${{ steps.recovery.outputs.resume }}" = true ]; then
+            python3 tools/release_version.py resume upstream --github-output "${GITHUB_OUTPUT}"
+            echo 'update_available=true' >> "${GITHUB_OUTPUT}"
+          else
+            python3 tools/release_version.py upstream \
+              --mesa-src work/mesa-version \
+              --github-output "${GITHUB_OUTPUT}" \
+              --write
+          fi
 
       - name: Explain candidate block
         if: steps.release.outputs.blocked_by_candidate == 'true'
@@ -117,7 +149,24 @@ jobs:
           unzip -t "dist/${ONEUI_FILE}"
           (cd dist && sha256sum "${STANDARD_FILE}" "${ONEUI_FILE}" > SHA256SUMS.txt)
 
-      - name: Publish immutable Latest release
+      - name: Persist verified source before publication
+        if: steps.release.outputs.update_available == 'true'
+        env:
+          NOTES_FILE: ${{ steps.release.outputs.notes_file }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          if [ "${{ steps.recovery.outputs.resume }}" != true ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add config/mesa-lock.json config/version-state.json evidence/candidates.json "${NOTES_FILE}"
+            git commit -m "release: registra snapshot upstream v${VERSION}"
+            git push origin HEAD:main
+          fi
+          test "$(git ls-remote origin refs/heads/main | cut -f1)" = "$(git rev-parse HEAD)"
+          git cat-file -e "HEAD:${NOTES_FILE}"
+          python3 tools/validate_project.py
+
+      - name: Publish verified Latest release
         if: steps.release.outputs.update_available == 'true'
         env:
           RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
@@ -126,25 +175,11 @@ jobs:
           STANDARD_FILE: ${{ steps.release.outputs.standard_file }}
           ONEUI_FILE: ${{ steps.release.outputs.oneui_file }}
         run: |
-          assets=("dist/${STANDARD_FILE}" "dist/${ONEUI_FILE}" "dist/SHA256SUMS.txt" "dist/REPRODUCIBILITY_standard.txt" "dist/REPRODUCIBILITY_oneui.txt")
-          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-            gh release upload "${RELEASE_TAG}" "${assets[@]}" --repo "${GITHUB_REPOSITORY}" --clobber
-            gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --title "${RELEASE_TITLE}" --notes-file "${NOTES_FILE}" --prerelease=false --latest
-          else
-            gh release create "${RELEASE_TAG}" "${assets[@]}" --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" --title "${RELEASE_TITLE}" --notes-file "${NOTES_FILE}" --latest
-          fi
-
-      - name: Persist released Mesa lock and version
-        if: steps.release.outputs.update_available == 'true'
-        env:
-          NOTES_FILE: ${{ steps.release.outputs.notes_file }}
-          VERSION: ${{ steps.release.outputs.version }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add config/mesa-lock.json config/version-state.json evidence/candidates.json "${NOTES_FILE}"
-          git commit -m "release: registra snapshot upstream v${VERSION}"
-          git push origin HEAD:main
+          python3 tools/publish_release.py publish \
+            --tag "${RELEASE_TAG}" --source-sha "$(git rev-parse HEAD)" \
+            --standard "${STANDARD_FILE}" --oneui "${ONEUI_FILE}" \
+            --title "${RELEASE_TITLE}" --notes-file "${NOTES_FILE}" \
+            --channel latest
 
       - name: Verify next run starts from this release
         if: steps.release.outputs.update_available == 'true'

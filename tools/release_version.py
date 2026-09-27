@@ -337,6 +337,50 @@ def prepare_candidate(args):
     return 0
 
 
+def resume_release(args):
+    """Describe the version already recorded on main for a failed publication retry."""
+    lock = load_json(LOCK_PATH)
+    state = load_json(STATE_PATH)
+    version = state["current_version"]
+    if lock["amaral_revision"] != version or version != compose_version(state):
+        raise RuntimeError("Recorded release version and Mesa lock disagree")
+
+    candidate = state.get("candidate")
+    if args.channel == "upstream":
+        if candidate or version != state["stable_version"]:
+            emit_output(args.github_output, {"resume_available": "false"})
+            return 0
+        if patchset_fingerprint() != state["stable_patchset_sha256"]:
+            emit_output(args.github_output, {"resume_available": "false"})
+            return 0
+    else:
+        if not candidate or candidate["version"] != version:
+            emit_output(args.github_output, {"resume_available": "false"})
+            return 0
+        if candidate["patchset_sha256"] != patchset_fingerprint():
+            raise RuntimeError("Recorded candidate differs from the current patch set")
+
+    meta = lock["mesa"]
+    if meta["commit"] != state["last_released_mesa_commit"]:
+        raise RuntimeError("Recorded Mesa commit and version state disagree")
+    note_path = release_note_path(meta, version)
+    if not note_path.is_file():
+        raise RuntimeError(f"Recorded release notes missing: {note_path}")
+    tag = f"mesa-{meta['version']}-v{version}"
+    emit_output(args.github_output, {
+        "resume_available": "true",
+        "version": version,
+        "release_tag": tag,
+        "release_title": f"Turnip Amaral {meta['version']} v{version}"
+        + (" Candidate" if args.channel == "candidate" else ""),
+        "notes_file": note_path.relative_to(ROOT).as_posix(),
+        "standard_file": f"turnip_amaral_{meta['version']}_v{version}.zip",
+        "oneui_file": f"turnip_amaral_{meta['version']}_v{version}_oneUI.zip",
+        "mesa_commit": meta["commit"],
+    })
+    return 0
+
+
 def promote_candidate(args):
     state = load_json(STATE_PATH)
     candidate = state.get("candidate")
@@ -376,6 +420,9 @@ def main():
     promote = subparsers.add_parser("promote")
     promote.add_argument("--github-output", type=pathlib.Path)
     promote.add_argument("--write", action="store_true")
+    resume = subparsers.add_parser("resume")
+    resume.add_argument("channel", choices=("upstream", "candidate"))
+    resume.add_argument("--github-output", type=pathlib.Path)
     subparsers.add_parser("fingerprint")
     args = parser.parse_args()
 
@@ -386,6 +433,8 @@ def main():
         return prepare_upstream(args)
     if args.command == "candidate":
         return prepare_candidate(args)
+    if args.command == "resume":
+        return resume_release(args)
     return promote_candidate(args)
 
 

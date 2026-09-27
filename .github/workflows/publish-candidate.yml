@@ -32,6 +32,29 @@ jobs:
           fetch-depth: 0
           ref: main
 
+      - id: recovery
+        name: Detect interrupted candidate publication
+        run: |
+          pending="$(mktemp)"
+          python3 tools/release_version.py resume candidate --github-output "${pending}"
+          if grep -Fxq 'resume_available=true' "${pending}"; then
+            tag="$(sed -n 's/^release_tag=//p' "${pending}")"
+            standard="$(sed -n 's/^standard_file=//p' "${pending}")"
+            oneui="$(sed -n 's/^oneui_file=//p' "${pending}")"
+            status="$(python3 tools/publish_release.py status --tag "${tag}" \
+              --source-sha "$(git rev-parse HEAD)" --standard "${standard}" \
+              --oneui "${oneui}")"
+            if [ "${status}" = incomplete ]; then
+              version="$(sed -n 's/^version=//p' "${pending}")"
+              source_sha="$(git log -1 --format=%H --fixed-strings \
+                --grep="candidate: registra revisão Amaral v${version}")"
+              test -n "${source_sha}"
+              git checkout --detach "${source_sha}"
+              python3 tools/release_version.py resume candidate
+              echo 'resume=true' >> "${GITHUB_OUTPUT}"
+            fi
+          fi
+
       - name: Fetch pinned Mesa
         run: |
           commit="$(python3 -c 'import json; print(json.load(open("config/mesa-lock.json"))["mesa"]["commit"])')"
@@ -42,10 +65,15 @@ jobs:
       - id: release
         name: Resolve candidate version
         run: |
-          python3 tools/release_version.py candidate \
-            --mesa-src work/mesa-version \
-            --github-output "${GITHUB_OUTPUT}" \
-            --write
+          if [ "${{ steps.recovery.outputs.resume }}" = true ]; then
+            python3 tools/release_version.py resume candidate --github-output "${GITHUB_OUTPUT}"
+            echo 'candidate_available=true' >> "${GITHUB_OUTPUT}"
+          else
+            python3 tools/release_version.py candidate \
+              --mesa-src work/mesa-version \
+              --github-output "${GITHUB_OUTPUT}" \
+              --write
+          fi
 
       - name: Validate candidate metadata
         if: steps.release.outputs.candidate_available == 'true'
@@ -92,7 +120,24 @@ jobs:
           grep -Fq "reproducible=true" dist/REPRODUCIBILITY_oneui.txt
           (cd dist && sha256sum "${STANDARD_FILE}" "${ONEUI_FILE}" > SHA256SUMS.txt)
 
-      - name: Publish pre-release for A/B
+      - name: Persist tested candidate source
+        if: steps.release.outputs.candidate_available == 'true'
+        env:
+          NOTES_FILE: ${{ steps.release.outputs.notes_file }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          if [ "${{ steps.recovery.outputs.resume }}" != true ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add config/mesa-lock.json config/version-state.json "${NOTES_FILE}"
+            git commit -m "candidate: registra revisão Amaral v${VERSION}"
+            git push origin HEAD:main
+          fi
+          test "$(git ls-remote origin refs/heads/main | cut -f1)" = "$(git rev-parse HEAD)"
+          git cat-file -e "HEAD:${NOTES_FILE}"
+          python3 tools/validate_project.py
+
+      - name: Publish verified pre-release for A/B
         if: steps.release.outputs.candidate_available == 'true'
         env:
           RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
@@ -101,23 +146,8 @@ jobs:
           STANDARD_FILE: ${{ steps.release.outputs.standard_file }}
           ONEUI_FILE: ${{ steps.release.outputs.oneui_file }}
         run: |
-          release_target="$(git rev-parse HEAD)"
-          assets=("dist/${STANDARD_FILE}" "dist/${ONEUI_FILE}" "dist/SHA256SUMS.txt" "dist/REPRODUCIBILITY_standard.txt" "dist/REPRODUCIBILITY_oneui.txt")
-          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-            gh release upload "${RELEASE_TAG}" "${assets[@]}" --repo "${GITHUB_REPOSITORY}" --clobber
-            gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --title "${RELEASE_TITLE}" --notes-file "${NOTES_FILE}" --prerelease --latest=false
-          else
-            gh release create "${RELEASE_TAG}" "${assets[@]}" --repo "${GITHUB_REPOSITORY}" --target "${release_target}" --title "${RELEASE_TITLE}" --notes-file "${NOTES_FILE}" --prerelease --latest=false
-          fi
-
-      - name: Persist candidate version
-        if: steps.release.outputs.candidate_available == 'true'
-        env:
-          NOTES_FILE: ${{ steps.release.outputs.notes_file }}
-          VERSION: ${{ steps.release.outputs.version }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add config/mesa-lock.json config/version-state.json "${NOTES_FILE}"
-          git commit -m "candidate: registra revisão Amaral v${VERSION}"
-          git push origin HEAD:main
+          python3 tools/publish_release.py publish \
+            --tag "${RELEASE_TAG}" --source-sha "$(git rev-parse HEAD)" \
+            --standard "${STANDARD_FILE}" --oneui "${ONEUI_FILE}" \
+            --title "${RELEASE_TITLE}" --notes-file "${NOTES_FILE}" \
+            --channel candidate

@@ -1,7 +1,11 @@
 import copy
+import json
 import pathlib
 import sys
+import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "tools"))
 
@@ -44,6 +48,31 @@ class VersionTests(unittest.TestCase):
             {"normalized_version": "26.3.1", "vulkan_version": "1.4.360"},
         )
         self.assertEqual(version, "5.6.1.1")
+
+    def test_resume_uses_recorded_version_without_advancing_it(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "config").mkdir()
+            (root / "docs/releases").mkdir(parents=True)
+            state = copy.deepcopy(BASE_STATE)
+            state.update({"current_version": "4.5.1.1", "stable_version": "4.5.1.1",
+                          "last_released_mesa_commit": "a" * 40,
+                          "stable_patchset_sha256": "b" * 64, "candidate": None})
+            lock = {"amaral_revision": "4.5.1.1",
+                    "mesa": {"version": "26.3.0-devel", "commit": "a" * 40}}
+            (root / "config/version-state.json").write_text(json.dumps(state))
+            (root / "config/mesa-lock.json").write_text(json.dumps(lock))
+            note = root / "docs/releases/mesa-26.3.0-devel-v4.5.1.1.md"
+            note.write_text("tested release\n")
+            output = root / "output"
+            with (patch.object(release_version, "ROOT", root),
+                  patch.object(release_version, "LOCK_PATH", root / "config/mesa-lock.json"),
+                  patch.object(release_version, "STATE_PATH", root / "config/version-state.json"),
+                  patch.object(release_version, "patchset_fingerprint", return_value="b" * 64)):
+                release_version.resume_release(
+                    SimpleNamespace(channel="upstream", github_output=output))
+            self.assertIn("release_tag=mesa-26.3.0-devel-v4.5.1.1", output.read_text())
+            self.assertEqual(json.loads((root / "config/version-state.json").read_text()), state)
 
 
 if __name__ == "__main__":
