@@ -180,6 +180,50 @@
       "status": "rejected",
       "default": false,
       "reason": "Altera layout, coerência e fallback UBWC para toda a família A8xx. A evidência A825 não isola esses efeitos nem elimina o risco de regressão gráfica nas demais GPUs."
+    },
+    {
+      "id": "kgsl-syncobj-merge-ts-fd",
+      "kind": "runtime-stability",
+      "status": "testing",
+      "default": true,
+      "patch": "patches/0009-kgsl-syncobj-merge-ts-fd.patch",
+      "reason": "Converte o timestamp correto antes de mesclar com sync-file; requer regressão em aparelhos KGSL A6xx/A7xx/A8xx.",
+      "source": "Banners Turnip common patch, distribuição desde 2026-09-28",
+      "license_review": "compatible",
+      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842"
+    },
+    {
+      "id": "kgsl-zero-timeout-poll",
+      "kind": "runtime-stability",
+      "status": "testing",
+      "default": true,
+      "patch": "patches/0010-kgsl-zero-timeout-poll.patch",
+      "reason": "Consulta timestamp aposentado para polling sem espera infinita; requer regressão VKD3D e emuladores.",
+      "source": "Banners Turnip common patch, distribuição desde 2026-09-29",
+      "license_review": "compatible",
+      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842"
+    },
+    {
+      "id": "a840v2-kgsl-id",
+      "kind": "device-support",
+      "status": "testing",
+      "default": true,
+      "patch": "patches/0011-a840v2-device-id.patch",
+      "reason": "Registra 0x44050A21 no perfil existente A840; identidade e renderização pendentes de confirmação em aparelho real.",
+      "source": "Banners Turnip A840v2 fixup",
+      "license_review": "compatible",
+      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842"
+    },
+    {
+      "id": "remove-mgs4-vendor-spoof",
+      "kind": "policy",
+      "status": "testing",
+      "default": true,
+      "patch": "patches/0008-remove-mgs4-vendor-spoof.patch",
+      "reason": "Remove regra upstream de identificação AMD em mgs4.exe.",
+      "source": "Mesa 3D upstream com exclusão Amaral",
+      "license_review": "compatible",
+      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842"
     }
   ]
 }

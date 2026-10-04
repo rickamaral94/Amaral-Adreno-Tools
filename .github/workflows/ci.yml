@@ -48,6 +48,14 @@ jobs:
           git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0006-emulator-compat-driconf.patch"
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0007-community-turnip-stability-fixes.patch"
           git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0007-community-turnip-stability-fixes.patch"
+          python3 tools/check_mesa_policy.py work/mesa
+          git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0008-remove-mgs4-vendor-spoof.patch"
+          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0008-remove-mgs4-vendor-spoof.patch"
+          for patch in 0009-kgsl-syncobj-merge-ts-fd 0010-kgsl-zero-timeout-poll 0011-a840v2-device-id; do
+            git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/${patch}.patch"
+            git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/${patch}.patch"
+          done
+          python3 tools/check_mesa_policy.py work/mesa --patched
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0003-oneui-ubwc.patch"
           git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0003-oneui-ubwc.patch"
           git -C work/mesa diff --check

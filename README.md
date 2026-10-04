@@ -107,6 +107,10 @@ NDK_ROOT=/caminho/android-ndk-r29 \
 O pipeline compila cada variante duas vezes e exige ZIP e ELF idênticos byte a
 byte antes de publicar.
 
+A candidata KGSL/A840v2 corrige merge de semáforos e polling sem espera,
+reconhece o ID KGSL `0x44050A21` no perfil A840 e remove o anúncio AMD de
+`mgs4.exe`. A promoção requer testes reais de sincronização e renderização.
+
 ## Como uma ideia entra no driver
 
 1. Registrar fonte, licença e hipótese em `evidence/`.

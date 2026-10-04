@@ -21,6 +21,26 @@ BASE_STATE = {
 
 
 class VersionTests(unittest.TestCase):
+    def test_promotion_records_candidate_mesa_as_released(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "config").mkdir()
+            notes = root / "docs/releases/mesa-26.3.0-devel-v4.7.4.1.md"
+            notes.parent.mkdir(parents=True)
+            notes.write_text("**Pré-release para A/B.**")
+            state = {"candidate": {"version": "4.7.4.1", "patchset_sha256": "b" * 64},
+                     "stable_version": "4.7.3.7", "last_released_mesa_commit": "a" * 40}
+            (root / "config/version-state.json").write_text(json.dumps(state))
+            (root / "config/mesa-lock.json").write_text(json.dumps({
+                "mesa": {"version": "26.3.0-devel", "commit": "c" * 40}}))
+            with (patch.object(release_version, "ROOT", root),
+                  patch.object(release_version, "LOCK_PATH", root / "config/mesa-lock.json"),
+                  patch.object(release_version, "STATE_PATH", root / "config/version-state.json"),
+                  patch.object(release_version, "patchset_fingerprint", return_value="b" * 64)):
+                release_version.promote_candidate(SimpleNamespace(github_output=None, write=True))
+            promoted = json.loads((root / "config/version-state.json").read_text())
+            self.assertEqual(promoted["last_released_mesa_commit"], "c" * 40)
+
     def test_mesa_devel_suffix_does_not_change_numeric_version(self):
         self.assertEqual(
             release_version.normalize_mesa_version("26.3.0-devel"), "26.3.0"

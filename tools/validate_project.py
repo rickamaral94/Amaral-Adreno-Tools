@@ -48,9 +48,10 @@ def main():
         normalize_mesa_version(lock["mesa"]["version"])
         == version_state["mesa"]["normalized_version"]
     ), "Mesa lock and version state disagree"
-    assert (
-        commit == version_state["last_released_mesa_commit"]
-    ), "Mesa lock is not the last released commit"
+    if version_state.get("candidate") is None:
+        assert (
+            commit == version_state["last_released_mesa_commit"]
+        ), "Stable Mesa lock is not the last released commit"
     assert re.fullmatch(r"[0-9a-f]{64}", version_state["stable_patchset_sha256"])
     candidate = version_state.get("candidate")
     current_fingerprint = patchset_fingerprint()
@@ -174,6 +175,23 @@ def main():
     assert stability_patch.count("tu_shader_destroy(dev, shader)") == 2
     assert "tu6_emit_msaa" not in stability_patch
     assert "tu_suballoc_bo_finish" not in stability_patch
+    assert "suballoc->bo" not in stability_patch
+
+    vendor_patch = read_text("patches/0008-remove-mgs4-vendor-spoof.patch")
+    assert '-             <option name="force_vk_vendor" value="0x1002" />' in vendor_patch
+    assert 'application_name_match="mgs4.exe"' in vendor_patch
+    assert '+             <option name="force_vk_vendor"' not in vendor_patch
+    build_script = read_text("scripts/build_universal.sh")
+    assert 'check_mesa_policy.py" "${mesa_src}" --patched' in build_script
+    assert '0008-remove-mgs4-vendor-spoof.patch' in build_script
+    for patch in ('0009-kgsl-syncobj-merge-ts-fd.patch',
+                  '0010-kgsl-zero-timeout-poll.patch',
+                  '0011-a840v2-device-id.patch'):
+        assert patch in build_script
+    assert 'kgsl_syncobj_ts_to_fd(&ret)' in read_text('patches/0009-kgsl-syncobj-merge-ts-fd.patch')
+    assert 'kgsl_timestamp_retired' in read_text('patches/0010-kgsl-zero-timeout-poll.patch')
+    a840 = read_text('patches/0011-a840v2-device-id.patch')
+    assert '0xffff44050A21' in a840 and '0x44050A21' in a840
 
     meta_template = read_text("build-aux/meta.json.in")
     assert "@VK_VERSION@" in meta_template
