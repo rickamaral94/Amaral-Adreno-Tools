@@ -46,7 +46,12 @@ do patch OneUI para o pacote Standard.
 | A810 Android | `0x44010000` | alias KGSL do perfil A810 já upstream |
 | A812 | `0xffff44010200` / `0x44010200` | perfil comunitário equivalente ao A810, isolado por chip ID |
 | A825 | `0x44030000` | propriedades de silício ainda fora do upstream |
+| A840v2 | `0xffff44050A21` / `0x44050A21` | aliases do perfil A840, dependentes de teste em hardware real |
 | OneUI UBWC | FD740/KGSL | valor deve coincidir com drivers do sistema |
+
+As correções KGSL de merge timestamp/sync-file e polling com timeout zero
+atingem apenas o backend KGSL. Permanecem candidatas até regressão em A6xx,
+A7xx e A8xx; o pipeline de build não substitui esse teste em hardware.
 
 ## Princípios técnicos
 
@@ -55,6 +60,8 @@ do patch OneUI para o pacote Standard.
 - autotuner GMEM/SYSMEM upstream preservado fora dos perfis por título.
 - nenhuma variável `TU_DEBUG` embutida.
 - sem spoof de GPU ou versão Vulkan.
+- regra upstream `force_vk_vendor` de MGS4 removida por patch isolado; regras
+  novas bloqueiam a publicação automática até revisão explícita.
 - hacks A8xx globais de FDM/MSAA, NOCB, UBWC e shared memory não entram.
 - ZIP Adreno Tools contém `libvulkan_freedreno.so` e `meta.json`.
 

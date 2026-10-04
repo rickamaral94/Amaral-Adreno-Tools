@@ -71,6 +71,12 @@ jobs:
           git -C work/mesa-version fetch -q --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git "${previous}"
           git -C work/mesa-version checkout -q --detach "${latest}"
 
+      - name: Check upstream vendor override policy
+        if: steps.recovery.outputs.resume != 'true'
+        run: |
+          python3 tools/check_mesa_policy.py work/mesa-version
+          git -C work/mesa-version apply --check "${GITHUB_WORKSPACE}/patches/0008-remove-mgs4-vendor-spoof.patch"
+
       - id: release
         name: Resolve upstream version
         run: |

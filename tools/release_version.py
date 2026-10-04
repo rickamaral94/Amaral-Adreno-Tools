@@ -403,6 +403,7 @@ def promote_candidate(args):
         )
         state["stable_patchset_sha256"] = candidate["patchset_sha256"]
         state["stable_version"] = candidate["version"]
+        state["last_released_mesa_commit"] = lock["mesa"]["commit"]
         state["candidate"] = None
         save_json(STATE_PATH, state)
     print(candidate["version"])

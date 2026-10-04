@@ -1,0 +1,13 @@
+diff --git a/src/freedreno/common/freedreno_devices.py b/src/freedreno/common/freedreno_devices.py
+index d319b97f6ab..41f504158cb 100644
+--- a/src/freedreno/common/freedreno_devices.py
++++ b/src/freedreno/common/freedreno_devices.py
+@@ -1614,6 +1614,8 @@ add_gpus([
+ 
+ add_gpus([
+         GPUId(chip_id=0xffff44050A31, name="Adreno (TM) 840"),
++        GPUId(chip_id=0xffff44050A21, name="Adreno (TM) 840v2"),
++        GPUId(chip_id=0x44050A21, name="Adreno (TM) 840v2"), # KGSL
+     ], A6xxGPUInfo(
+         CHIP.A8XX,
+         [a7xx_base, a7xx_gen3, a8xx_base, a8xx_gen2,

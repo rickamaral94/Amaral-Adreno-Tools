@@ -1,0 +1,16 @@
+diff --git a/src/freedreno/vulkan/00-turnip-defaults.conf b/src/freedreno/vulkan/00-turnip-defaults.conf
+index 2f97ad1d467..32278328023 100644
+--- a/src/freedreno/vulkan/00-turnip-defaults.conf
++++ b/src/freedreno/vulkan/00-turnip-defaults.conf
+@@ -129,11 +129,5 @@
+             -->
+             <option name="tu_expose_device_local_only_memory_type" value="true" />
+         </application>
+-        <application name="Metal Gear Solid 4" application_name_match="mgs4.exe">
+-             <!-- MGS4 with DX12 uses DGC for shadows and some menu text. It seems to have some workarounds for AMD.
+-                  TODO: Remove this when/if we add support for DGC.
+-             -->
+-             <option name="force_vk_vendor" value="0x1002" />
+-        </application>
+     </device>
+ </driconf>
