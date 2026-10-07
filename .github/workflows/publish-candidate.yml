@@ -48,7 +48,9 @@ jobs:
               version="$(sed -n 's/^version=//p' "${pending}")"
               source_sha="$(git log -1 --format=%H --fixed-strings \
                 --grep="candidate: registra revisão Amaral v${version}")"
-              test -n "${source_sha}"
+              # A PR may already record validated candidate metadata. Its
+              # current source is resumable even without the bot's marker commit.
+              source_sha="${source_sha:-$(git rev-parse HEAD)}"
               git checkout --detach "${source_sha}"
               python3 tools/release_version.py resume candidate
               echo 'resume=true' >> "${GITHUB_OUTPUT}"
