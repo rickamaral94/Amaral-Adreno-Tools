@@ -361,7 +361,7 @@ def resume_release(args):
             raise RuntimeError("Recorded candidate differs from the current patch set")
 
     meta = lock["mesa"]
-    if meta["commit"] != state["last_released_mesa_commit"]:
+    if args.channel == "upstream" and meta["commit"] != state["last_released_mesa_commit"]:
         raise RuntimeError("Recorded Mesa commit and version state disagree")
     note_path = release_note_path(meta, version)
     if not note_path.is_file():
