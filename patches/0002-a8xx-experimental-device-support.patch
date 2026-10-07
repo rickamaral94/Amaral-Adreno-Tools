@@ -11,7 +11,7 @@ index 977a92399ed..0000000 100644
      ], A6xxGPUInfo(
          CHIP.A8XX,
          [a7xx_base, a7xx_gen3, a8xx_base, a8xx_gen1, GPUProps(
-@@ -1583,6 +1586,40 @@ add_gpus([
+@@ -1583,6 +1586,39 @@ add_gpus([
          raw_magic_regs = a8xx_base_raw_magic_regs,
      ))
  
@@ -45,7 +45,6 @@ index 977a92399ed..0000000 100644
 +        cs_shared_mem_size = 64 * 1024,
 +        wave_granularity = 2,
 +        fibers_per_sp = 128 * 2 * 16,
-+        magic_regs = dict(),
 +        raw_magic_regs = a8xx_base_raw_magic_regs,
 +    ))
 +
@@ -56,7 +55,7 @@ diff --git a/src/freedreno/drm-shim/freedreno_noop.c b/src/freedreno/drm-shim/fr
 index 4c21ab38baf..00000000000 100644
 --- a/src/freedreno/drm-shim/freedreno_noop.c
 +++ b/src/freedreno/drm-shim/freedreno_noop.c
-@@ -341,12 +341,22 @@ static const struct msm_device_info device_infos[] = {
+@@ -341,14 +341,24 @@ static const struct msm_device_info device_infos[] = {
     },
     {
        .gpu_id = 810,
