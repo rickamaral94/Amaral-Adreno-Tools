@@ -56,7 +56,7 @@ jobs:
           python3 tools/check_mesa_policy.py work/mesa
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0008-remove-mgs4-vendor-spoof.patch"
           git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0008-remove-mgs4-vendor-spoof.patch"
-          for patch in 0009-kgsl-syncobj-merge-ts-fd 0010-kgsl-zero-timeout-poll 0011-a840v2-device-id; do
+          for patch in 0011-a840v2-device-id; do
             git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/${patch}.patch"
             git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/${patch}.patch"
           done
