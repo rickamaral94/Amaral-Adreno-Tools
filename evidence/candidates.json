@@ -148,7 +148,7 @@
       "status": "active",
       "default": true,
       "patch": "patches/0007-community-turnip-stability-fixes.patch",
-      "reason": "Cinco correções isoladas de lifetime e tratamento de erro: cleanup de pipeline/OOM, proteção do binding com memória nula, liberação de objetos KGSL, liberação de contadores derivados e destruição correta de variantes de shader. Não altera tuning, registradores, GMEM/SYSMEM nem identificação de GPU.",
+      "reason": "Quatro correções externas de lifetime e tratamento de erro preservadas: cleanup de pipeline/OOM, binding com memória nula, contadores derivados e variantes de shader. A correção KGSL de profiling foi substituída pela MR upstream 44838. Sem tuning global.",
       "source": "whitebelyash/mesa-unified PR #12; commits individuais revisados contra o Mesa fixado",
       "license_review": "compatible-mit",
       "patch_apply_verified_on_mesa": "a51a418991f883413f10f66cd52398d590a8257b",
@@ -225,3 +225,4 @@
     }
   ]
 }
+
