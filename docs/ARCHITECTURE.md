@@ -80,7 +80,9 @@ A7xx e A8xx; o pipeline de build não substitui esse teste em hardware.
 
 ## Workflows ativos
 
-- `ci.yml`: valida metadados, testes, scripts e aplicação dos patches.
+- `ci.yml`: valida metadados, testes, scripts, aplicação dos patches e geração
+  da device database Standard/OneUI; o job `upstream-canary` repete a geração
+  sobre o `mesa/main` atual como aviso antecipado, sem bloquear merge.
 - `build-candidate.yml`: build manual e reproduzível de uma revisão informada.
 - `publish-upstream.yml`: atualiza Mesa sobre o patch set aprovado e publica
   Standard/OneUI como `Latest`.

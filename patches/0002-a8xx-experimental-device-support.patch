@@ -11,13 +11,19 @@ index 977a92399ed..0000000 100644
      ], A6xxGPUInfo(
          CHIP.A8XX,
          [a7xx_base, a7xx_gen3, a8xx_base, a8xx_gen1, GPUProps(
-@@ -1583,6 +1586,40 @@ add_gpus([
+@@ -1583,6 +1586,46 @@ add_gpus([
          raw_magic_regs = a8xx_base_raw_magic_regs,
      ))
  
 +# Experimental hardware profile for the Adreno 825 (gen8_6_0).
 +# Community hardware testing covered both GMEM and SYSMEM.  Keep every
 +# non-upstream property local to this exact KGSL chip ID.
++#
++# Mesa main dropped the magic_regs argument (17ca6174dcc, "freedreno: Drop
++# magic_regs"), while older pinned snapshots still require it.  Pass it only
++# when the generator in this tree expects it.
++amaral_a825_legacy_args = ({"magic_regs": dict()}
++    if "magic_regs" in A6xxGPUInfo.__init__.__code__.co_varnames else {})
 +add_gpus([
 +        GPUId(chip_id=0x44030000, name="Adreno (TM) 825"),
 +    ], A6xxGPUInfo(
@@ -45,8 +51,8 @@ index 977a92399ed..0000000 100644
 +        cs_shared_mem_size = 64 * 1024,
 +        wave_granularity = 2,
 +        fibers_per_sp = 128 * 2 * 16,
-+        magic_regs = dict(),
 +        raw_magic_regs = a8xx_base_raw_magic_regs,
++        **amaral_a825_legacy_args,
 +    ))
 +
  add_gpus([

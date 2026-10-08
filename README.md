@@ -121,7 +121,8 @@ reconhece o ID KGSL `0x44050A21` no perfil A840 e remove o anúncio AMD de
 5. Promover ao padrão somente com ganho comprovado e baixo risco.
 
 Consulte a [política de evidências](docs/EVIDENCE-POLICY.md), a
-[auditoria comunitária de 01/09](docs/audits/2026-09-01-community-source-audit.md)
+[auditoria comunitária de 01/09](docs/audits/2026-09-01-community-source-audit.md),
+o [roteiro upstream/famílias de 08/10](docs/audits/2026-10-08-upstream-and-family-roadmap.md)
 e o [processo upstream](docs/UPSTREAM-UPDATES.md). A
 [arquitetura](docs/ARCHITECTURE.md) documenta a divisão entre configuração,
 patches, evidências, testes e os workflows ativos.

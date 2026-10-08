@@ -75,7 +75,8 @@
         "https://github.com/whitebelyash/mesa-unified/commit/7e0c63c3f517038cc47b573d458960ab7672183a",
         "https://github.com/whitebelyash/mesa-unified/commit/dfbe2a7671d36d59b2322da9ce419b09836bef31",
         "https://github.com/DiskDVD/TurniptoolsA8XX/releases/tag/tu_A8XX-Y2.5"
-      ]
+      ],
+      "generator_compat_review": "Compatibilidade de gerador revisada em 2026-10-08: o Mesa main removeu magic_regs (17ca6174dcc). Verificado com scripts/check_device_table.sh que a device database gerada no Mesa fixado c126acd8 é idêntica, registro a registro, à da revisão anterior do patch, e que o patch gera a tabela no Mesa main 5a273016."
     },
     {
       "id": "oneui-tp-ubwc-flag-hint",
@@ -86,7 +87,8 @@
       "reason": "Gera uma variante separada que ativa TP_UBWC_FLAG_HINT somente nas duas entradas KGSL da FD740, sem afetar o ID legado ou a Adreno X1-85.",
       "source": "Mesa 3D e builds comunitários OneUI",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842"
+      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842",
+      "generator_compat_review": "Compatibilidade de gerador revisada em 2026-10-08: o Mesa main removeu magic_regs (17ca6174dcc). Verificado com scripts/check_device_table.sh que a device database gerada no Mesa fixado c126acd8 é idêntica, registro a registro, à da revisão anterior do patch, e que o patch gera a tabela no Mesa main 5a273016."
     },
     {
       "id": "depth-extensions",

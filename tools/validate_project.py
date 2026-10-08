@@ -102,6 +102,9 @@ def main():
     assert "tu_pipeline.cc" not in a8xx_patch
     assert "is_target_gpu" not in a8xx_patch
     assert "cs_shared_mem_size = 64 * 1024" in a8xx_patch
+    # Compatível com Mesa antes e depois de 17ca6174dcc (magic_regs removido).
+    assert "+        magic_regs = dict()," not in a8xx_patch
+    assert "**amaral_a825_legacy_args" in a8xx_patch
     device_profile_patch = a8xx_patch.split(
         "diff --git a/src/freedreno/drm-shim/freedreno_noop.c", 1
     )[0]
@@ -114,10 +117,16 @@ def main():
     oneui_patch = read_text("patches/0003-oneui-ubwc.patch")
     assert oneui_patch.count("enable_tp_ubwc_flag_hint = True") == 1
     assert "0x44030000" not in oneui_patch
-    assert oneui_patch.count('GPUId(chip_id=0x43050a01, name="FD740")') == 2
-    assert oneui_patch.count('GPUId(chip_id=0xffff43050a01, name="FD740")') == 2
+    # A variante deriva do perfil upstream resolvido da FD740 em vez de
+    # duplicar o bloco: sem cópia de magic_regs nem de GPUId(740)/X1-85.
+    assert "kgsl_ids = (0x43050a01, 0xffff43050a01)" in oneui_patch
+    assert "copy.deepcopy(upstream)" in oneui_patch
+    oneui_added = [line for line in oneui_patch.splitlines()
+                   if line.startswith("+") and not line.startswith("+++")]
+    assert not any("add_gpus(" in line for line in oneui_added)
+    assert not any("magic_regs" in line for line in oneui_added)
     assert "GPUId(740)" in oneui_patch
-    assert "0xffff43050c01" in oneui_patch
+    assert "X1-85" in oneui_patch
     assert "restrito às entradas KGSL da FD740" in oneui_patch
 
     # v4.4: o gate por chip_id saiu. Ele marcava onde estava a evidencia, nao

@@ -34,6 +34,10 @@ jobs:
           python3 -m unittest discover -s tests -v
       - name: Check shell syntax
         run: bash -n scripts/*.sh
+      - name: Install device-table generator dependencies
+        run: |
+          python3 -m venv work/venv
+          work/venv/bin/pip install --requirement requirements-build.txt
       - name: Verify driver patches against pinned Mesa
         run: |
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0001-android-ndk-r29-compat.patch"
@@ -56,6 +60,37 @@ jobs:
             git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/${patch}.patch"
           done
           python3 tools/check_mesa_policy.py work/mesa --patched
+          PYTHON=work/venv/bin/python scripts/check_device_table.sh work/mesa
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0003-oneui-ubwc.patch"
           git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0003-oneui-ubwc.patch"
+          PYTHON=work/venv/bin/python scripts/check_device_table.sh work/mesa
           git -C work/mesa diff --check
+
+  # Aviso antecipado: o publish-upstream diário recompila sobre o mesa/main.
+  # Este job aplica o mesmo patch set no HEAD atual e gera a device database,
+  # para que uma quebra upstream apareça no PR antes de parar a automação.
+  # Não bloqueia o merge: o estado do mesa/main não é responsabilidade do PR.
+  upstream-canary:
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Fetch Mesa main
+        run: |
+          git init work/mesa
+          git -C work/mesa remote add origin https://gitlab.freedesktop.org/mesa/mesa.git
+          git -C work/mesa fetch --depth=1 origin main
+          git -C work/mesa checkout --detach FETCH_HEAD
+          echo "Mesa main: $(git -C work/mesa rev-parse HEAD)"
+      - name: Install device-table generator dependencies
+        run: |
+          python3 -m venv work/venv
+          work/venv/bin/pip install --requirement requirements-build.txt
+      - name: Apply patch set and generate device tables
+        run: |
+          for patch in $(ls patches/*.patch | grep -v '/0003-oneui-ubwc.patch$'); do
+            git -C work/mesa apply "${GITHUB_WORKSPACE}/${patch}"
+          done
+          PYTHON=work/venv/bin/python scripts/check_device_table.sh work/mesa
+          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0003-oneui-ubwc.patch"
+          PYTHON=work/venv/bin/python scripts/check_device_table.sh work/mesa
