@@ -14,12 +14,14 @@ driver_variant="${DRIVER_VARIANT:-standard}"
 build_once() {
   local label="$1"
   local run_root="${repro_root}/${driver_variant}/${label}"
+  mkdir -p "${run_root}"
+  echo "Building ${driver_variant}/${label}; log: ${run_root}/build.log"
   WORK_ROOT="${run_root}/work" \
   MESA_SRC="${run_root}/mesa" \
   OUTPUT_ROOT="${run_root}/dist" \
   DRIVER_VARIANT="${driver_variant}" \
   NDK_ROOT="${NDK_ROOT:?NDK_ROOT precisa apontar para o Android NDK r29}" \
-    "${repo_root}/scripts/build_universal.sh" >/dev/null
+    "${repo_root}/scripts/build_universal.sh" 2>&1 | tee "${run_root}/build.log"
 }
 
 find_artifact() {

@@ -34,6 +34,11 @@ jobs:
           python3 -m unittest discover -s tests -v
       - name: Check shell syntax
         run: bash -n scripts/*.sh
+      - name: Install pinned GPU generator dependencies
+        run: |
+          python3 -m venv work/venv
+          work/venv/bin/pip install --requirement requirements-build.txt
+          echo "${GITHUB_WORKSPACE}/work/venv/bin" >> "${GITHUB_PATH}"
       - name: Verify driver patches against pinned Mesa
         run: |
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0001-android-ndk-r29-compat.patch"
@@ -51,11 +56,20 @@ jobs:
           python3 tools/check_mesa_policy.py work/mesa
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0008-remove-mgs4-vendor-spoof.patch"
           git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0008-remove-mgs4-vendor-spoof.patch"
-          for patch in 0009-kgsl-syncobj-merge-ts-fd 0010-kgsl-zero-timeout-poll 0011-a840v2-device-id; do
+          for patch in 0011-a840v2-device-id; do
             git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/${patch}.patch"
             git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/${patch}.patch"
           done
           python3 tools/check_mesa_policy.py work/mesa --patched
+          mkdir -p work/generated-registers
+          python3 work/mesa/src/freedreno/registers/gen_header.py \
+            --rnn work/mesa/src/freedreno/registers \
+            --xml work/mesa/src/freedreno/registers/adreno/a6xx.xml py-defines \
+            > work/generated-registers/a6xx.py
+          python3 work/mesa/src/freedreno/common/freedreno_devices.py \
+            -p work/generated-registers > work/generated-registers/standard.h
           git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0003-oneui-ubwc.patch"
           git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0003-oneui-ubwc.patch"
+          python3 work/mesa/src/freedreno/common/freedreno_devices.py \
+            -p work/generated-registers > work/generated-registers/oneui.h
           git -C work/mesa diff --check

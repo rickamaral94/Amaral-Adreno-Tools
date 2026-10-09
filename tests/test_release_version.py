@@ -21,6 +21,34 @@ BASE_STATE = {
 
 
 class VersionTests(unittest.TestCase):
+    def test_candidate_resume_accepts_new_mesa_without_changing_stable_commit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "config").mkdir()
+            note = root / "docs/releases/mesa-26.3.0-devel-v4.5.1.1.md"
+            note.parent.mkdir(parents=True)
+            note.write_text("prepared candidate\n")
+            state = copy.deepcopy(BASE_STATE)
+            state.update({"current_version": "4.5.1.1", "stable_version": "4.5.0.1",
+                          "last_released_mesa_commit": "a" * 40,
+                          "stable_patchset_sha256": "c" * 64,
+                          "candidate": {"version": "4.5.1.1", "patchset_sha256": "b" * 64}})
+            lock = {"amaral_revision": "4.5.1.1",
+                    "mesa": {"version": "26.3.0-devel", "commit": "d" * 40}}
+            state_path = root / "config/version-state.json"
+            lock_path = root / "config/mesa-lock.json"
+            state_path.write_text(json.dumps(state))
+            lock_path.write_text(json.dumps(lock))
+            output = root / "output"
+            with (patch.object(release_version, "ROOT", root),
+                  patch.object(release_version, "LOCK_PATH", lock_path),
+                  patch.object(release_version, "STATE_PATH", state_path),
+                  patch.object(release_version, "patchset_fingerprint", return_value="b" * 64)):
+                release_version.resume_release(SimpleNamespace(channel="candidate", github_output=output))
+            self.assertIn("resume_available=true", output.read_text())
+            self.assertIn("mesa_commit=" + "d" * 40, output.read_text())
+            self.assertEqual(json.loads(state_path.read_text()), state)
+
     def test_promotion_records_candidate_mesa_as_released(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)

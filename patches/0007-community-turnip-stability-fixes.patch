@@ -13,7 +13,7 @@ This patch contains only correctness and resource-lifetime fixes:
 
 * propagate command-stream allocation failure and release the pipeline object;
 * avoid dereferencing a NULL BO for VK_NULL_HANDLE buffer bindings;
-* release KGSL profiling command objects after queue submission;
+* KGSL profiling lifetime is handled by upstream MR 44838;
 * release derived performance counters when destroying their query pool;
 * destroy shader variants when shader upload fails.
 
@@ -80,19 +80,6 @@ index e7f6a549d56..cf2d0b512d8 100644
     }
     return VK_SUCCESS;
  }
-diff --git a/src/freedreno/vulkan/tu_knl_kgsl.cc b/src/freedreno/vulkan/tu_knl_kgsl.cc
-index 8b51fa27f68..5458a3104de 100644
---- a/src/freedreno/vulkan/tu_knl_kgsl.cc
-+++ b/src/freedreno/vulkan/tu_knl_kgsl.cc
-@@ -1686,6 +1686,8 @@ fail_submit:
-       mtx_unlock(&queue->device->kgsl_profiling_mutex);
-    }
- 
-+   vk_free(&queue->device->vk.alloc, objs);
-+
-    return result;
- }
- 
 diff --git a/src/freedreno/vulkan/tu_query_pool.cc b/src/freedreno/vulkan/tu_query_pool.cc
 index 6b18c12e26e..a42eca64aa7 100644
 --- a/src/freedreno/vulkan/tu_query_pool.cc

@@ -10,7 +10,7 @@
       "reason": "Compatibiliza os tipos de native_handle do Mesa com o NDK r29; não altera a política de execução do Turnip.",
       "source": "Repositórios Amaral 6xx/7xx/8xx",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842"
+      "patch_apply_verified_on_mesa": "a51a418991f883413f10f66cd52398d590a8257b"
     },
     {
       "id": "force-gmem-or-sysmem-global",
@@ -51,7 +51,7 @@
       "reason": "Adiciona o alias KGSL 0x44010000 ao perfil A810 já upstream e reconhece a A812 pelos IDs 0xffff44010200 e 0x44010200. A A812 reutiliza deliberadamente o perfil conservador A810 do Mesa fixado; não importa gmem_size para GPUProps, caches comunitários, UBWC global nem aumento de shared memory.",
       "source": "Mesa A810 upstream + whitebelyash/mesa-unified turnip/gen8 V32",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842",
+      "patch_apply_verified_on_mesa": "a51a418991f883413f10f66cd52398d590a8257b",
       "evidence": [
         "https://github.com/whitebelyash/mesa-unified/commit/9c7e022677dfa3abb356c2b6732cbd2e25783d01",
         "https://github.com/whitebelyash/AdrenoToolsDrivers/releases/tag/tu_v32"
@@ -67,7 +67,7 @@
       "reason": "Adiciona o ID KGSL e o perfil A825 refinado após evidência comunitária em hardware real nos modos GMEM e SYSMEM: color/depth cache GMEM em HALF/128 KiB, tile 64x32, shared memory de 64 KiB e offsets VPC preservados, sem forçar o modo de memória.",
       "source": "Mesa A830 gen1 + whitebelyash/mesa-unified + DiskDVD/A8XX-Y; propriedades revisadas e isoladas para A825",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842",
+      "patch_apply_verified_on_mesa": "a51a418991f883413f10f66cd52398d590a8257b",
       "evidence": [
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/37",
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/38",
@@ -86,7 +86,7 @@
       "reason": "Gera uma variante separada que ativa TP_UBWC_FLAG_HINT somente nas duas entradas KGSL da FD740, sem afetar o ID legado ou a Adreno X1-85.",
       "source": "Mesa 3D e builds comunitários OneUI",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842"
+      "patch_apply_verified_on_mesa": "a51a418991f883413f10f66cd52398d590a8257b"
     },
     {
       "id": "depth-extensions",
@@ -97,7 +97,7 @@
       "reason": "Expõe VK_EXT_depth_bias_control (subconjunto honesto: depthBiasControl e depthBiasExact; as duas features de representação ficam false, porque o Adreno não tem chave para forçar UNORM em D32_SFLOAT) e VK_EXT_depth_range_unrestricted. Alcance por dependência real, não por chip_id: bias_control em todas as famílias, porque o runtime do Vulkan faz o trabalho e tu6_emit_depth_bias() não ramifica por chip; range_unrestricted em a7xx+ (device->info->chip >= 7), porque no a6xx o hardware clampa sozinho e a extensão não teria como ser honrada. Até a v4.3 as duas ficavam em dois chip_id da FD740 — gate que marcava onde estava a evidência, não uma dependência técnica.",
       "source": "Amaral Adreno Tools IA, patches 0010 e 0011; gates re-derivados na v4.4",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842",
+      "patch_apply_verified_on_mesa": "a51a418991f883413f10f66cd52398d590a8257b",
       "evidence": [
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/69"
       ],
@@ -112,7 +112,7 @@
       "reason": "Porta a hipótese Aurora pelo mecanismo real, não pelo nome A740: GCM somente onde reg_size_vec4 >= 96 e suballocadores de 512 KiB em todas as famílias. Continua candidato porque Driver Lab #64/#68 não demonstrou ganho global conclusivo.",
       "source": "Balemuni/Balemunis-Aurora; mecanismo re-derivado no Mesa/IR3",
       "license_review": "clean-room-mechanism-review",
-      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842",
+      "patch_apply_verified_on_mesa": "a51a418991f883413f10f66cd52398d590a8257b",
       "evidence": [
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/64",
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/68"
@@ -127,7 +127,7 @@
       "reason": "Reconstrói do ELF oficial Apex V2 as opções BOTW/TOTK, mas as prende ao nome do título. O alcance é portável entre A6xx/A7xx/A8xx porque os caminhos não testam chip; o frontend precisa expor botw/totk em pApplicationName. Sem isso, a regra não ativa.",
       "source": "Balemuni Apex V2 official binaries; static driconf audited on 2026-09-01",
       "license_review": "configuration-values-reimplemented",
-      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842",
+      "patch_apply_verified_on_mesa": "a51a418991f883413f10f66cd52398d590a8257b",
       "evidence": [
         "https://github.com/Balemuni/Balemunis-Aurora/releases",
         "https://github.com/Balemuni/Balemunis-Aurora/issues/4",
@@ -148,10 +148,10 @@
       "status": "active",
       "default": true,
       "patch": "patches/0007-community-turnip-stability-fixes.patch",
-      "reason": "Cinco correções isoladas de lifetime e tratamento de erro: cleanup de pipeline/OOM, proteção do binding com memória nula, liberação de objetos KGSL, liberação de contadores derivados e destruição correta de variantes de shader. Não altera tuning, registradores, GMEM/SYSMEM nem identificação de GPU.",
+      "reason": "Quatro correções externas de lifetime e tratamento de erro preservadas: cleanup de pipeline/OOM, binding com memória nula, contadores derivados e variantes de shader. A correção KGSL de profiling foi substituída pela MR upstream 44838. Sem tuning global.",
       "source": "whitebelyash/mesa-unified PR #12; commits individuais revisados contra o Mesa fixado",
       "license_review": "compatible-mit",
-      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842",
+      "patch_apply_verified_on_mesa": "a51a418991f883413f10f66cd52398d590a8257b",
       "evidence": [
         "https://github.com/whitebelyash/mesa-unified/pull/12"
       ],
@@ -184,24 +184,22 @@
     {
       "id": "kgsl-syncobj-merge-ts-fd",
       "kind": "runtime-stability",
-      "status": "testing",
+      "status": "upstream",
       "default": true,
-      "patch": "patches/0009-kgsl-syncobj-merge-ts-fd.patch",
-      "reason": "Converte o timestamp correto antes de mesclar com sync-file; requer regressão em aparelhos KGSL A6xx/A7xx/A8xx.",
-      "source": "Banners Turnip common patch, distribuição desde 2026-09-28",
+      "reason": "Substituído pela implementação upstream completa da MR 44838; não aplicar patch externo.",
+      "source": "Mesa MR 44838",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842"
+      "patch_apply_verified_on_mesa": "a51a418991f883413f10f66cd52398d590a8257b"
     },
     {
       "id": "kgsl-zero-timeout-poll",
       "kind": "runtime-stability",
-      "status": "testing",
+      "status": "upstream",
       "default": true,
-      "patch": "patches/0010-kgsl-zero-timeout-poll.patch",
-      "reason": "Consulta timestamp aposentado para polling sem espera infinita; requer regressão VKD3D e emuladores.",
-      "source": "Banners Turnip common patch, distribuição desde 2026-09-29",
+      "reason": "Substituído pela implementação upstream completa da MR 44838; não aplicar patch externo.",
+      "source": "Mesa MR 44838",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842"
+      "patch_apply_verified_on_mesa": "a51a418991f883413f10f66cd52398d590a8257b"
     },
     {
       "id": "a840v2-kgsl-id",
@@ -212,7 +210,7 @@
       "reason": "Registra 0x44050A21 no perfil existente A840; identidade e renderização pendentes de confirmação em aparelho real.",
       "source": "Banners Turnip A840v2 fixup",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842"
+      "patch_apply_verified_on_mesa": "a51a418991f883413f10f66cd52398d590a8257b"
     },
     {
       "id": "remove-mgs4-vendor-spoof",
@@ -223,7 +221,8 @@
       "reason": "Remove regra upstream de identificação AMD em mgs4.exe.",
       "source": "Mesa 3D upstream com exclusão Amaral",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "c126acd85a645728bcecaa164d7d7c928438e842"
+      "patch_apply_verified_on_mesa": "a51a418991f883413f10f66cd52398d590a8257b"
     }
   ]
 }
+

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
+trap 'status=$?; printf "Build failed at line %s (exit %s): %s\n" "${LINENO}" "${status}" "${BASH_COMMAND}" >&2; exit "${status}"' ERR
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/.." && pwd)"
@@ -73,8 +74,6 @@ apply_patch_once "${repo_root}/patches/0006-emulator-compat-driconf.patch"
 apply_patch_once "${repo_root}/patches/0007-community-turnip-stability-fixes.patch"
 python3 "${repo_root}/tools/check_mesa_policy.py" "${mesa_src}"
 apply_patch_once "${repo_root}/patches/0008-remove-mgs4-vendor-spoof.patch"
-apply_patch_once "${repo_root}/patches/0009-kgsl-syncobj-merge-ts-fd.patch"
-apply_patch_once "${repo_root}/patches/0010-kgsl-zero-timeout-poll.patch"
 apply_patch_once "${repo_root}/patches/0011-a840v2-device-id.patch"
 python3 "${repo_root}/tools/check_mesa_policy.py" "${mesa_src}" --patched
 if [[ "${driver_variant}" == "oneui" ]]; then
@@ -94,7 +93,6 @@ expected_source_files=(
   "src/freedreno/vulkan/00-turnip-defaults.conf"
   "src/freedreno/vulkan/tu_buffer.cc"
   "src/freedreno/vulkan/tu_device.cc"
-  "src/freedreno/vulkan/tu_knl_kgsl.cc"
   "src/freedreno/vulkan/tu_pipeline.cc"
   "src/freedreno/vulkan/tu_query_pool.cc"
   "src/freedreno/vulkan/tu_shader.cc"

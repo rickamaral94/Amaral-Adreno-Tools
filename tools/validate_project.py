@@ -72,7 +72,7 @@ def main():
         ids.add(item["id"])
         assert item["status"] in {
             "proposed", "testing", "approved", "active",
-            "reference-only", "rejected"
+            "reference-only", "rejected", "upstream"
         }
         if item["kind"].startswith("runtime") and item["status"] == "active":
             gate = item.get("gate", {})
@@ -80,6 +80,8 @@ def main():
             assert gate.get("minimum_runs", 0) >= 5
             assert gate.get("confidence") in {"medium", "high"}
             assert gate.get("families") == ["A6xx", "A7xx", "A8xx"]
+        if item["status"] == "upstream":
+            assert not item.get("patch"), "upstream fixes must not keep external patches"
         if item.get("patch"):
             assert (ROOT / item["patch"]).is_file(), item["patch"]
             assert (
@@ -170,7 +172,7 @@ def main():
     assert "tu_pipeline_finish(*pipeline" in stability_patch
     assert "vk_object_free(&builder->device->vk" in stability_patch
     assert "buffer->bo = NULL" in stability_patch
-    assert "vk_free(&queue->device->vk.alloc, objs)" in stability_patch
+    assert "tu_knl_kgsl.cc" not in stability_patch
     assert "is_perf_query_derived(pool)" in stability_patch
     assert stability_patch.count("tu_shader_destroy(dev, shader)") == 2
     assert "tu6_emit_msaa" not in stability_patch
@@ -184,12 +186,8 @@ def main():
     build_script = read_text("scripts/build_universal.sh")
     assert 'check_mesa_policy.py" "${mesa_src}" --patched' in build_script
     assert '0008-remove-mgs4-vendor-spoof.patch' in build_script
-    for patch in ('0009-kgsl-syncobj-merge-ts-fd.patch',
-                  '0010-kgsl-zero-timeout-poll.patch',
-                  '0011-a840v2-device-id.patch'):
+    for patch in ('0011-a840v2-device-id.patch',):
         assert patch in build_script
-    assert 'kgsl_syncobj_ts_to_fd(&ret)' in read_text('patches/0009-kgsl-syncobj-merge-ts-fd.patch')
-    assert 'kgsl_timestamp_retired' in read_text('patches/0010-kgsl-zero-timeout-poll.patch')
     a840 = read_text('patches/0011-a840v2-device-id.patch')
     assert '0xffff44050A21' in a840 and '0x44050A21' in a840
 
