@@ -1,0 +1,168 @@
+{
+  "schema": 1,
+  "checked_at_utc": "2026-10-09T10:50:00Z",
+  "profile": {
+    "name": "VP_KHR_roadmap_2026",
+    "version": 2,
+    "api_version": "1.4.328",
+    "source": "https://github.com/KhronosGroup/Vulkan-Profiles/blob/main/profiles/Khronos/VP_KHR_roadmap.json"
+  },
+  "mesa": {
+    "commit": "a51a418991f883413f10f66cd52398d590a8257b",
+    "version": "26.3.0-devel",
+    "turnip_device_file": "src/freedreno/vulkan/tu_device.cc",
+    "freedreno_device_file": "src/freedreno/common/freedreno_devices.py"
+  },
+  "build_context": {
+    "platform": "android",
+    "kmd": "kgsl",
+    "abi": "arm64-v8a",
+    "note": "O build Amaral usa -Dplatforms=android. O meson do Turnip só define TU_USE_WSI_PLATFORM para X11/Wayland/KMS, portanto extensões protegidas por esse define existem no código-fonte mas não são tratadas como expostas pelo artefato Android."
+  },
+  "policy": {
+    "no_spoofing": true,
+    "no_extension_flag_without_implementation": true,
+    "cts_required_before_new_extension": true,
+    "note": "Presença em Vulkan-Headers, SPIR-V, NIR ou WSI genérico não prova suporte do Turnip/IR3 nem conformidade no hardware."
+  },
+  "strategic_extensions": [
+    {
+      "name": "VK_KHR_fragment_shading_rate",
+      "roadmap_2026": true,
+      "status": "upstream-hardware-gated",
+      "source_marker": ".KHR_fragment_shading_rate",
+      "source_marker_expected": true,
+      "android_driver_status": "implemented",
+      "gates": [
+        "has_attachment_shading_rate",
+        "has_primitive_shading_rate"
+      ],
+      "gpu_notes": {
+        "A740": "a7xx_base expõe attachment shading rate e a7xx_gen2 expõe primitive shading rate",
+        "A750": "a7xx_gen3 expõe primitive shading rate; validar capabilities em hardware",
+        "A830": "validar propriedades Gen8 e CTS antes de afirmar equivalência"
+      },
+      "action": "validate-cts-and-device-query",
+      "priority": "high"
+    },
+    {
+      "name": "VK_KHR_present_id2",
+      "roadmap_2026": true,
+      "status": "source-wsi-only",
+      "source_marker": ".KHR_present_id2",
+      "source_marker_expected": true,
+      "compile_guard": "TU_USE_WSI_PLATFORM",
+      "android_driver_status": "not-exposed-by-current-turnip-android-path",
+      "action": "research-android-wsi",
+      "priority": "high"
+    },
+    {
+      "name": "VK_KHR_present_wait2",
+      "roadmap_2026": true,
+      "status": "source-wsi-only",
+      "source_marker": ".KHR_present_wait2",
+      "source_marker_expected": true,
+      "compile_guard": "TU_USE_WSI_PLATFORM",
+      "android_driver_status": "not-exposed-by-current-turnip-android-path",
+      "action": "research-android-wsi",
+      "priority": "high"
+    },
+    {
+      "name": "VK_KHR_present_mode_fifo_latest_ready",
+      "roadmap_2026": true,
+      "status": "generic-wsi-partial-turnip-not-exposed",
+      "source_marker": ".KHR_present_mode_fifo_latest_ready",
+      "source_marker_expected": false,
+      "android_driver_status": "missing",
+      "note": "Mesa WSI genérico reconhece VK_PRESENT_MODE_FIFO_LATEST_READY_KHR, mas o Turnip não anuncia a extensão e o caminho Android precisa de validação específica de surface/presentation.",
+      "action": "research-do-not-enable",
+      "priority": "high"
+    },
+    {
+      "name": "VK_KHR_pipeline_binary",
+      "roadmap_2026": true,
+      "status": "missing-turnip",
+      "source_marker": ".KHR_pipeline_binary",
+      "source_marker_expected": false,
+      "android_driver_status": "missing",
+      "existing_prerequisites": [
+        "VK_EXT_shader_module_identifier",
+        "VK_EXT_graphics_pipeline_library",
+        "pipeline cache UUID"
+      ],
+      "note": "ANV/RADV/NVK possuem implementação no mesmo Mesa; não há implementação Turnip equivalente no SHA auditado.",
+      "action": "design-turnip-implementation",
+      "priority": "high"
+    },
+    {
+      "name": "VK_KHR_shader_untyped_pointers",
+      "roadmap_2026": true,
+      "status": "missing-turnip",
+      "source_marker": ".KHR_shader_untyped_pointers",
+      "source_marker_expected": false,
+      "android_driver_status": "missing",
+      "action": "audit-nir-ir3-and-cts",
+      "priority": "medium"
+    },
+    {
+      "name": "VK_KHR_cooperative_matrix",
+      "roadmap_2026": true,
+      "status": "missing-turnip",
+      "source_marker": ".KHR_cooperative_matrix",
+      "source_marker_expected": false,
+      "android_driver_status": "missing",
+      "note": "Mesa contém lowerings específicos em outros backends, mas não há implementação Freedreno/IR3 equivalente no SHA auditado.",
+      "action": "hardware-and-ir3-research",
+      "priority": "medium"
+    },
+    {
+      "name": "VK_KHR_copy_memory_indirect",
+      "roadmap_2026": true,
+      "status": "missing-turnip",
+      "source_marker": ".KHR_copy_memory_indirect",
+      "source_marker_expected": false,
+      "android_driver_status": "missing",
+      "action": "research",
+      "priority": "medium"
+    },
+    {
+      "name": "VK_KHR_shader_maximal_reconvergence",
+      "roadmap_2026": true,
+      "status": "missing-turnip",
+      "source_marker": ".KHR_shader_maximal_reconvergence",
+      "source_marker_expected": false,
+      "android_driver_status": "missing",
+      "action": "audit-nir-ir3-control-flow",
+      "priority": "medium"
+    }
+  ],
+  "qcom_watchlist": [
+    {
+      "name": "VK_QCOM_image_processing3",
+      "status": "spec-toolchain-ready-turnip-missing",
+      "source_marker": ".QCOM_image_processing3",
+      "source_marker_expected": false,
+      "note": "Turnip já possui VK_QCOM_image_processing em GPUs com has_image_processing. A versão 3 adiciona novos gathers/SPIR-V e formatos; a proposta fala em instruções dedicadas nas GPUs Adreno mais recentes, sem provar suporte A740.",
+      "action": "prototype-after-ir3-hardware-proof",
+      "priority": "high"
+    },
+    {
+      "name": "VK_QCOM_shader_multiple_wait_queues",
+      "status": "spec-toolchain-ready-turnip-missing",
+      "source_marker": ".QCOM_shader_multiple_wait_queues",
+      "source_marker_expected": false,
+      "note": "É um hint de compilador dependente do número real de wait queues do hardware; requer modelagem IR3 e propriedade maxShaderWaitQueues.",
+      "action": "a8xx-first-hardware-research",
+      "priority": "medium"
+    },
+    {
+      "name": "VK_QCOM_tile_shading",
+      "status": "spec-turnip-missing",
+      "source_marker": ".QCOM_tile_shading",
+      "source_marker_expected": false,
+      "note": "Alinha-se ao TBDR/GMEM do Adreno, mas exige API/render-pass/SPIR-V/tile-memory completos; não é um flag de extensão.",
+      "action": "long-term-turnip-gmem-research",
+      "priority": "medium"
+    }
+  ]
+}
