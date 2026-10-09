@@ -142,9 +142,16 @@
       "status": "spec-toolchain-ready-turnip-missing",
       "source_marker": ".QCOM_image_processing3",
       "source_marker_expected": false,
-      "note": "Turnip já possui VK_QCOM_image_processing em GPUs com has_image_processing. A versão 3 adiciona novos gathers/SPIR-V e formatos; a proposta fala em instruções dedicadas nas GPUs Adreno mais recentes, sem provar suporte A740.",
-      "action": "prototype-after-ir3-hardware-proof",
-      "priority": "high"
+      "note": "Turnip já possui VK_QCOM_image_processing quando has_image_processing. O IR3 ISA já define SAMGP0..SAMGP3, mas o SPIR-V→NIR do Mesa fixado ainda não reconhece OpImageGatherQCOM/ImageGatherLinearQCOM/ImageGatherExtendedModesQCOM. O mapeamento dos quatro modos GatherH2/V2/D/4x1 para os opcodes SAMGP precisa ser provado antes de expor a extensão.",
+      "action": "prove-samgp-mode-mapping-then-add-vtn-nir-ir3-cts",
+      "priority": "high",
+      "blockers": [
+        "SPIR-V capability/opcode no VTN do Mesa fixado",
+        "NIR texop/source representation",
+        "mapeamento SAMGP0..3 não comprovado",
+        "gates de geração de GPU",
+        "CTS/VVL"
+      ]
     },
     {
       "name": "VK_QCOM_shader_multiple_wait_queues",
