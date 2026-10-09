@@ -5,6 +5,46 @@
       "name": "Mesa 3D",
       "url": "https://gitlab.freedesktop.org/mesa/mesa",
       "use": "Código upstream, device database e histórico de commits"
+    },
+    {
+      "name": "KhronosGroup/Vulkan-Docs",
+      "url": "https://github.com/KhronosGroup/Vulkan-Docs",
+      "use": "Especificação Vulkan, propostas e evolução normativa de extensões KHR/EXT/QCOM"
+    },
+    {
+      "name": "KhronosGroup/Vulkan-Profiles",
+      "url": "https://github.com/KhronosGroup/Vulkan-Profiles",
+      "use": "Roadmaps oficiais, com prioridade para VP_KHR_roadmap_2026 e requisitos de capabilities"
+    },
+    {
+      "name": "KhronosGroup/Vulkan-Headers",
+      "url": "https://github.com/KhronosGroup/Vulkan-Headers",
+      "use": "Registry, headers e chegada oficial de novas extensões, enums, structs e versões Vulkan"
+    },
+    {
+      "name": "KhronosGroup/VK-GL-CTS",
+      "url": "https://github.com/KhronosGroup/VK-GL-CTS",
+      "use": "Conformance Test Suite; referência obrigatória antes de expor novas capabilities Vulkan"
+    },
+    {
+      "name": "KhronosGroup/Vulkan-ValidationLayers",
+      "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers",
+      "use": "Validação de uso da API, sincronização, descriptors, render passes e mudanças de VUID"
+    },
+    {
+      "name": "KhronosGroup/SPIRV-Tools",
+      "url": "https://github.com/KhronosGroup/SPIRV-Tools",
+      "use": "Validação e transformação SPIR-V; sinaliza requisitos de backend/compiler para novas features"
+    },
+    {
+      "name": "KhronosGroup/SPIRV-Headers",
+      "url": "https://github.com/KhronosGroup/SPIRV-Headers",
+      "use": "Registry e definições SPIR-V usadas para mapear extensões Vulkan até NIR/IR3"
+    },
+    {
+      "name": "KhronosGroup/glslang",
+      "url": "https://github.com/KhronosGroup/glslang",
+      "use": "Frontend GLSL/SPIR-V; acompanhar novas extensões, especialmente QCOM e shader capabilities"
     }
   ],
   "internal": [
