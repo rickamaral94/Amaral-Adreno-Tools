@@ -90,11 +90,21 @@ format flags. A proposta Khronos menciona instruções dedicadas nas GPUs Adreno
 mais recentes, mas isso não prova que A740 suporte os novos modos.
 
 glslang e SPIRV-Tools já conhecem a nova linguagem/capability, enquanto o Turnip
-ainda não implementa a extensão.
+ainda não implementa a extensão. Há, porém, uma pista concreta no backend:
+`ir3-cat5.xml` já define quatro opcodes `samgp0`…`samgp3`. Isso torna plausível
+que exista um caminho nativo para os quatro modos de gather da extensão, mas o
+mapeamento não está documentado/provado e esses opcodes são antigos — portanto
+não devem ser associados aos novos modos apenas pelo nome.
 
-**Decisão:** prioridade alta de pesquisa. Exigir prova de opcode/hardware e
-lowering IR3 antes de qualquer exposição. A8xx é o primeiro candidato natural
-quando houver evidência de hardware.
+No SHA auditado, `spirv_to_nir.c` ainda reconhece somente as capabilities/ops de
+`VK_QCOM_image_processing` original (`SampleWeighted`, `BoxFilter`, `BlockMatch`)
+e não trata `OpImageGatherQCOM`. Assim, mesmo que o hardware esteja pronto,
+faltam pelo menos VTN/SPIR-V, representação NIR e lowering IR3 verificável.
+
+**Decisão:** prioridade alta de pesquisa. Primeiro provar em shader/disassembly
+o mapeamento GatherH2/V2/D/4x1 → SAMGP0..3; depois implementar VTN/NIR/IR3 e só
+então expor a extensão atrás de gate de geração e CTS. A8xx é o primeiro alvo
+natural se a evidência confirmar que os modos são de hardware recente.
 
 ### 4. QCOM tile shading
 
