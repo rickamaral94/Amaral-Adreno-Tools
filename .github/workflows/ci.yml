@@ -61,6 +61,7 @@ jobs:
             git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/${patch}.patch"
           done
           python3 tools/check_mesa_policy.py work/mesa --patched
+          python3 tools/check_vulkan_roadmap.py work/mesa
           mkdir -p work/generated-registers
           python3 work/mesa/src/freedreno/registers/gen_header.py \
             --rnn work/mesa/src/freedreno/registers \
