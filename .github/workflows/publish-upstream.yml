@@ -2,8 +2,8 @@ name: Publish Mesa upstream as Latest
 
 on:
   schedule:
-    # 07:07 BRT (America/Sao_Paulo)
-    - cron: "7 10 * * *"
+    # 07:07 BRT (America/Sao_Paulo), nos dias 1 e 16 de cada mes
+    - cron: "7 10 1,16 * *"
   workflow_dispatch:
   push:
     branches: [main]
