@@ -49,8 +49,7 @@ caracteres.
 
 ## Automação upstream
 
-`.github/workflows/publish-upstream.yml` executa diariamente às 07:07 BRT e
-também aceita disparo manual.
+`.github/workflows/publish-upstream.yml` executa quinzenalmente, nos dias 1 e 16 de cada mês às 07:07 BRT, e também aceita disparo manual.
 
 1. busca o `mesa/main` atual;
 2. confirma que o patch set é exatamente o último aprovado em A/B;
