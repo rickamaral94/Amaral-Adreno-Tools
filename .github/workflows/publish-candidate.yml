@@ -172,6 +172,8 @@ jobs:
           python3 tools/release_version.py promote --write
           gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --prerelease=false --latest --title "Turnip Amaral 26.3.0-devel v4.7.7.1" --notes-file "${NOTES_FILE}"
           test "$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq .tag_name)" = "${RELEASE_TAG}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add config/version-state.json "${NOTES_FILE}"
           git commit -m "release: record user-authorized A840 topology correction as Latest"
           git push origin HEAD:main
