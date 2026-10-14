@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "checked_at_utc": "2026-10-09T10:50:00Z",
+  "checked_at_utc": "2026-10-14T15:10:00Z",
   "profile": {
     "name": "VP_KHR_roadmap_2026",
     "version": 2,
@@ -8,7 +8,7 @@
     "source": "https://github.com/KhronosGroup/Vulkan-Profiles/blob/main/profiles/Khronos/VP_KHR_roadmap.json"
   },
   "mesa": {
-    "commit": "a51a418991f883413f10f66cd52398d590a8257b",
+    "commit": "07ea97900e735afff9bfd59805983912f72f7dfd",
     "version": "26.3.0-devel",
     "turnip_device_file": "src/freedreno/vulkan/tu_device.cc",
     "freedreno_device_file": "src/freedreno/common/freedreno_devices.py"

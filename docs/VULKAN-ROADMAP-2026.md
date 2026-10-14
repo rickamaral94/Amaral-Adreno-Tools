@@ -1,7 +1,7 @@
 # Vulkan Roadmap 2026 — matriz Amaral Adreno Tools
 
-Data da auditoria: 2026-10-09  
-Mesa fixado: `a51a418991f883413f10f66cd52398d590a8257b`  
+Data da auditoria: 2026-10-14
+Mesa fixado: `07ea97900e735afff9bfd59805983912f72f7dfd`
 Contexto de build: Android / KGSL / AArch64
 
 Esta matriz acompanha a evolução da API Vulkan antes de ela aparecer como

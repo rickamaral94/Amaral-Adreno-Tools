@@ -1,0 +1,16 @@
+{
+  "version": "4.7.7.1",
+  "mesa_commit": "07ea97900e735afff9bfd59805983912f72f7dfd",
+  "patchset_sha256": "01078851b363a40806c1d67d64daa838ffeaf9a65324e71a93db8f7e7280860e",
+  "authorization": "User: Ajuste e lance como latest",
+  "device_validation": "not-run",
+  "cts": "not-run",
+  "required_gates": [
+    "patch-application",
+    "a840-topology",
+    "standard-reproducibility",
+    "oneui-reproducibility",
+    "artifact-validation",
+    "sha256"
+  ]
+}
