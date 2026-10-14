@@ -74,7 +74,6 @@ apply_patch_once "${repo_root}/patches/0006-emulator-compat-driconf.patch"
 apply_patch_once "${repo_root}/patches/0007-community-turnip-stability-fixes.patch"
 python3 "${repo_root}/tools/check_mesa_policy.py" "${mesa_src}"
 apply_patch_once "${repo_root}/patches/0008-remove-mgs4-vendor-spoof.patch"
-apply_patch_once "${repo_root}/patches/0011-a840v2-device-id.patch"
 python3 "${repo_root}/tools/check_mesa_policy.py" "${mesa_src}" --patched
 if [[ "${driver_variant}" == "oneui" ]]; then
   apply_patch_once "${repo_root}/patches/0003-oneui-ubwc.patch"
@@ -83,6 +82,7 @@ elif git -C "${mesa_src}" apply --reverse --check \
   echo "A árvore Mesa da variante standard contém o patch OneUI." >&2
   exit 1
 fi
+python3 "${repo_root}/tools/check_a840_topology.py" "${mesa_src}"
 git -C "${mesa_src}" diff --check
 mapfile -t changed_source_files < <(git -C "${mesa_src}" diff --name-only | LC_ALL=C sort)
 expected_source_files=(

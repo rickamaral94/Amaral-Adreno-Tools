@@ -186,10 +186,8 @@ def main():
     build_script = read_text("scripts/build_universal.sh")
     assert 'check_mesa_policy.py" "${mesa_src}" --patched' in build_script
     assert '0008-remove-mgs4-vendor-spoof.patch' in build_script
-    for patch in ('0011-a840v2-device-id.patch',):
-        assert patch in build_script
-    a840 = read_text('patches/0011-a840v2-device-id.patch')
-    assert '0xffff44050A21' in a840 and '0x44050A21' in a840
+    assert not (ROOT / "patches/0011-a840v2-device-id.patch").exists()
+    assert "0011-a840v2-device-id.patch" not in build_script
 
     meta_template = read_text("build-aux/meta.json.in")
     assert "@VK_VERSION@" in meta_template

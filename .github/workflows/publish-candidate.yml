@@ -153,3 +153,25 @@ jobs:
             --standard "${STANDARD_FILE}" --oneui "${ONEUI_FILE}" \
             --title "${RELEASE_TITLE}" --notes-file "${NOTES_FILE}" \
             --channel candidate
+
+      - name: Promote explicitly authorized A840 topology correction
+        if: steps.release.outputs.candidate_available == 'true' && steps.release.outputs.version == '4.7.7.1'
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
+          NOTES_FILE: ${{ steps.release.outputs.notes_file }}
+        run: |
+          python3 - <<'PYAUTH'
+          import json
+          from tools.release_version import patchset_fingerprint
+          authorization = json.load(open("evidence/latest-authorization-4.7.7.1.json"))
+          lock = json.load(open("config/mesa-lock.json"))
+          assert authorization["version"] == lock["amaral_revision"] == "4.7.7.1"
+          assert authorization["mesa_commit"] == lock["mesa"]["commit"]
+          assert authorization["patchset_sha256"] == patchset_fingerprint()
+          PYAUTH
+          python3 tools/release_version.py promote --write
+          gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --prerelease=false --latest --title "Turnip Amaral 26.3.0-devel v4.7.7.1" --notes-file "${NOTES_FILE}"
+          test "$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq .tag_name)" = "${RELEASE_TAG}"
+          git add config/version-state.json "${NOTES_FILE}"
+          git commit -m "release: record user-authorized A840 topology correction as Latest"
+          git push origin HEAD:main
