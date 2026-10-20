@@ -19,8 +19,18 @@ upstream pendentes.
   (fecha a lacuna da auditoria anterior, que usou um espelho).
 - Pilha Standard (0001, 0002, 0007-0012) e OneUI (+0003) aplicada limpa sobre
   `4b0f64c`, com `git diff --check` limpo.
-- Build Android/KGSL com NDK r29, duas vezes por variante: ver o resultado
-  registrado no PR/commit desta candidata.
+- Build Android/KGSL local com NDK r29 (SHA-1 oficial conferido), duas árvores
+  independentes por variante; ZIP e ELF idênticos byte a byte, catálogo de GPU
+  idêntico, DT_NEEDED somente bibliotecas Android, patchset `c55cd42d…094bd`:
+
+  | Variante | ZIP SHA-256 | ELF SHA-256 |
+  |---|---|---|
+  | Standard | `4ab5a953e83da4074405fc7c8ed05f47eadc6d2551a75a5a97c42fc8b0197c29` | `5f4d52d5bc082e5281da046ad330c398e47121c3503436286684aed647c03068` |
+  | OneUI | `26e6bc57cae1c54b6dabc2ee7251abc5a8f353ced4e38d2744056aeada15c676` | `b4f39e222e3efc33648401868a020dd3ca9e5b07f98d2dd4636795bb9c48ebbd` |
+
+  Catálogos Standard/OneUI diferem somente nas entradas FD740 (patch 0003).
+  O único warning de compilação é preexistente (`tu_cmd_buffer.cc:2225`).
+  A CI do GitHub repete esses gates; hashes de outro ambiente podem diferir.
 - Novas guardas em `tools/validate_project.py` impedem que 0009-0012 toquem
   `tu_device.cc`, `freedreno_devices.py` ou driconf, e verificam o gate de
   família de cada patch.
