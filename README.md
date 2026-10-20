@@ -1,3 +1,9 @@
+# Branch de laboratório Little Nightmares / A740
+
+**5.7.9.1: experimento, não versão universal recomendada.**
+Leia [escopo, instalação por jogo e A/B](docs/LITTLE-NIGHTMARES-LAB.md).
+O texto abaixo descreve a base de controle 5.7.8.1.
+
 # Amaral Adreno Tools
 
 Turnip universal para Android/Qualcomm A6xx, A7xx e A8xx.

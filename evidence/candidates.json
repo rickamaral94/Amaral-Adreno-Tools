@@ -224,6 +224,20 @@
       "source": "Mesa 3D upstream com exclusão Amaral",
       "license_review": "compatible",
       "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d"
+    },
+    {
+      "id": "ln-a740-profiled-lab",
+      "kind": "runtime-profile",
+      "status": "testing",
+      "default": false,
+      "patch": "patches/0009-lab-a740-profiled-autotune.patch",
+      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
+      "reason": "Lab opt-in por instalação no perfil do jogo; algoritmo PROFILED existente, gate A740/app, sem vitória medida. Não integra main.",
+      "evidence": [
+        "docs/LITTLE-NIGHTMARES-LAB.md"
+      ],
+      "hardware_tested": false,
+      "cts_tested": false
     }
   ]
 }

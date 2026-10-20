@@ -1,0 +1,10 @@
+name: Little Nightmares A740 laboratory build
+on:
+  push:
+    branches: [lab/little-nightmares-a740-profiled]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    uses: ./.github/workflows/build-candidate.yml
