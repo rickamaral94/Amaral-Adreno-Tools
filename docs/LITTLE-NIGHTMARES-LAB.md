@@ -36,8 +36,11 @@ A6xx/A750/A8xx e outros engines mantêm o comportamento anterior.
 
 O log de inicialização deve conter:
 `AMARAL_LAB_LN_A740: profiled autotuner; title unknown; per-game test only`.
-Sem essa mensagem, não considerar o experimento ativado. Ela indica seleção
-do algoritmo, não prova que cada passe usou GMEM ou SYSMEM.
+Essa mensagem indica seleção do algoritmo, não prova que cada passe usou
+GMEM ou SYSMEM. O coletor do APK começa no início da captura e pode perder
+a mensagem anterior de inicialização: ausência no ZIP não prova falha de
+ativação. Conferir hash do ELF e ausência de overrides; confirmar diretamente
+a ativação requer preservar o contexto de inicialização em uma futura captura.
 Não usar TU_DEBUG=gmem/sysmem nem overrides de autotuner nesta comparação.
 
 Não é necessário mudar o APK para o primeiro A/B. Para uma futura política
