@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Android ICD dependency and exported-entrypoint checks, in addition to hardening."""
+"""Android HAL dependency/export checks; Mesa links hardware/log/nativewindow/sync stubs."""
 import re
 import subprocess
 import sys
 
-ALLOWED = {'libc.so', 'libm.so', 'libdl.so', 'liblog.so', 'libz.so', 'libandroid.so', 'libnativewindow.so', 'libsync.so'}
-REQUIRED_EXPORTS = {'vk_icdGetInstanceProcAddr', 'vk_icdNegotiateLoaderICDInterfaceVersion'}
+ALLOWED = {'libc.so', 'libm.so', 'libdl.so', 'liblog.so', 'libz.so', 'libandroid.so', 'libnativewindow.so', 'libsync.so', 'libhardware.so'}
+# Mesa src/vulkan/vulkan-icd-android-symbols.txt exports the Android HAL HMI.
+# Desktop ICD negotiation exports are not required by this Android build.
+REQUIRED_EXPORTS = {'HMI'}
 
 
 def validate(dynamic, symbols):

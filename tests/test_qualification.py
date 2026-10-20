@@ -49,10 +49,10 @@ class QualificationTests(unittest.TestCase):
 
 
 class ElfTests(unittest.TestCase):
-    symbols='1: 0 8 FUNC GLOBAL DEFAULT 12 vk_icdGetInstanceProcAddr\n2: 0 8 FUNC GLOBAL DEFAULT 12 vk_icdNegotiateLoaderICDInterfaceVersion'
+    symbols='1: 0 8 OBJECT GLOBAL DEFAULT 12 HMI'
     def test_host_dependency_rejected(self):
         with self.assertRaises(ValueError):validate('(NEEDED) Shared library: [libstdc++.so.6]',self.symbols)
     def test_android_dependencies_and_icd_entrypoints(self):
-        self.assertEqual(validate('(NEEDED) Shared library: [libc.so]',self.symbols),['libc.so'])
+        self.assertEqual(validate('(NEEDED) Shared library: [libc.so]\n(NEEDED) Shared library: [libhardware.so]',self.symbols),['libc.so','libhardware.so'])
     def test_undefined_symbol_is_not_an_export(self):
         with self.assertRaises(ValueError):validate('(NEEDED) Shared library: [libc.so]',self.symbols.replace('DEFAULT 12','DEFAULT UND'))

@@ -16,7 +16,7 @@
   "stable_patchset_sha256": "01078851b363a40806c1d67d64daa838ffeaf9a65324e71a93db8f7e7280860e",
   "candidate": {
     "version": "5.7.8.1",
-    "patchset_sha256": "b7865f89578e08cf2af2695310ea1539c6f74ed67072487d0b57f7bad47d2f7d",
+    "patchset_sha256": "cc52dbd9ae58c1e39089a1277d5e9f39aca9c4fa7d9402e1301456f88d44fce6",
     "mesa_commit": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d"
   }
 }
