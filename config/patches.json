@@ -4,7 +4,11 @@
     "patches/0001-android-ndk-r29-compat.patch",
     "patches/0002-a8xx-experimental-device-support.patch",
     "patches/0007-community-turnip-stability-fixes.patch",
-    "patches/0008-remove-mgs4-vendor-spoof.patch"
+    "patches/0008-remove-mgs4-vendor-spoof.patch",
+    "patches/0009-a8xx-split-large-indirect-draws.patch",
+    "patches/0010-a7xx-texel-buffer-emulation-bounds.patch",
+    "patches/0011-a6xx-xfb-query-cache-invalidate.patch",
+    "patches/0012-vis-stream-patchpoint-bo-ref.patch"
   ],
   "oneui_extra": [
     "patches/0003-oneui-ubwc.patch"

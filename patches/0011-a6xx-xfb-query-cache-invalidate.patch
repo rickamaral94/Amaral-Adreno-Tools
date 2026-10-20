@@ -1,0 +1,56 @@
+Amaral · A6xx: CACHE_INVALIDATE antes de WRITE_PRIMITIVE_COUNTS em query XFB
+
+Origem:   Mesa MR !41860 (Danylo Piliaiev, Igalia); ack Connor Abbott
+Revisão:  MR head 1cdf2199ed61
+Degrau:   L1 (A6xx). Código emitido apenas com CHIP == A6XX; A7xx/A8xx
+          inalterados. Reproduzido em A630, A650 e A660.
+Motivo:   Dados de transform feedback corrompidos quando o draw XFB fica
+          dentro de uma query XFB (Risk of Rain 2; DXVK usa XFB para stream
+          output de D3D11). Custo: um evento de cache por BeginQuery XFB.
+Licença:  MIT
+Base:     Mesa 4b0f64ceac6a86af38c1e69cd38cf29f84ba611d
+
+From 1cdf2199ed613e12482a73508ca1a16b742329fd Mon Sep 17 00:00:00 2001
+From: Danylo Piliaiev <dpiliaiev@igalia.com>
+Date: Tue, 19 May 2026 01:18:55 +0200
+Subject: [PATCH] tu/a6xx: Workaround some cache issue with
+ FD_WRITE_PRIMITIVE_COUNTS
+
+This is a bizzare one, when XFB draw is surrounded by XFB query -
+XFB buffers are not getting right values unless we do FD_CACHE_INVALIDATE
+right before FD_WRITE_PRIMITIVE_COUNTS, at the start of the query.
+
+To better describe the situation:
+- Removing FD_WRITE_PRIMITIVE_COUNTS before the draw yields correct
+  data in the XFB buffers.
+- Doing flushall/syncdraw right after the XFB draw doesn't help.
+- Doing flushall/syncdraw before the RP with XFB draw (where that
+  draw is a third one in the RP) - doesn't help.
+- XFB draw has only a vertex shader.
+
+Happened at least on A630 and A650.
+
+Fixes Risk of Rain 2.
+
+Signed-off-by: Danylo Piliaiev <dpiliaiev@igalia.com>
+---
+ src/freedreno/vulkan/tu_query_pool.cc | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/freedreno/vulkan/tu_query_pool.cc b/src/freedreno/vulkan/tu_query_pool.cc
+index 3d0851de7c4d..5a29fd0b4ad6 100644
+--- a/src/freedreno/vulkan/tu_query_pool.cc
++++ b/src/freedreno/vulkan/tu_query_pool.cc
+@@ -1379,6 +1379,9 @@ emit_begin_xfb_query(struct tu_cmd_buffer *cmdbuf,
+    struct tu_cs *cs = cmdbuf->state.pass ? &cmdbuf->draw_cs : &cmdbuf->cs;
+    uint64_t begin_iova = primitive_query_iova(pool, query, begin, 0, 0);
+ 
++   if (CHIP == A6XX)
++      tu_emit_event_write<CHIP>(cmdbuf, cs, FD_CACHE_INVALIDATE);
++
+    tu_cs_emit_regs(cs, VPC_SO_QUERY_BASE(CHIP, .qword = begin_iova));
+    tu_emit_event_write<CHIP>(cmdbuf, cs, FD_WRITE_PRIMITIVE_COUNTS);
+ 
+-- 
+GitLab
+

@@ -224,6 +224,121 @@
       "source": "Mesa 3D upstream com exclusão Amaral",
       "license_review": "compatible",
       "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d"
+    },
+    {
+      "id": "a8xx-split-large-indirect-draws",
+      "kind": "correctness-stability",
+      "status": "testing",
+      "default": true,
+      "patch": "patches/0009-a8xx-split-large-indirect-draws.patch",
+      "families": [
+        "A8xx"
+      ],
+      "reason": "Divide vkCmdDraw*Indirect e *IndirectCount em pacotes CP_DRAW_INDIRECT_MULTI dentro do limite de fetch do CP ((1<<20)-1 dwords) para evitar GPU fault em A8xx. Para CHIP < A8XX o limite é UINT32_MAX e o caminho *Count não divide: A6xx/A7xx emitem os mesmos pacotes.",
+      "source": "Mesa MR 44352 commits 1/7 e 2/7 (Vamsi Chitta, Qualcomm)",
+      "license_review": "compatible-mit",
+      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
+      "evidence": [
+        "https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/44352"
+      ],
+      "evidence_scope": "Fault descrito pelo autor da Qualcomm; robclark aprovou integrar a divisão para corrigir o problema imediato e tratar draw_id depois. Sem hardware A8xx nesta preparação. Limitação conhecida: gl_DrawID reinicia por pacote somente nos draws que excedem o limite (antes: fault). Commits 3-7 (draw_id_offset) excluídos porque alteram VS params de indirect draws em todas as famílias e seguem em revisão."
+    },
+    {
+      "id": "a7xx-texel-buffer-emulation-bounds",
+      "kind": "correctness",
+      "status": "testing",
+      "default": true,
+      "patch": "patches/0010-a7xx-texel-buffer-emulation-bounds.patch",
+      "families": [
+        "A7xx"
+      ],
+      "reason": "Usa comparação sem sinal no bounds check da emulação de texel buffer: offset negativo deixava de ser OOB e escrevia antes da view. A emulação só existe em gen 7 e só é ligada por driconf (Spider-Man Remastered, Ratchet & Clank Rift Apart via vkd3d-proton).",
+      "source": "Mesa MR 45204 (Job Noorman, Igalia); r-b Danylo Piliaiev; Fixes dc1bb7bbf45",
+      "license_review": "compatible-mit",
+      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
+      "evidence": [
+        "https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/45204"
+      ],
+      "evidence_scope": "Reproducer Amber publicado na MR. Falha do marge somente por runner_system_failure. Validar nos dois títulos em A7xx antes de promover."
+    },
+    {
+      "id": "a6xx-xfb-query-cache-invalidate",
+      "kind": "correctness",
+      "status": "testing",
+      "default": true,
+      "patch": "patches/0011-a6xx-xfb-query-cache-invalidate.patch",
+      "families": [
+        "A6xx"
+      ],
+      "reason": "Emite FD_CACHE_INVALIDATE antes de FD_WRITE_PRIMITIVE_COUNTS no início de query XFB, somente quando CHIP == A6XX. Corrige dados de transform feedback corrompidos (Risk of Rain 2).",
+      "source": "Mesa MR 41860 (Danylo Piliaiev, Igalia); ack Connor Abbott",
+      "license_review": "compatible-mit",
+      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
+      "evidence": [
+        "https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/41860"
+      ],
+      "evidence_scope": "Reproduzido pelo autor em A630, A650 e A660. Custo restrito a BeginQuery de XFB. Não é otimização de desempenho."
+    },
+    {
+      "id": "vis-stream-patchpoint-bo-ref",
+      "kind": "correctness-stability",
+      "status": "testing",
+      "default": true,
+      "patch": "patches/0012-vis-stream-patchpoint-bo-ref.patch",
+      "families": [
+        "A6xx",
+        "A7xx",
+        "A8xx"
+      ],
+      "reason": "Chama tu_cs_finish() após enviar o sub-stream de patchpoints, liberando a referência tomada por tu_cs_init_suballoc(); sem isso o BO do suballocator de visibility stream nunca é liberado.",
+      "source": "Mesa MR 45369 (Karmjit Mahil, Igalia); r-b Danylo Piliaiev",
+      "license_review": "compatible-mit",
+      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
+      "evidence": [
+        "https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/45369"
+      ],
+      "evidence_scope": "Lifetime verificado no código fixado (tu_cs_init_suballoc toma ref; tu_cs_finish libera). Afeta command buffers SIMULTANEOUS_USE em GMEM com binning."
+    },
+    {
+      "id": "sysmem-resolve-flush-skip",
+      "kind": "runtime-performance",
+      "status": "rejected",
+      "default": false,
+      "reason": "MR 43714 removeria flushes de resolve sysmem vazios em dynamic rendering, mas o pipeline de merge falhou em todos os jobs Vulkan a618, a660 e a750 (script_failure, não infraestrutura). Não importar até upstream resolver.",
+      "evidence": [
+        "https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/43714",
+        "https://gitlab.freedesktop.org/mesa/mesa/-/pipelines/1725847"
+      ]
+    },
+    {
+      "id": "a8xx-draw-id-offset-ubo",
+      "kind": "correctness",
+      "status": "proposed",
+      "default": false,
+      "reason": "Commits 3-7 da MR 44352: draw_id_offset via NIR e UBO de driver params para manter gl_DrawID entre pacotes divididos. Alteram VS params de indirect draws em todas as famílias e seguem em revisão de design; aguardar merge upstream.",
+      "evidence": [
+        "https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/44352"
+      ]
+    },
+    {
+      "id": "ue5-ssbo-emulation-all",
+      "kind": "runtime-compatibility",
+      "status": "proposed",
+      "default": false,
+      "reason": "MR 44325 aplicaria tu_enable_ssbo_emulation (A7xx) a todo jogo UE5, mas depende de infraestrutura driconf nova e de uma mudança vkd3d-proton ainda não integrada; o autor aceita dano colateral em UE4. Monitorar.",
+      "evidence": [
+        "https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/44325"
+      ]
+    },
+    {
+      "id": "sysmem-depth-clear-ccu-evict",
+      "kind": "correctness",
+      "status": "rejected",
+      "default": false,
+      "reason": "MR 43899: a investigação concluiu que o teste CTS não sincroniza a imagem de profundidade entre render passes (Khronos work item 6894). Não é bug do Turnip.",
+      "evidence": [
+        "https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/43899"
+      ]
     }
   ]
 }

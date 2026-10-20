@@ -7,11 +7,23 @@ A [Latest](https://github.com/rickamaral94/Amaral-Adreno-Tools/releases/latest)
 permanece o controle estável publicado. A linha atual de desenvolvimento é uma
 **candidata**, sem CTS/hardware/A-B concluídos. Não há promessa de ganho de FPS.
 
-## Candidata atual
+## Candidata atual: 5.7.9.1
 
 Mesa `27.0.0-devel`, commit `4b0f64ceac6a86af38c1e69cd38cf29f84ba611d`.
 Correções upstream de invalidação bindless, coleta de push constants e IR3
 (offsets de constantes e ordem do lowering) justificam a avaliação.
+
+Além disso, quatro correções upstream ainda pendentes, revisadas e presas à
+família afetada (detalhes nas [notas](docs/releases/mesa-27.0.0-devel-v5.7.9.1.md)):
+
+- **A8xx:** divisão de indirect draws grandes, que causavam GPU fault (MR !44352).
+- **A7xx:** bounds check sem sinal na emulação de texel buffer usada por títulos
+  D3D12 (MR !45204).
+- **A6xx:** invalidação de cache antes da query de transform feedback (MR !41860).
+- **Todas:** liberação de referência de BO nos patchpoints de visibility stream
+  (MR !45369).
+
+Nenhuma delas é tuning de desempenho ou nova capacidade Vulkan.
 
 Os defaults de GCM, suballocadores e regras BOTW/TOTK voltam ao upstream.
 As extensões Amaral de profundidade não são expostas sem qualificação do caminho
