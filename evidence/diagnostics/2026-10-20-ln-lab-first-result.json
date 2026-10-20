@@ -1,0 +1,240 @@
+{
+  "schema": 1,
+  "captures": [
+    {
+      "archive_sha256": "65635f6ff47715a908579fa14a817740588daa3cda7a1939ecb8a7c3eb80249c",
+      "schema": 2,
+      "integrity": "payload-hashes-verified",
+      "duration_ms": 162751,
+      "samples": 81,
+      "emulator_commit": "6b592ecbeaac9631ffef1cb5735931ed1083189b",
+      "driver_elf_sha256": [
+        "e554cff65c6fdfcb2b4d30275c8a21b6ea3289d01fc4e5e4a3fbbcc1559933e9"
+      ],
+      "force_max_clock": "true",
+      "settings_sha256": "d4df6d93ab968035691f835c993a377cb7a9aba976178e1e93b89258ccd0ba76",
+      "guest_present_fps_avg": 44.26937707013415,
+      "guest_intervals": {
+        "count": 7204,
+        "p50_ms": 17.0,
+        "p99_ms": 33.75,
+        "max_ms": 999.991,
+        "skipped_across_pause": 1
+      },
+      "gpu": {
+        "coverage_pct": 99.98783824870782,
+        "frames_complete": 7202,
+        "frames_partial": 1,
+        "frame_gpu": {
+          "count": 7202,
+          "max_ms": 45.579,
+          "p50_ms": 15.75,
+          "p90_ms": 24.75,
+          "p99_ms": 39.0,
+          "percentile_method": "upper bound of the histogram bucket",
+          "percentile_resolution_ms": 0.25
+        }
+      },
+      "system": {
+        "gpu_clock_mhz_kgsl": {
+          "count": 81,
+          "avg": 680.0,
+          "min": 680.0,
+          "max": 680.0
+        },
+        "thermal_status_max": 0.0,
+        "battery_temp_c_max": 26.0,
+        "sampler_cost_ms": {
+          "count": 81,
+          "avg": 6.3630831851851815,
+          "min": 3.616197,
+          "max": 12.286615
+        }
+      },
+      "pipeline_counters": {
+        "graphics_pipeline_cache_miss": 100,
+        "compute_pipeline_cache_miss": 0,
+        "pipeline_create_failed": 0,
+        "shader_translate_failed": 0,
+        "driver_pipeline_cache_hits": 100,
+        "pipeline_feedback_valid": 100
+      },
+      "waits_by_reason": {
+        "guest_sync": {
+          "count": 9232,
+          "distribution": {
+            "16_33ms": 86,
+            "1_4ms": 4,
+            "4_8ms": 2261,
+            "8_16ms": 6877,
+            "ge_33ms": 4,
+            "lt_1ms": 0
+          },
+          "max_us": 165241,
+          "mean_us": 11771.13949501733,
+          "total_us": 108671159
+        },
+        "present_resources": {
+          "count": 2173,
+          "distribution": {
+            "16_33ms": 6,
+            "1_4ms": 447,
+            "4_8ms": 556,
+            "8_16ms": 1069,
+            "ge_33ms": 1,
+            "lt_1ms": 94
+          },
+          "max_us": 107240,
+          "mean_us": 7894.475288080994,
+          "total_us": 17154694
+        },
+        "texture_download": {
+          "count": 1,
+          "distribution": {
+            "16_33ms": 0,
+            "1_4ms": 0,
+            "4_8ms": 0,
+            "8_16ms": 0,
+            "ge_33ms": 1,
+            "lt_1ms": 0
+          },
+          "max_us": 101846,
+          "mean_us": 101846.718,
+          "total_us": 101846
+        }
+      },
+      "hitch_windows": 5,
+      "hitch_windows_without_pipeline_misses": 2,
+      "limitations": [
+        "Observational capture; not a controlled driver A/B.",
+        "Same-window correlation does not establish frame-level causality.",
+        "GPU timestamps exclude present blit; waits overlap across threads.",
+        "Histogram p99 is not 1% low FPS; missing metrics are not zero.",
+        "Battery temperature and Android thermal status do not prove thermal equivalence."
+      ]
+    },
+    {
+      "archive_sha256": "a1e942bbeb4ae8c3b88e1b791b1bf48278bdc750114753f4a56867b2f3e0e098",
+      "schema": 2,
+      "integrity": "payload-hashes-verified",
+      "duration_ms": 297908,
+      "samples": 149,
+      "emulator_commit": "6b592ecbeaac9631ffef1cb5735931ed1083189b",
+      "driver_elf_sha256": [
+        "1038279f89312dc7f5a9dedd033000b8ed94ae6e36b878e7ecbe5210695ce077"
+      ],
+      "force_max_clock": "true",
+      "settings_sha256": "d4df6d93ab968035691f835c993a377cb7a9aba976178e1e93b89258ccd0ba76",
+      "guest_present_fps_avg": 37.77207847139232,
+      "guest_intervals": {
+        "count": 11253,
+        "p50_ms": 33.25,
+        "p99_ms": 34.5,
+        "max_ms": 800.208,
+        "skipped_across_pause": 1
+      },
+      "gpu": {
+        "coverage_pct": 99.9944888399008,
+        "frames_complete": 11252,
+        "frames_partial": 1,
+        "frame_gpu": {
+          "count": 11252,
+          "max_ms": 44.27,
+          "p50_ms": 15.25,
+          "p90_ms": 27.5,
+          "p99_ms": 35.0,
+          "percentile_method": "upper bound of the histogram bucket",
+          "percentile_resolution_ms": 0.25
+        }
+      },
+      "system": {
+        "gpu_clock_mhz_kgsl": {
+          "count": 149,
+          "avg": 680.0,
+          "min": 680.0,
+          "max": 680.0
+        },
+        "thermal_status_max": 0.0,
+        "battery_temp_c_max": 26.0,
+        "sampler_cost_ms": {
+          "count": 149,
+          "avg": 5.712822295302012,
+          "min": 3.014687,
+          "max": 10.490782
+        }
+      },
+      "pipeline_counters": {
+        "graphics_pipeline_cache_miss": 85,
+        "compute_pipeline_cache_miss": 0,
+        "pipeline_create_failed": 0,
+        "shader_translate_failed": 0,
+        "driver_pipeline_cache_hits": 85,
+        "pipeline_feedback_valid": 85
+      },
+      "waits_by_reason": {
+        "guest_sync": {
+          "count": 11537,
+          "distribution": {
+            "16_33ms": 1703,
+            "1_4ms": 4,
+            "4_8ms": 731,
+            "8_16ms": 9088,
+            "ge_33ms": 11,
+            "lt_1ms": 0
+          },
+          "max_us": 51494,
+          "mean_us": 13982.976457137906,
+          "total_us": 161321599
+        },
+        "present_resources": {
+          "count": 702,
+          "distribution": {
+            "16_33ms": 3,
+            "1_4ms": 145,
+            "4_8ms": 173,
+            "8_16ms": 350,
+            "ge_33ms": 0,
+            "lt_1ms": 31
+          },
+          "max_us": 18086,
+          "mean_us": 7815.373621082621,
+          "total_us": 5486392
+        },
+        "texture_download": {
+          "count": 170,
+          "distribution": {
+            "16_33ms": 125,
+            "1_4ms": 0,
+            "4_8ms": 1,
+            "8_16ms": 44,
+            "ge_33ms": 0,
+            "lt_1ms": 0
+          },
+          "max_us": 24672,
+          "mean_us": 17155.07844117647,
+          "total_us": 2916363
+        }
+      },
+      "hitch_windows": 10,
+      "hitch_windows_without_pipeline_misses": 9,
+      "limitations": [
+        "Observational capture; not a controlled driver A/B.",
+        "Same-window correlation does not establish frame-level causality.",
+        "GPU timestamps exclude present blit; waits overlap across threads.",
+        "Histogram p99 is not 1% low FPS; missing metrics are not zero.",
+        "Battery temperature and Android thermal status do not prove thermal equivalence."
+      ]
+    }
+  ],
+  "comparisons": [
+    {
+      "a": 1,
+      "b": 2,
+      "driver_ab_qualified": false,
+      "reasons": [
+        "different_or_missing_clock_distribution",
+        "scene_cache_thermal_and_balanced_repetitions_not_established"
+      ]
+    }
+  ]
+}
