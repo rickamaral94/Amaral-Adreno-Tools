@@ -224,6 +224,18 @@
       "source": "Mesa 3D upstream com exclusão Amaral",
       "license_review": "compatible",
       "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d"
+    },
+    {
+      "id": "a740-readback-counters-lab",
+      "kind": "diagnostic",
+      "status": "testing",
+      "default": false,
+      "patch": "patches/0010-lab-a740-readback-counters.patch",
+      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
+      "reason": "Bounded recording counters to distinguish 2D/3D and row-wise copies. No performance claim. A740 lab only.",
+      "evidence": [
+        "docs/READBACK-LAB.md"
+      ]
     }
   ]
 }

@@ -1,0 +1,132 @@
+From: Amaral Adreno Tools <rickamaral94@users.noreply.github.com>
+Subject: [LAB ONLY] tu: bounded A740 readback path counters at command recording
+
+Base is 5.7.8.1 BANDWIDTH; no PROFILED tuning. Preserve GPU command emission,
+barriers and format selection. Count alignment fallbacks before optimizing.
+512 regions per log, thread-local batches, no addresses or image contents.
+Not a performance build; counters measure recording, not completion/timing.
+
+--- a/src/freedreno/vulkan/tu_clear_blit.cc
++++ b/src/freedreno/vulkan/tu_clear_blit.cc
+@@ -6,6 +6,8 @@
+  *    Jonathan Marek <jonathan@marek.ca>
+  */
+ 
++#include "tu_amaral_readback_lab.h"
++#include "util/log.h"
+ #include "tu_clear_blit.h"
+ 
+ #include "nir/nir_builder.h"
+@@ -3139,6 +3141,11 @@
+                         bool *unaligned_store)
+ {
+    struct tu_cs *cs = &cmd->cs;
++   const auto &lab_id = cmd->device->physical_device->dev_id;
++   const auto &lab_app = cmd->device->instance->vk.app_info;
++   const bool lab = amaral_readback_scope(lab_id.gpu_id, lab_id.chip_id,
++                                         lab_app.app_name, lab_app.engine_name);
++   uint64_t lab_runs = 0, lab_row_layers = 0;
+    uint32_t layers = MAX2(info->imageExtent.depth,
+                           vk_image_subresource_layer_count(&src_image->vk,
+                                                            &info->imageSubresource));
+@@ -3198,6 +3205,7 @@
+ 
+       uint64_t dst_va = vk_buffer_address(&dst_buffer->vk, info->bufferOffset) + layer_size * i;
+       if ((dst_va & 63) || (pitch & 63)) {
++         if (lab) ++lab_row_layers;
+          for (uint32_t y = 0; y < extent.height; y++) {
+             uint32_t x = (dst_va & 63) / block_size;
+             uint32_t excess_width = 0;
+@@ -3213,6 +3221,7 @@
+             ops->dst_buffer(cs, dst_format, dst_va & ~63, 0, src_format);
+             buffer_row_coords<CHIP>(ops, cmd, cs, false, copy_rot, offset, extent, y, x, 0, clamped_width);
+             ops->run(cmd, cs);
++            if (lab) ++lab_runs;
+ 
+             if (excess_width) {
+                uint64_t dst_va_overflow = (dst_va + clamped_width * block_size);
+@@ -3221,6 +3230,7 @@
+                buffer_row_coords<CHIP>(ops, cmd, cs, false, copy_rot, offset, extent, y, 0, clamped_width,
+                                        excess_width);
+                ops->run(cmd, cs);
++               if (lab) ++lab_runs;
+             }
+ 
+             dst_va += pitch;
+@@ -3234,10 +3244,30 @@
+             coords(ops, cmd, cs, (VkOffset3D) { 0, 0 }, offset, extent);
+          }
+          ops->run(cmd, cs);
++         if (lab) ++lab_runs;
+       }
+    }
+ 
+    ops->teardown(cmd, cs);
++
++   if (lab) {
++      static thread_local amaral_readback_batch batch;
++      if (batch.add(static_cast<uint32_t>(src_image->vk.format), layers,
++                    lab_row_layers, lab_runs,
++                    uint64_t(extent.width) * extent.height * block_size * layers,
++                    ops == &r3d_ops<CHIP>)) {
++         mesa_logi("AMARAL_RB_V1 regions=%llu layers=%llu row_layers=%llu runs=%llu "
++                   "requested_bytes=%llu r3d_regions=%llu dominant_vk_format=%u "
++                   "dominant_regions=%u other_format_regions=%llu",
++                   (unsigned long long)batch.regions, (unsigned long long)batch.layers,
++                   (unsigned long long)batch.row_layers, (unsigned long long)batch.runs,
++                   (unsigned long long)batch.requested_bytes,
++                   (unsigned long long)batch.r3d_regions, batch.dominant_format,
++                   batch.formats[batch.dominant_format],
++                   (unsigned long long)batch.other_formats);
++         batch = {};
++      }
++   }
+ }
+ 
+ template <chip CHIP>
+--- /dev/null
++++ b/src/freedreno/vulkan/tu_amaral_readback_lab.h
+@@ -0,0 +1,43 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef TU_AMARAL_READBACK_LAB_H
++#define TU_AMARAL_READBACK_LAB_H
++#include <cstdint>
++#include <string_view>
++
++static inline bool
++amaral_readback_scope(uint32_t gpu, uint64_t chip, const char *app, const char *engine)
++{
++   const bool a740 = (gpu == 740 && chip == 0) ||
++      ((chip == 0x43050a01ULL || chip == 0xffff43050a01ULL) && (gpu == 0 || gpu == 740));
++   return a740 && app && engine && std::string_view(app) == "yuzu Emulator" &&
++          std::string_view(engine) == "yuzu Emulator";
++}
++
++/* Command recording counts, never GPU completion/timing or bytes on the bus.
++ * One thread-local batch per recording thread. No locks, allocation or waits.
++ */
++struct amaral_readback_batch {
++   uint64_t regions = 0, layers = 0, row_layers = 0, runs = 0;
++   uint64_t requested_bytes = 0, r3d_regions = 0, other_formats = 0;
++   uint32_t formats[256] = {};
++   uint32_t dominant_format = 0;
++
++   bool add(uint32_t format, uint64_t layer_count, uint64_t row_count,
++            uint64_t run_count, uint64_t bytes, bool r3d)
++   {
++      ++regions;
++      layers += layer_count;
++      row_layers += row_count;
++      runs += run_count;
++      requested_bytes += bytes;
++      r3d_regions += r3d;
++      if (format < 256) {
++         ++formats[format];
++         if (formats[format] > formats[dominant_format]) dominant_format = format;
++      } else {
++         ++other_formats;
++      }
++      return regions == 512;
++   }
++};
++#endif

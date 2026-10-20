@@ -1,0 +1,10 @@
+name: A740 readback diagnostic laboratory build
+on:
+  push:
+    branches: [lab/a740-readback-counters]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    uses: ./.github/workflows/build-candidate.yml
