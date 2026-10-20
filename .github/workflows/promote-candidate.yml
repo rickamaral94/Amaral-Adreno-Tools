@@ -1,56 +1,38 @@
-name: Promote A/B-approved candidate
-
+name: Promote hardware-qualified candidate
 on:
   workflow_dispatch:
-    inputs:
-      confirm_ab_approved:
-        description: "Confirm that the candidate passed the required A/B tests"
-        required: true
-        type: boolean
-  push:
-    branches: [main]
-    paths:
-      - "evidence/promotions/**"
-
 permissions:
   contents: write
-
 concurrency:
   group: amaral-release
   cancel-in-progress: false
-
 jobs:
   promote:
-    if: github.event_name == 'push' || inputs.confirm_ab_approved == true
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
-      - id: candidate
-        run: python3 tools/release_version.py promote --github-output "${GITHUB_OUTPUT}"
-      - name: Prepare stable metadata
-        run: python3 tools/release_version.py promote --write
-      - name: Promote the exact tested release
-        env:
-          VERSION: ${{ steps.candidate.outputs.version }}
+      - name: Validate qualification before any mutation
         run: |
-          mesa_version="$(python3 -c 'import json; print(json.load(open("config/mesa-lock.json"))["mesa"]["version"])')"
-          tag="mesa-${mesa_version}-v${VERSION}"
-          notes_file="docs/releases/${tag}.md"
-          gh release edit "${tag}" --repo "${GITHUB_REPOSITORY}" \
-            --title "Turnip Amaral ${mesa_version} v${VERSION}" \
-            --notes-file "${notes_file}" --prerelease=false --latest
-      - name: Record stable patch set
-        env:
-          VERSION: ${{ steps.candidate.outputs.version }}
+          python3 tools/release_version.py promote --github-output "$RUNNER_TEMP/promotion"
+          python3 tools/release_version.py resume candidate --github-output "$RUNNER_TEMP/release"
+          tag="$(sed -n 's/^release_tag=//p' "$RUNNER_TEMP/release")"
+          git fetch origin "refs/tags/$tag:refs/tags/$tag"
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" --dir dist
+          python3 tools/verify_release_bundle.py dist --source-sha "$(git rev-list -n1 "$tag")" --qualification
+          test "$(git ls-remote origin refs/heads/main | cut -f1)" = "$(git rev-parse HEAD)"
+      - name: Promote the tested binaries and record state
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          mesa_version="$(python3 -c 'import json; print(json.load(open("config/mesa-lock.json"))["mesa"]["version"])')"
-          git add config/version-state.json "docs/releases/mesa-${mesa_version}-v${VERSION}.md"
-          git commit -m "release: promove v${VERSION} como estável"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          tag="$(sed -n 's/^release_tag=//p' "$RUNNER_TEMP/release")"
+          notes="$(sed -n 's/^notes_file=//p' "$RUNNER_TEMP/release")"
+          python3 tools/release_version.py promote --write
+          gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --prerelease=false --latest --notes-file "$notes"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)" = "$tag"
+          git add config/version-state.json "$notes"
+          git commit -m "release: record qualified promotion $tag"
           git push origin HEAD:main

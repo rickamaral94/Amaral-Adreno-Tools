@@ -184,8 +184,14 @@ def main():
     assert 'application_name_match="mgs4.exe"' in vendor_patch
     assert '+             <option name="force_vk_vendor"' not in vendor_patch
     build_script = read_text("scripts/build_universal.sh")
-    assert 'check_mesa_policy.py" "${mesa_src}" --patched' in build_script
-    assert '0008-remove-mgs4-vendor-spoof.patch' in build_script
+    assert 'apply_patches.py" "${mesa_src}"' in build_script
+    manifest = load("config/patches.json")
+    assert "patches/0008-remove-mgs4-vendor-spoof.patch" in manifest["standard"]
+    assert not set(manifest["standard"] + manifest["oneui_extra"]) & set(manifest["research_only"])
+    assert manifest["oneui_extra"] == ["patches/0003-oneui-ubwc.patch"]
+    for item in evidence["candidates"]:
+        if item.get("patch") in manifest["research_only"]:
+            assert item["default"] is False and item["status"] == "reference-only"
     assert not (ROOT / "patches/0011-a840v2-device-id.patch").exists()
     assert "0011-a840v2-device-id.patch" not in build_script
 

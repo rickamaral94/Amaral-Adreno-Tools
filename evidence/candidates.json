@@ -10,7 +10,7 @@
       "reason": "Compatibiliza os tipos de native_handle do Mesa com o NDK r29; não altera a política de execução do Turnip.",
       "source": "Repositórios Amaral 6xx/7xx/8xx",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "378a5dc61b982b7d36e744cf44407e6b55dc98b7"
+      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d"
     },
     {
       "id": "force-gmem-or-sysmem-global",
@@ -51,7 +51,7 @@
       "reason": "Adiciona o alias KGSL 0x44010000 ao perfil A810 já upstream e reconhece a A812 pelos IDs 0xffff44010200 e 0x44010200. A A812 reutiliza deliberadamente o perfil conservador A810 do Mesa fixado; não importa gmem_size para GPUProps, caches comunitários, UBWC global nem aumento de shared memory.",
       "source": "Mesa A810 upstream + whitebelyash/mesa-unified turnip/gen8 V32",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "378a5dc61b982b7d36e744cf44407e6b55dc98b7",
+      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
       "evidence": [
         "https://github.com/whitebelyash/mesa-unified/commit/9c7e022677dfa3abb356c2b6732cbd2e25783d01",
         "https://github.com/whitebelyash/AdrenoToolsDrivers/releases/tag/tu_v32"
@@ -67,7 +67,7 @@
       "reason": "Adiciona o ID KGSL e o perfil A825 refinado após evidência comunitária em hardware real nos modos GMEM e SYSMEM: color/depth cache GMEM em HALF/128 KiB, tile 64x32, shared memory de 64 KiB e offsets VPC preservados, sem forçar o modo de memória.",
       "source": "Mesa A830 gen1 + whitebelyash/mesa-unified + DiskDVD/A8XX-Y; propriedades revisadas e isoladas para A825",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "378a5dc61b982b7d36e744cf44407e6b55dc98b7",
+      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
       "evidence": [
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/37",
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/38",
@@ -86,54 +86,57 @@
       "reason": "Gera uma variante separada que ativa TP_UBWC_FLAG_HINT somente nas duas entradas KGSL da FD740, sem afetar o ID legado ou a Adreno X1-85.",
       "source": "Mesa 3D e builds comunitários OneUI",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "378a5dc61b982b7d36e744cf44407e6b55dc98b7"
+      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d"
     },
     {
       "id": "depth-extensions",
       "kind": "compatibility",
-      "status": "testing",
-      "default": true,
+      "status": "reference-only",
+      "default": false,
       "patch": "patches/0004-depth-extensions.patch",
       "reason": "Expõe VK_EXT_depth_bias_control (subconjunto honesto: depthBiasControl e depthBiasExact; as duas features de representação ficam false, porque o Adreno não tem chave para forçar UNORM em D32_SFLOAT) e VK_EXT_depth_range_unrestricted. Alcance por dependência real, não por chip_id: bias_control em todas as famílias, porque o runtime do Vulkan faz o trabalho e tu6_emit_depth_bias() não ramifica por chip; range_unrestricted em a7xx+ (device->info->chip >= 7), porque no a6xx o hardware clampa sozinho e a extensão não teria como ser honrada. Até a v4.3 as duas ficavam em dois chip_id da FD740 — gate que marcava onde estava a evidência, não uma dependência técnica.",
       "source": "Amaral Adreno Tools IA, patches 0010 e 0011; gates re-derivados na v4.4",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "378a5dc61b982b7d36e744cf44407e6b55dc98b7",
+      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
       "evidence": [
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/69"
       ],
-      "evidence_scope": "Medição em UM modelo (FD740, Driver Lab #69): capability_diff +2/-0, compatibilidade 100/100, zero divergência de pixel em 116 comparações. Isso prova que o driver renderiza idêntico para quem NÃO habilita a extensão. O caminho com a extensão habilitada nunca foi exercitado, e a generalização de um chip_id para uma família é passo no mecanismo, não na medição."
+      "evidence_scope": "Medição em UM modelo (FD740, Driver Lab #69): capability_diff +2/-0, compatibilidade 100/100, zero divergência de pixel em 116 comparações. Isso prova que o driver renderiza idêntico para quem NÃO habilita a extensão. O caminho com a extensão habilitada nunca foi exercitado, e a generalização de um chip_id para uma família é passo no mecanismo, não na medição.",
+      "distribution": "not-applied; research only pending CTS/hardware and balanced A/B"
     },
     {
       "id": "aurora-gcm-and-suballocators",
       "kind": "runtime-performance",
-      "status": "testing",
-      "default": true,
+      "status": "reference-only",
+      "default": false,
       "patch": "patches/0005-a740-aurora-performance.patch",
       "reason": "Porta a hipótese Aurora pelo mecanismo real, não pelo nome A740: GCM somente onde reg_size_vec4 >= 96 e suballocadores de 512 KiB em todas as famílias. Continua candidato porque Driver Lab #64/#68 não demonstrou ganho global conclusivo.",
       "source": "Balemuni/Balemunis-Aurora; mecanismo re-derivado no Mesa/IR3",
       "license_review": "clean-room-mechanism-review",
-      "patch_apply_verified_on_mesa": "378a5dc61b982b7d36e744cf44407e6b55dc98b7",
+      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
       "evidence": [
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/64",
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/68"
-      ]
+      ],
+      "distribution": "not-applied; research only pending CTS/hardware and balanced A/B"
     },
     {
       "id": "zelda-botw-totk-title-profile",
       "kind": "runtime-compatibility",
-      "status": "testing",
-      "default": true,
+      "status": "reference-only",
+      "default": false,
       "patch": "patches/0006-emulator-compat-driconf.patch",
       "reason": "Reconstrói do ELF oficial Apex V2 as opções BOTW/TOTK, mas as prende ao nome do título. O alcance é portável entre A6xx/A7xx/A8xx porque os caminhos não testam chip; o frontend precisa expor botw/totk em pApplicationName. Sem isso, a regra não ativa.",
       "source": "Balemuni Apex V2 official binaries; static driconf audited on 2026-09-01",
       "license_review": "configuration-values-reimplemented",
-      "patch_apply_verified_on_mesa": "378a5dc61b982b7d36e744cf44407e6b55dc98b7",
+      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
       "evidence": [
         "https://github.com/Balemuni/Balemunis-Aurora/releases",
         "https://github.com/Balemuni/Balemunis-Aurora/issues/4",
         "https://github.com/Balemuni/Balemunis-Aurora/issues/8"
       ],
-      "evidence_scope": "Mecanismo presente no binário, mas sem confirmação independente nas issues públicas. Requer A/B visual e frametime por título e família antes de promoção."
+      "evidence_scope": "Mecanismo presente no binário, mas sem confirmação independente nas issues públicas. Requer A/B visual e frametime por título e família antes de promoção.",
+      "distribution": "not-applied; research only pending CTS/hardware and balanced A/B"
     },
     {
       "id": "broad-emulator-driconf",
@@ -151,7 +154,7 @@
       "reason": "Quatro correções externas de lifetime e tratamento de erro preservadas: cleanup de pipeline/OOM, binding com memória nula, contadores derivados e variantes de shader. A correção KGSL de profiling foi substituída pela MR upstream 44838. Sem tuning global.",
       "source": "whitebelyash/mesa-unified PR #12; commits individuais revisados contra o Mesa fixado",
       "license_review": "compatible-mit",
-      "patch_apply_verified_on_mesa": "378a5dc61b982b7d36e744cf44407e6b55dc98b7",
+      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
       "evidence": [
         "https://github.com/whitebelyash/mesa-unified/pull/12"
       ],
@@ -220,7 +223,7 @@
       "reason": "Remove regra upstream de identificação AMD em mgs4.exe.",
       "source": "Mesa 3D upstream com exclusão Amaral",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "378a5dc61b982b7d36e744cf44407e6b55dc98b7"
+      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d"
     }
   ]
 }

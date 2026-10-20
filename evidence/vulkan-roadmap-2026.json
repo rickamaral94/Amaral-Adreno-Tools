@@ -8,8 +8,8 @@
     "source": "https://github.com/KhronosGroup/Vulkan-Profiles/blob/main/profiles/Khronos/VP_KHR_roadmap.json"
   },
   "mesa": {
-    "commit": "07ea97900e735afff9bfd59805983912f72f7dfd",
-    "version": "26.3.0-devel",
+    "commit": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
+    "version": "27.0.0-devel",
     "turnip_device_file": "src/freedreno/vulkan/tu_device.cc",
     "freedreno_device_file": "src/freedreno/common/freedreno_devices.py"
   },

@@ -20,6 +20,7 @@ readelf -d "${driver}" | grep -q "BIND_NOW"
 readelf -W -l "${driver}" | grep -q "GNU_RELRO"
 ! readelf -W -l "${driver}" | grep "GNU_STACK" | grep -q "RWE"
 ! readelf -d "${driver}" | grep -q "TEXTREL"
+python3 "$(dirname "$0")/../tools/validate_elf.py" "${driver}"
 python3 -m json.tool "${meta}" >/dev/null
 python3 - "${meta}" <<'PY'
 import json, sys

@@ -23,11 +23,14 @@ STATE_PATH = ROOT / "config/version-state.json"
 EVIDENCE_PATH = ROOT / "evidence/candidates.json"
 PATCHSET_PATTERNS = (
     "patches/*.patch",
+    "config/patches.json",
+    "tools/apply_patches.py",
+    "tools/validate_elf.py",
+    "tools/build_manifest.py",
     "build-aux/*",
     "requirements-build.txt",
-    "scripts/build_universal.sh",
-    "scripts/check_reproducibility.sh",
-    "scripts/validate_artifact.sh",
+    "scripts/*.sh",
+    ".github/workflows/build-candidate.yml",
 )
 RELEVANT_MESA_PREFIXES = (
     "include/vulkan/",
@@ -117,6 +120,8 @@ def patchset_fingerprint():
         digest.update(b"\0")
         digest.update(path.read_bytes())
         digest.update(b"\0")
+    lock = load_json(LOCK_PATH)
+    digest.update(json.dumps(lock["build"], sort_keys=True).encode())
     return digest.hexdigest()
 
 
@@ -187,15 +192,12 @@ def write_release_notes(
 
 ## Política desta publicação
 
-Atualizações exclusivas do Mesa upstream podem avançar para Latest depois dos
-gates de compilação, aplicação dos patches, validação do pacote e
-reprodutibilidade byte a byte. Correções comunitárias estritas de estabilidade
-também podem ser promovidas após revisão de código e esses mesmos gates quando
-já são distribuídas em outro driver e permanecem sem correção posterior
-conhecida. Tuning, performance e workarounds continuam exigindo testes A/B.
+Toda mudança passa por candidata. Promoção exige evidência vinculada ao SHA
+Mesa, fingerprint e hashes Standard/OneUI. Build reproduzível não prova
+compatibilidade, conformidade ou ganho de desempenho. Defaults de compiler,
+suballocadores e perfis por título permanecem upstream; patches de pesquisa
+não são aplicados aos pacotes distribuídos.
 
-Não há `TU_DEBUG=sysmem` forçado nos perfis Zelda. O autotuner continua livre
-para escolher GMEM/SYSMEM, com a preferência por GMEM já validada na v4.5.
 """
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
@@ -222,73 +224,7 @@ def update_patch_apply_evidence(commit):
 
 
 def prepare_upstream(args):
-    lock = load_json(LOCK_PATH)
-    state = load_json(STATE_PATH)
-    meta = mesa_metadata(args.mesa_src)
-    fingerprint = patchset_fingerprint()
-
-    if fingerprint != state["stable_patchset_sha256"]:
-        emit_output(
-            args.github_output,
-            {"update_available": "false", "blocked_by_candidate": "true"},
-        )
-        print(
-            "Upstream release skipped: the current Amaral patch set still "
-            "requires candidate publication or A/B promotion."
-        )
-        return 0
-
-    if meta["commit"] == state["last_released_mesa_commit"]:
-        emit_output(args.github_output, {"update_available": "false"})
-        print("Mesa upstream is already released.")
-        return 0
-
-    previous_commit = state["last_released_mesa_commit"]
-    changed_files = run_git(
-        args.mesa_src, "diff", "--name-only", f"{previous_commit}..{meta['commit']}"
-    ).splitlines()
-    relevant_files = sorted(
-        name
-        for name in changed_files
-        if name in RELEVANT_MESA_FILES
-        or any(name.startswith(prefix) for prefix in RELEVANT_MESA_PREFIXES)
-    )
-    if not relevant_files:
-        emit_output(args.github_output, {"update_available": "false"})
-        print("New Mesa commits do not affect the Turnip build surface.")
-        return 0
-
-    version = advance_upstream_version(state, meta)
-    state["last_released_mesa_commit"] = meta["commit"]
-    state["stable_version"] = version
-    state["candidate"] = None
-    update_lock(lock, state, meta, version)
-    note_path = release_note_path(meta, version)
-
-    if args.write:
-        save_json(LOCK_PATH, lock)
-        save_json(STATE_PATH, state)
-        update_patch_apply_evidence(meta["commit"])
-        write_release_notes(
-            note_path, meta, version, "latest", previous_commit, relevant_files
-        )
-
-    tag = f"mesa-{meta['version']}-v{version}"
-    outputs = {
-        "update_available": "true",
-        "version": version,
-        "mesa_version": meta["version"],
-        "mesa_commit": meta["commit"],
-        "vulkan_version": meta["vulkan_version"],
-        "release_tag": tag,
-        "release_title": f"Turnip Amaral {meta['version']} v{version}",
-        "notes_file": note_path.relative_to(ROOT).as_posix(),
-        "standard_file": f"turnip_amaral_{meta['version']}_v{version}.zip",
-        "oneui_file": f"turnip_amaral_{meta['version']}_v{version}_oneUI.zip",
-    }
-    emit_output(args.github_output, outputs)
-    print(json.dumps(outputs, indent=2))
-    return 0
+    raise RuntimeError("Direct upstream Latest publication is disabled; prepare a reviewed candidate")
 
 
 def prepare_candidate(args):
@@ -300,21 +236,25 @@ def prepare_candidate(args):
             "Candidate Mesa source does not match config/mesa-lock.json"
         )
     fingerprint = patchset_fingerprint()
-    if fingerprint == state["stable_patchset_sha256"]:
+    if fingerprint == state["stable_patchset_sha256"] and meta["commit"] == state["last_released_mesa_commit"]:
         emit_output(args.github_output, {"candidate_available": "false"})
         print("No Amaral patch-set change to publish.")
         return 0
     existing = state.get("candidate")
-    if existing and existing.get("patchset_sha256") == fingerprint:
+    if existing and existing.get("patchset_sha256") == fingerprint and existing.get("mesa_commit") == meta["commit"]:
         emit_output(args.github_output, {"candidate_available": "false"})
         print("This Amaral patch set already has a candidate release.")
         return 0
 
     previous_commit = state["last_released_mesa_commit"]
+    if meta["normalized_version"] != state["mesa"]["normalized_version"]:
+        state["mesa"]["generation"] += 1
+    if meta["vulkan_version"] != state["vulkan"]["version"]:
+        state["vulkan"]["generation"] += 1
     state["amaral_revision"] += 1
     state["upstream_revision"] = 1
     version = compose_version(state)
-    state["candidate"] = {"version": version, "patchset_sha256": fingerprint}
+    state["candidate"] = {"version": version, "patchset_sha256": fingerprint, "mesa_commit": meta["commit"]}
     update_lock(lock, state, meta, version)
     note_path = release_note_path(meta, version)
     if args.write:
@@ -388,6 +328,8 @@ def promote_candidate(args):
         raise RuntimeError("There is no candidate awaiting promotion")
     if candidate["patchset_sha256"] != patchset_fingerprint():
         raise RuntimeError("Current patch set differs from the published candidate")
+    from promotion_gate import validate_promotion
+    validate_promotion(ROOT, candidate, load_json(LOCK_PATH))
     emit_output(args.github_output, {"version": candidate["version"]})
     if args.write:
         lock = load_json(LOCK_PATH)

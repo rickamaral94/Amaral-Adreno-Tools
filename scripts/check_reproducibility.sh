@@ -72,4 +72,8 @@ cp "${first_artifact}" "${final_output}/$(basename "${first_artifact}")"
   } > "REPRODUCIBILITY_${driver_variant}.txt"
 )
 
+cmp --silent "${repro_root}/${driver_variant}/first/dist/GPU_CATALOG_${driver_variant}.h" \
+  "${repro_root}/${driver_variant}/second/dist/GPU_CATALOG_${driver_variant}.h"
+cp "${repro_root}/${driver_variant}/first/dist/GPU_CATALOG_${driver_variant}.h" "${final_output}/"
+python3 "${repo_root}/tools/build_manifest.py" "${driver_variant}" "${final_output}"
 cat "${final_output}/REPRODUCIBILITY_${driver_variant}.txt"

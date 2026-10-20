@@ -1,16 +1,9 @@
 name: Reproducible universal build
-
 on:
-  pull_request:
+  workflow_call:
   workflow_dispatch:
-
 permissions:
   contents: read
-
-concurrency:
-  group: reproducible-build-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   build-twice:
     runs-on: ubuntu-24.04
@@ -19,62 +12,43 @@ jobs:
       fail-fast: false
       matrix:
         variant: [standard, oneui]
-
+    env:
+      DRIVER_VARIANT: ${{ matrix.variant }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-
-      - name: Install host tools
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Project gates before expensive builds
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            bison \
-            build-essential \
-            file \
-            flex \
-            glslang-tools \
-            pkg-config \
-            python3-venv \
-            unzip \
-            zip
-
-      - name: Install pinned Python build tools
-        run: |
-          python3 -m venv work/venv
-          work/venv/bin/pip install --requirement requirements-build.txt
-          echo "${GITHUB_WORKSPACE}/work/venv/bin" >> "${GITHUB_PATH}"
-
-      - name: Download verified Android NDK r29
-        run: |
-          mkdir -p work/toolchains
-          curl --fail --location \
-            --output work/android-ndk-r29-linux.zip \
-            https://dl.google.com/android/repository/android-ndk-r29-linux.zip
-          echo "87e2bb7e9be5d6a1c6cdf5ec40dd4e0c6d07c30b  work/android-ndk-r29-linux.zip" \
-            | sha1sum --check
-          unzip -q work/android-ndk-r29-linux.zip -d work/toolchains
-
-      - name: Build twice and compare byte for byte
+          python3 tools/validate_project.py
+          python3 -m unittest discover -s tests -v
+          for script in scripts/*.sh; do bash -n "$script"; done
+      - name: Cache verified NDK archive only
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: work/downloads/android-ndk-r29-linux.zip
+          key: ndk-r29-linux-87e2bb7e9be5d6a1c6cdf5ec40dd4e0c6d07c30b
+      - name: Install and record build environment
+        run: bash scripts/setup_build.sh
+      - name: Build twice from independent source and output directories
         env:
           NDK_ROOT: ${{ github.workspace }}/work/toolchains/android-ndk-r29
-          DRIVER_VARIANT: ${{ matrix.variant }}
-        run: ./scripts/check_reproducibility.sh
-
-      - name: Upload test candidate
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        run: bash scripts/check_reproducibility.sh
+      - name: Upload verified variant
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: turnip-amaral-${{ matrix.variant }}-test-candidate
+          name: verified-${{ matrix.variant }}
           path: |
             dist/turnip_amaral_*.zip
-            dist/SHA256SUMS.txt
             dist/REPRODUCIBILITY_*.txt
+            dist/BUILD_MANIFEST_*.json
+            dist/BUILD_ENVIRONMENT_*.txt
+            dist/GPU_CATALOG_*.h
           if-no-files-found: error
-          retention-days: 14
-      - name: Upload build logs
+          retention-days: 30
+      - name: Preserve build diagnostics even on failure
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: turnip-amaral-${{ matrix.variant }}-build-logs
+          name: logs-${{ matrix.variant }}
           path: work/reproducibility/${{ matrix.variant }}/*/build.log
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 30

@@ -1,129 +1,59 @@
 # Amaral Adreno Tools
 
-Projeto do **Amaral Turnip Universal**, driver Vulkan para Android/KGSL
-construído a partir do Mesa 3D. A ordem de decisão é: compatibilidade gráfica,
-estabilidade, frametimes consistentes e desempenho.
+Turnip universal para Android/Qualcomm A6xx, A7xx e A8xx.
+**Compatibility first. Performance measured.**
 
-> Status: a [release marcada como Latest](https://github.com/rickamaral94/Amaral-Adreno-Tools/releases/latest)
-> é a referência estável.
-> Atualizações puras do Mesa podem avançar automaticamente; mudanças próprias
-> do Amaral continuam em pre-release até aprovação A/B. Correções comunitárias
-> estritamente de estabilidade podem ser promovidas após revisão de código,
-> aplicação limpa e gates de build quando já são distribuídas em outro driver
-> e permanecem sem correção posterior conhecida.
+A [Latest](https://github.com/rickamaral94/Amaral-Adreno-Tools/releases/latest)
+permanece o controle estável publicado. A linha atual de desenvolvimento é uma
+**candidata**, sem CTS/hardware/A-B concluídos. Não há promessa de ganho de FPS.
 
-## Variantes
+## Candidata atual
 
-| Variante | Arquivo | Uso |
-|---|---|---|
-| Standard | `turnip_amaral_<mesa>_v<M.V.A.U>.zip` | Ponto de partida para Android/KGSL |
-| OneUI | `turnip_amaral_<mesa>_v<M.V.A.U>_oneUI.zip` | Somente quando o firmware OneUI precisar do ajuste UBWC da FD740 |
+Mesa `27.0.0-devel`, commit `4b0f64ceac6a86af38c1e69cd38cf29f84ba611d`.
+Correções upstream de invalidação bindless, coleta de push constants e IR3
+(offsets de constantes e ordem do lowering) justificam a avaliação.
 
-As variantes têm a mesma base Mesa, suporte às famílias e perfis por
-aplicativo. A OneUI acrescenta apenas `TP_UBWC_FLAG_HINT` nas duas entradas
-KGSL da FD740; o ID legado `GPUId(740)`, a A825 e a X1-85 não são alterados.
+Os defaults de GCM, suballocadores e regras BOTW/TOTK voltam ao upstream.
+As extensões Amaral de profundidade não são expostas sem qualificação do caminho
+habilitado. Os patches anteriores ficam preservados como pesquisa, fora do build.
+Essa retirada também pode afetar workloads: compare com a Latest anterior.
 
-## Base funcional atual
+## Variantes e GPUs
 
-- Mesa `main` fixado por SHA completo em `config/mesa-lock.json`.
-- Correções upstream de Turnip, Freedreno, NIR e runtime Vulkan incorporadas
-  somente quando alcançam a superfície usada pelo driver.
-- Perfis BOTW/TOTK reconstruídos do binário Balemuni Apex V2,
-  isolados por título e disponíveis para A6xx/A7xx/A8xx quando o frontend expõe
-  `botw` ou `totk` em `pApplicationName`.
-- Identificação Android experimental para A810/A812, usando o perfil A810
-  conservador do Mesa e sem carregar o campo `gmem_size` removido de
-  `GPUProps`; o tamanho de GMEM continua vindo do kernel KGSL.
-- Remoção do perfil amplo que alterava todos os jogos identificados como
-  `yuzu Emulator`; esse alcance não tinha validação A/B e podia causar
-  regressões fora de Zelda.
-- Correções comunitárias de lifetime e tratamento de erro em pipeline, binding
-  de memória, submissão KGSL, performance queries e variantes de shader.
+- **Standard:** ponto de partida universal e variante para Odin 2 Portal/A740.
+- **OneUI:** mesmo código, acrescentando somente o ajuste UBWC das duas entradas
+  FD740/KGSL, quando o firmware Samsung precisar. Não altera X1-85 ou GPUId(740).
+- A740/A750/A830 e demais GPUs seguem o suporte real do snapshot Mesa.
+- A810 KGSL, A812 e A825 têm complementos externos isolados por chip ID.
+  A825/A812 permanecem experimentais; inclusão no pacote não significa qualificação.
+- A840 de dois e três slices usa perfis upstream independentes.
 
-Os perfis Zelda não forçam GMEM ou SYSMEM, não são promessa de ganho de FPS e
-não ativam se o emulador esconder o nome do jogo do Vulkan. Novas alterações
-devem ser comparadas com a `Latest` imediatamente anterior.
+## Build e evidência
 
-## Universal não significa forçar tudo em todas as GPUs
+`config/mesa-lock.json` fixa Mesa/NDK/API/ABI/KGSL.
+`config/patches.json` é a lista única de patches distribuídos e de pesquisa.
+`config/version-state.json` separa candidata e último controle estável.
 
-Cada mudança é gateada pela dependência real:
-
-| Mudança | Alcance |
-|---|---|
-| Mesa upstream | GPUs reconhecidas pelo snapshot |
-| GCM Aurora | dispositivos com `reg_size_vec4 >= 96` |
-| suballocadores de 512 KiB | A6xx/A7xx/A8xx |
-| `VK_EXT_depth_bias_control` | todas as famílias |
-| `VK_EXT_depth_range_unrestricted` | A7xx+ |
-| BOTW/TOTK | aplicação, sem gate por GPU |
-| perfis A8xx experimentais | A810 KGSL `0x44010000`, A812 `0x44010200` e A825 `0x44030000` |
-| UBWC OneUI | somente FD740/KGSL na variante OneUI |
-
-Uma otimização A740 só alcança outras GPUs quando o código demonstra a mesma
-capacidade. Ajustes de UBWC, cache, tile, FDM/MSAA ou registradores ligados ao
-silício permanecem isolados.
-
-## Versionamento e canais
-
-O formato novo é `Mesa.Vulkan.Amaral.Upstream`, por exemplo `4.5.1.3`:
-
-- primeiro campo: geração da versão numérica Mesa;
-- segundo: geração da versão dos headers Vulkan;
-- terceiro: revisão de patches/ajustes próprios;
-- quarto: snapshot automático do Mesa upstream.
-
-Mesa upstream sobre o patch set aprovado é publicado como `Latest`. Qualquer
-mudança própria aumenta o terceiro campo e permanece como pre-release até os
-testes A/B, salvo correção estrita de estabilidade aceita pela regra acima.
-Consulte o [processo upstream](docs/UPSTREAM-UPDATES.md).
-
-## Estado rastreável
-
-| Item | Valor |
-|---|---|
-| Versão atual | `config/version-state.json` |
-| Estado exato | `config/mesa-lock.json` e `config/version-state.json` |
-| Backend | Turnip/Freedreno + KGSL |
-| ABI | Android AArch64, `armv8-a` |
-| API mínima proposta | Android 10 / API 29 |
-| Exceções não upstream | aliases Android A810/A812 e perfil A825, isolados por `chip_id` |
-
-## Compilar
-
-Requisitos: Linux x86_64, Android NDK r29, Python 3, Git, Meson, Ninja, Flex,
-Bison, glslang, pkg-config, zip e ferramentas ELF.
-
-```bash
+```sh
 python3 -m venv work/venv
-work/venv/bin/pip install --requirement requirements-build.txt
-
-NDK_ROOT=/caminho/android-ndk-r29 \
-  DRIVER_VARIANT=standard ./scripts/build_universal.sh
-
-NDK_ROOT=/caminho/android-ndk-r29 \
-  DRIVER_VARIANT=oneui ./scripts/build_universal.sh
+work/venv/bin/pip install -r requirements-build.txt
+PATH="$PWD/work/venv/bin:$PATH" NDK_ROOT=/caminho/android-ndk-r29 \
+  DRIVER_VARIANT=standard bash scripts/check_reproducibility.sh
 ```
 
-O pipeline compila cada variante duas vezes e exige ZIP e ELF idênticos byte a
-byte antes de publicar.
+Use `DRIVER_VARIANT=oneui` em diretórios de saída separados. Cada variante exige
+ZIP, ELF e catálogo idênticos em duas árvores limpas. CI executa variantes em
+paralelo e cacheia apenas o download verificado do NDK, nunca objetos compilados.
+As releases preservam hashes, manifestos de build, ambiente e catálogos de GPU.
+Logs completos ficam nos artifacts da execução por 30 dias.
 
-A candidata KGSL/A840v2 corrige merge de semáforos e polling sem espera,
-reconhece o ID KGSL `0x44050A21` no perfil A840 e remove o anúncio AMD de
-`mgs4.exe`. A promoção requer testes reais de sincronização e renderização.
+## Releases
 
-## Como uma ideia entra no driver
+Toda mudança nasce como pre-release. O workflow de promoção exige qualificação
+revisada, vinculada ao SHA Mesa, fingerprint e hashes dos artefatos, incluindo
+CTS, VVL, hardware, regressões e A/B térmico. Build verde não prova compatibilidade.
+A atualização quinzenal ocorre dias **1 e 16 às 07:07 BRT**, com execução manual,
+e registra triagem upstream sem compilar automaticamente por número de versão.
 
-1. Registrar fonte, licença e hipótese em `evidence/`.
-2. Ler o código/patch real; texto de release não basta.
-3. Separar dependência de hardware, família e aplicativo.
-4. Fazer A/B reproduzível com imagem, crash, FPS, frametime/P99, stutter,
-   temperatura e consumo.
-5. Promover ao padrão somente com ganho comprovado e baixo risco.
-
-Consulte a [política de evidências](docs/EVIDENCE-POLICY.md), a
-[auditoria comunitária de 01/09](docs/audits/2026-09-01-community-source-audit.md)
-e o [processo upstream](docs/UPSTREAM-UPDATES.md). A
-[arquitetura](docs/ARCHITECTURE.md) documenta a divisão entre configuração,
-patches, evidências, testes e os workflows ativos.
-
-Este projeto não é afiliado à Qualcomm, Mesa ou aos projetos de emulação.
+Consulte [política](docs/EVIDENCE-POLICY.md), [processo](docs/UPSTREAM-UPDATES.md),
+[pesquisa](docs/RESEARCH-PLAN.md) e [protocolo da candidata](docs/VALIDATION-PLAN.md).

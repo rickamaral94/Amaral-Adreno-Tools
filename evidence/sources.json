@@ -108,6 +108,11 @@
     {
       "name": "Issues dos emuladores",
       "use": "Reprodução de incompatibilidades em Eden, GameHub/Winlator, Vita3K, Cemu e Xendroid"
+    },
+    {
+      "name": "WinNative-Emu/Drivers",
+      "url": "https://github.com/WinNative-Emu/Drivers",
+      "use": "Auditar patches reais; rejeitar UBWC amplo, desligamento global de atomics e clock forcing sem evidência por GPU."
     }
   ]
 }
