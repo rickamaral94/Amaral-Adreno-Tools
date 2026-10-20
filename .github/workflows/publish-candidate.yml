@@ -1,17 +1,6 @@
 name: Publish verified candidate
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - config/**
-      - patches/**
-      - scripts/**
-      - tools/**
-      - build-aux/**
-      - requirements-build.txt
-      - .github/workflows/publish-candidate.yml
-      - .github/workflows/build-candidate.yml
 permissions:
   contents: read
 concurrency:

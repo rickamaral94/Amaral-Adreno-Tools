@@ -49,7 +49,9 @@ Logs completos ficam nos artifacts da execução por 30 dias.
 
 ## Releases
 
-Toda mudança nasce como pre-release. O workflow de promoção exige qualificação
+Build e publicação são separados: pushes executam checks; `build-candidate.yml`
+compila para avaliação e `publish-candidate.yml` publica somente por execução
+manual após revisão técnica. Toda mudança nasce como pre-release. O workflow de promoção exige qualificação
 revisada, vinculada ao SHA Mesa, fingerprint e hashes dos artefatos, incluindo
 CTS, VVL, hardware, regressões e A/B térmico. Build verde não prova compatibilidade.
 A atualização quinzenal ocorre dias **1 e 16 às 07:07 BRT**, com execução manual,
@@ -57,3 +59,6 @@ e registra triagem upstream sem compilar automaticamente por número de versão.
 
 Consulte [política](docs/EVIDENCE-POLICY.md), [processo](docs/UPSTREAM-UPDATES.md),
 [pesquisa](docs/RESEARCH-PLAN.md) e [protocolo da candidata](docs/VALIDATION-PLAN.md).
+
+A [reavaliação com logs Eden e fontes Cemu](docs/audits/2026-10-20-diagnostics.md)
+detalha o benefício esperado por família e as limitações da candidata 5.7.8.1.
