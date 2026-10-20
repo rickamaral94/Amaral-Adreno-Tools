@@ -1,0 +1,69 @@
+From: Amaral Adreno Tools <rickamaral94@users.noreply.github.com>
+Subject: [LAB ONLY] tu: evaluate profiled autotuning on exact A740/Eden identities
+
+Hypothesis: GPU-timed renderpass selection can outperform bandwidth estimates
+for the fragmented Little Nightmares workload. This is not a measured win.
+The APK identifies all titles as yuzu Emulator; install only per game.
+No changes to compiler, features, barriers, clocks, UBWC or correctness guards.
+Explicit autotune environment/drirc overrides take priority. No new A6/A8 policy.
+
+--- a/src/freedreno/vulkan/tu_autotune.cc
++++ b/src/freedreno/vulkan/tu_autotune.cc
+@@ -4,6 +4,7 @@
+  */
+ 
+ #include "tu_autotune.h"
++#include "tu_amaral_lab.h"
+ 
+ #include <algorithm>
+ #include <array>
+@@ -325,6 +326,22 @@
+       assert(static_cast<uint8_t>(mod_flags) == mod_flags);
+       at_config = config_t(algo, static_cast<uint8_t>(mod_flags));
+    });
++
++   /* Apply the lab default per device, after the process-wide environment
++    * cache. Never cache a GPU/app-specific decision in the static at_config.
++    * Explicit environment values and nonempty drirc selections win.
++    */
++   const auto &id = device->physical_device->dev_id;
++   const auto &app = device->instance->vk.app_info;
++   if (!os_get_option("TU_AUTOTUNE_ALGO") &&
++       !os_get_option("TU_AUTOTUNE_FLAGS") &&
++       (!device->instance->drirc.perf.autotune_algo ||
++        !device->instance->drirc.perf.autotune_algo[0]) &&
++       amaral_a740_eden_lab_matches(id.gpu_id, id.chip_id,
++                                   app.app_name, app.engine_name)) {
++      mesa_logi("AMARAL_LAB_LN_A740: profiled autotuner; title unknown; per-game test only");
++      return config_t(algorithm::PROFILED, 0);
++   }
+ 
+    if (TU_DEBUG(STARTUP))
+       mesa_logi("TU_AUTOTUNE: %s", at_config.to_string().c_str());
+--- /dev/null
++++ b/src/freedreno/vulkan/tu_amaral_lab.h
+@@ -0,0 +1,24 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef TU_AMARAL_LAB_H
++#define TU_AMARAL_LAB_H
++
++#include <cstdint>
++#include <string_view>
++
++/* Research build only. The APK does not expose a title ID to Vulkan.
++ * Select this driver per game, never as a universal performance profile.
++ * Exact known A740 IDs; do not infer other families from numeric ranges.
++ */
++static inline bool
++amaral_a740_eden_lab_matches(uint32_t gpu_id, uint64_t chip_id,
++                            const char *app, const char *engine)
++{
++   const bool a740 = (gpu_id == 740 && chip_id == 0) ||
++                     (chip_id == 0x43050a01ULL && (gpu_id == 0 || gpu_id == 740)) ||
++                     (chip_id == 0xffff43050a01ULL && (gpu_id == 0 || gpu_id == 740));
++   return a740 && app && engine &&
++          std::string_view(app) == "yuzu Emulator" &&
++          std::string_view(engine) == "yuzu Emulator";
++}
++
++#endif
