@@ -1,73 +1,29 @@
 name: Project checks
-
 on:
   pull_request:
   push:
     branches: [main]
-
 permissions:
   contents: read
-
 concurrency:
-  group: project-checks-${{ github.ref }}
+  group: checks-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   validate:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - name: Fetch pinned Mesa
-        run: |
-          commit="$(python3 -c 'import json; print(json.load(open("config/mesa-lock.json"))["mesa"]["commit"])')"
-          git init work/mesa
-          git -C work/mesa remote add origin https://gitlab.freedesktop.org/mesa/mesa.git
-          git -C work/mesa fetch --depth=1 origin "${commit}"
-          git -C work/mesa checkout --detach FETCH_HEAD
-      - name: Resolve patch-set state for validation
-        run: |
-          python3 tools/release_version.py candidate \
-            --mesa-src work/mesa --write
-      - name: Validate metadata and evidence gates
-        run: |
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - run: |
           python3 tools/validate_project.py
           python3 -m unittest discover -s tests -v
-      - name: Check shell syntax
-        run: bash -n scripts/*.sh
-      - name: Install pinned GPU generator dependencies
+          for script in scripts/*.sh; do bash -n "$script"; done
+      - name: Apply exact patch manifest against official pinned Mesa
         run: |
-          python3 -m venv work/venv
-          work/venv/bin/pip install --requirement requirements-build.txt
-          echo "${GITHUB_WORKSPACE}/work/venv/bin" >> "${GITHUB_PATH}"
-      - name: Verify driver patches against pinned Mesa
-        run: |
-          git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0001-android-ndk-r29-compat.patch"
-          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0001-android-ndk-r29-compat.patch"
-          git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0002-a8xx-experimental-device-support.patch"
-          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0002-a8xx-experimental-device-support.patch"
-          git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0004-depth-extensions.patch"
-          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0004-depth-extensions.patch"
-          git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0005-a740-aurora-performance.patch"
-          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0005-a740-aurora-performance.patch"
-          git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0006-emulator-compat-driconf.patch"
-          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0006-emulator-compat-driconf.patch"
-          git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0007-community-turnip-stability-fixes.patch"
-          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0007-community-turnip-stability-fixes.patch"
-          python3 tools/check_mesa_policy.py work/mesa
-          git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0008-remove-mgs4-vendor-spoof.patch"
-          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0008-remove-mgs4-vendor-spoof.patch"
-          python3 tools/check_mesa_policy.py work/mesa --patched
+          sha="$(python3 -c 'import json; print(json.load(open("config/mesa-lock.json"))["mesa"]["commit"])')"
+          git init -q work/mesa
+          git -C work/mesa fetch --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git "$sha"
+          git -C work/mesa checkout --detach FETCH_HEAD
+          python3 tools/apply_patches.py work/mesa --variant standard
           python3 tools/check_a840_topology.py work/mesa
-          python3 tools/check_vulkan_roadmap.py work/mesa
-          mkdir -p work/generated-registers
-          python3 work/mesa/src/freedreno/registers/gen_header.py \
-            --rnn work/mesa/src/freedreno/registers \
-            --xml work/mesa/src/freedreno/registers/adreno/a6xx.xml py-defines \
-            > work/generated-registers/a6xx.py
-          python3 work/mesa/src/freedreno/common/freedreno_devices.py \
-            -p work/generated-registers > work/generated-registers/standard.h
-          git -C work/mesa apply --check "${GITHUB_WORKSPACE}/patches/0003-oneui-ubwc.patch"
-          git -C work/mesa apply "${GITHUB_WORKSPACE}/patches/0003-oneui-ubwc.patch"
-          python3 work/mesa/src/freedreno/common/freedreno_devices.py \
-            -p work/generated-registers > work/generated-registers/oneui.h
-          git -C work/mesa diff --check
+          python3 tools/check_vulkan_roadmap.py work/mesa --fail-on-new-support
+          git -C work/mesa apply --check "$GITHUB_WORKSPACE/patches/0003-oneui-ubwc.patch"

@@ -58,52 +58,9 @@ if [[ "${actual_commit}" != "${expected_commit}" ]]; then
   exit 1
 fi
 
-apply_patch_once() {
-  local patch_file="$1"
-  if ! git -C "${mesa_src}" apply --reverse --check "${patch_file}" >/dev/null 2>&1; then
-    git -C "${mesa_src}" apply --check "${patch_file}"
-    git -C "${mesa_src}" apply "${patch_file}"
-  fi
-}
-
-apply_patch_once "${repo_root}/patches/0001-android-ndk-r29-compat.patch"
-apply_patch_once "${repo_root}/patches/0002-a8xx-experimental-device-support.patch"
-apply_patch_once "${repo_root}/patches/0004-depth-extensions.patch"
-apply_patch_once "${repo_root}/patches/0005-a740-aurora-performance.patch"
-apply_patch_once "${repo_root}/patches/0006-emulator-compat-driconf.patch"
-apply_patch_once "${repo_root}/patches/0007-community-turnip-stability-fixes.patch"
-python3 "${repo_root}/tools/check_mesa_policy.py" "${mesa_src}"
-apply_patch_once "${repo_root}/patches/0008-remove-mgs4-vendor-spoof.patch"
-python3 "${repo_root}/tools/check_mesa_policy.py" "${mesa_src}" --patched
-if [[ "${driver_variant}" == "oneui" ]]; then
-  apply_patch_once "${repo_root}/patches/0003-oneui-ubwc.patch"
-elif git -C "${mesa_src}" apply --reverse --check \
-    "${repo_root}/patches/0003-oneui-ubwc.patch" >/dev/null 2>&1; then
-  echo "A árvore Mesa da variante standard contém o patch OneUI." >&2
-  exit 1
-fi
+python3 "${repo_root}/tools/apply_patches.py" "${mesa_src}" --variant "${driver_variant}"
 python3 "${repo_root}/tools/check_a840_topology.py" "${mesa_src}"
-git -C "${mesa_src}" diff --check
-mapfile -t changed_source_files < <(git -C "${mesa_src}" diff --name-only | LC_ALL=C sort)
-expected_source_files=(
-  "include/android_stub/cutils/native_handle.h"
-  "src/freedreno/common/freedreno_devices.py"
-  "src/freedreno/drm-shim/freedreno_noop.c"
-  "src/freedreno/ir3/ir3_nir.c"
-  "src/freedreno/vulkan/00-turnip-defaults.conf"
-  "src/freedreno/vulkan/tu_buffer.cc"
-  "src/freedreno/vulkan/tu_device.cc"
-  "src/freedreno/vulkan/tu_pipeline.cc"
-  "src/freedreno/vulkan/tu_query_pool.cc"
-  "src/freedreno/vulkan/tu_shader.cc"
-  "src/util/u_gralloc/u_gralloc_fallback.c"
-  "src/vulkan/runtime/vk_android.c"
-)
-if [[ "${changed_source_files[*]}" != "${expected_source_files[*]}" ]]; then
-  echo "Alterações inesperadas na árvore Mesa:" >&2
-  printf '  %s\n' "${changed_source_files[@]}" >&2
-  exit 1
-fi
+python3 "${repo_root}/tools/check_vulkan_roadmap.py" "${mesa_src}"
 
 ndk_bin="${ndk_root}/toolchains/llvm/prebuilt/linux-x86_64/bin"
 ndk_sysroot="${ndk_root}/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
@@ -204,4 +161,11 @@ touch -d "@${SOURCE_DATE_EPOCH}" "${package_dir}/libvulkan_freedreno.so" "${pack
 (cd "${package_dir}" && zip -X -9 -q "${artifact_path}" libvulkan_freedreno.so meta.json)
 (cd "${output_root}" && sha256sum "${package_basename}.zip" > SHA256SUMS.txt)
 "${repo_root}/scripts/validate_artifact.sh" "${artifact_path}"
+mkdir -p "${work_root}/generated-registers"
+python3 "${mesa_src}/src/freedreno/registers/gen_header.py" \
+  --rnn "${mesa_src}/src/freedreno/registers" \
+  --xml "${mesa_src}/src/freedreno/registers/adreno/a6xx.xml" py-defines \
+  > "${work_root}/generated-registers/a6xx.py"
+python3 "${mesa_src}/src/freedreno/common/freedreno_devices.py" \
+  -p "${work_root}/generated-registers" > "${output_root}/GPU_CATALOG_${driver_variant}.h"
 echo "${artifact_path}"

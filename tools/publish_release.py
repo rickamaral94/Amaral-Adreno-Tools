@@ -24,7 +24,16 @@ def gh(*args, missing_ok=False):
 
 
 def release(repo, tag):
-    return gh("api", f"repos/{repo}/releases/tags/{tag}", missing_ok=True)
+    current = gh("api", f"repos/{repo}/releases/tags/{tag}", missing_ok=True)
+    if current is None:
+        # HTTP 500 during creation can leave a draft: recover only this exact tag.
+        raw = gh("api", f"repos/{repo}/releases?per_page=100")
+        entries = json.loads(raw) if isinstance(raw, str) else raw
+        matches = [item for item in entries if item["tag_name"] == tag]
+        if len(matches) > 1:
+            raise RuntimeError(f"Ambiguous releases for {tag}; inspect before retry")
+        current = matches[0] if matches else None
+    return current
 
 
 def asset_digests(paths):
@@ -95,6 +104,10 @@ def main():
 
     if not args.title or not args.notes_file or not args.channel:
         raise RuntimeError("Publication requires title, notes and channel")
+    if args.channel == "latest":
+        raise RuntimeError("Use the evidence-gated promotion workflow, never direct Latest publication")
+    names += tuple(f"{prefix}_{variant}.{extension}" for variant in ("standard", "oneui")
+                   for prefix, extension in (("BUILD_MANIFEST", "json"), ("BUILD_ENVIRONMENT", "txt"), ("GPU_CATALOG", "h")))
     paths = [Path("dist") / name for name in names]
     if any(not path.is_file() for path in paths):
         raise RuntimeError("A tested release asset is missing")
@@ -121,7 +134,7 @@ def main():
         raise RuntimeError("Published assets are incomplete")
     flags = ["--prerelease", "--latest=false"] if args.channel == "candidate" else ["--prerelease=false", "--latest"]
     gh("release", "edit", args.tag, "--repo", args.repo, "--title", args.title,
-       "--notes-file", str(args.notes_file), *flags)
+       "--notes-file", str(args.notes_file), "--draft=false", *flags)
     current = release(args.repo, args.tag)
     if bool(current["prerelease"]) != (args.channel == "candidate"):
         raise RuntimeError("Published channel verification failed")

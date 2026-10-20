@@ -64,7 +64,8 @@ class VersionTests(unittest.TestCase):
             with (patch.object(release_version, "ROOT", root),
                   patch.object(release_version, "LOCK_PATH", root / "config/mesa-lock.json"),
                   patch.object(release_version, "STATE_PATH", root / "config/version-state.json"),
-                  patch.object(release_version, "patchset_fingerprint", return_value="b" * 64)):
+                  patch.object(release_version, "patchset_fingerprint", return_value="b" * 64),
+                  patch("promotion_gate.validate_promotion", return_value={})):
                 release_version.promote_candidate(SimpleNamespace(github_output=None, write=True))
             promoted = json.loads((root / "config/version-state.json").read_text())
             self.assertEqual(promoted["last_released_mesa_commit"], "c" * 40)
@@ -125,3 +126,23 @@ class VersionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class CandidateIdentityTests(unittest.TestCase):
+    def test_upstream_only_change_creates_candidate_and_preserves_stable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=pathlib.Path(directory);(root/'config').mkdir()
+            state=copy.deepcopy(BASE_STATE)
+            state.update(current_version='4.5.1.1',stable_version='4.5.1.1',last_released_mesa_commit='a'*40,stable_patchset_sha256='b'*64,candidate=None)
+            lock={'amaral_revision':'4.5.1.1','mesa':{'commit':'c'*40,'version':'26.3.0-devel'}}
+            state_path=root/'config/version-state.json';lock_path=root/'config/mesa-lock.json'
+            state_path.write_text(json.dumps(state));lock_path.write_text(json.dumps(lock))
+            meta={'commit':'c'*40,'version':'26.3.0-devel','normalized_version':'26.3.0','vulkan_version':'1.4.359','commit_date_utc':'2026-10-20','title':'Correctness fix'}
+            with (patch.object(release_version,'ROOT',root),patch.object(release_version,'STATE_PATH',state_path),
+                  patch.object(release_version,'LOCK_PATH',lock_path),patch.object(release_version,'patchset_fingerprint',return_value='b'*64),
+                  patch.object(release_version,'mesa_metadata',return_value=meta)):
+                release_version.prepare_candidate(SimpleNamespace(mesa_src=root,github_output=None,write=True))
+            new=json.loads(state_path.read_text())
+            self.assertEqual(new['stable_version'],'4.5.1.1')
+            self.assertEqual(new['last_released_mesa_commit'],'a'*40)
+            self.assertEqual(new['candidate']['mesa_commit'],'c'*40)
+            self.assertEqual(new['current_version'],'4.5.2.1')
