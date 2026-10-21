@@ -11,6 +11,7 @@ para auditoria e futuras análises.
 |---|---|---|
 | Odin 2 Portal, A740, Android 13, Little Nightmares no Eden | Latest 4.7.7.2, Standard 5.7.8.1, Labs 5.7.9.1, 5.7.10.1 e 5.7.11.1 | Há execução real, mas ainda não há ganho de FPS demonstrado por A/B controlado. Meta de 60 FPS pendente. |
 | Odin 2 Portal, A740, Little Nightmares | Readback Lab 5.7.11.1 | Binário carregado; nenhum heartbeat V2 apareceu, portanto o caminho de cópia continua sem medição. |
+| Odin 2 Portal, A740, Little Nightmares | Readback Lab 5.7.12.1 | Standard e OneUI reproduzíveis; nova captura física pendente para identificar o filtro/callback de fila. |
 | A6xx, A750, A8xx | — | Nenhum resultado novo de hardware neste registro. |
 | Cemu Fork Amaral | — | Código e relatos públicos estudados; nenhum ZIP bruto de gameplay analisado nesta etapa. |
 

@@ -64,6 +64,16 @@
       "status": "observed",
       "patchset_sha256": "ad753c5591c2e50d629550b5a8238576ceead8340949c46be7b63b18668752f2",
       "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/26"
+    },
+    "lab-5.7.12.1": {
+      "name": "A740 Readback Lab 5.7.12.1 Standard",
+      "mesa_commit": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
+      "elf_sha256": "b3aa76d16b409bded16c8c6d083b12b006f0c71c8933d0d89cc7bef5edc447cc",
+      "proposal": "Registrar IDs e resultado do filtro antes do gate A740 nos callbacks de fila A7xx, com log Android direto. Contagem de cópias continua A740/Eden.",
+      "hardware_result": null,
+      "status": "awaiting-hardware",
+      "patchset_sha256": "0f26945e13d457bd605b20a58db0509ee73d608c1f94dc060f51c26019023b8c",
+      "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/26"
     }
   },
   "captures": [

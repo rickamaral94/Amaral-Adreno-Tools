@@ -17,6 +17,7 @@ selecionadas sem publicar logs brutos.
 | PROFILED Lab 5.7.9.1 | Trocar default do autotuner BANDWIDTH por PROFILED somente no A740/Eden. | 37,77 e 40,80 FPS observados em cargas distintas; melhora não demonstrada. | Não integrar o tuning. |
 | Readback Lab 5.7.10.1 | Contar cópias de imagem, fallback por linha e r2d/r3d em lotes de 512 por thread. | 41,28 FPS; 3 esperas `texture_download` em 27 ms; nenhum contador `AMARAL_RB_V1` apareceu. | Instrumentação inconclusiva. |
 | Readback Lab 5.7.11.1 | Heartbeat de submissão e contadores cumulativos visíveis mesmo com poucas cópias. | 44,01 FPS em 817,61 s; o ELF correto carregou, mas nenhuma linha `AMARAL_RB_V2` apareceu. | Investigar filtro/log; sem release. |
+| Readback Lab 5.7.12.1 | Registrar IDs internos e resultado do filtro antes do gate A740 nas filas A7xx, com log Android direto. | **Aguardando captura física.** Standard/OneUI reproduzíveis em CI; nenhuma conclusão de desempenho. | Lab diagnóstica. |
 
 Todos os labs usam o mesmo Mesa `4b0f64ceac6a86af38c1e69cd38cf29f84ba611d`
 da candidata 5.7.8.1. A Latest usa
@@ -102,8 +103,9 @@ interpretar KGSL busy repetido como capacidade ociosa, nem somar waits de
 threads diferentes. As capturas ainda não justificam Latest, ganho de FPS ou
 ajuste global de GMEM/SYSMEM.
 
-Decisão atual: **2 — atualizar controle/evidências**. Próximo passo: investigar
-no código o gate do ID A740, o callback de fila e o logging Android; só depois
-preparar outra instrumentação ou pedir nova captura. Para uma afirmação de ganho,
+Decisão atual: **2 — atualizar controle/evidências**. Próximo teste: executar
+a [Lab V3 5.7.12.1](https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/26)
+no Odin e verificar `AMARAL_RB_V3`, IDs e `scope` no log. Se o heartbeat continuar
+ausente, investigar o callback/coletor antes de qualquer tuning. Para uma afirmação de ganho,
 repetir 5.7.8.1 contra uma candidata com cena marcada, cinco rodadas balanceadas,
 clocks/cache/temperatura controlados e verificação visual.
