@@ -232,10 +232,11 @@
       "default": false,
       "patch": "patches/0010-lab-a740-readback-counters.patch",
       "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
-      "reason": "A740 diagnostic V2: bounded queue heartbeat and cross-thread cumulative readback recording counts. No rendering tuning or performance claim.",
+      "reason": "V3: bounded direct Android heartbeat on A7xx queue callbacks to reveal actual IDs and gate result. Readback counters stay A740/Eden-only. No performance claim.",
       "evidence": [
         "docs/READBACK-LAB.md",
-        "docs/READBACK-FIRST-RESULT.md"
+        "docs/READBACK-FIRST-RESULT.md",
+        "docs/READBACK-SECOND-RESULT.md"
       ]
     }
   ]

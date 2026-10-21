@@ -1,4 +1,4 @@
-# A740 Readback Lab 5.7.11.1
+# A740 Readback Lab 5.7.12.1
 
 Build de diagnóstico baseada na 5.7.8.1, sem o perfil PROFILED.
 Leia [protocolo e limites](docs/READBACK-LAB.md).

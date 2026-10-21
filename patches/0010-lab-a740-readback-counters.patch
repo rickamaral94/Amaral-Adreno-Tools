@@ -1,9 +1,10 @@
 From: Amaral Adreno Tools <rickamaral94@users.noreply.github.com>
-Subject: [LAB ONLY] tu: observable A740 readback totals and queue heartbeat
+Subject: [LAB ONLY] tu: expose A7 queue identity before gated readback counters
 
-Keep GPU commands, barriers and format selection unchanged. A740 queue entry
-heartbeat at most once per 10 seconds; eligible Eden recording counts are shared
-across threads/TUs. Diagnostic overhead, not a performance build.
+The 5.7.11.1 heartbeat never appeared on the Odin despite the correct ELF.
+V3 observes actual A7xx IDs and queue path using bounded direct Android logcat
+output, before the A740/Eden counting gate. Counting remains A740/Eden-only.
+No GPU command, barrier, autotuner or copy-path selection changes.
 
 --- a/src/freedreno/vulkan/tu_clear_blit.cc
 +++ b/src/freedreno/vulkan/tu_clear_blit.cc
@@ -72,44 +73,79 @@ across threads/TUs. Diagnostic overhead, not a performance build.
  template <chip CHIP>
 --- a/src/freedreno/vulkan/tu_queue.cc
 +++ b/src/freedreno/vulkan/tu_queue.cc
-@@ -8,6 +8,9 @@
+@@ -8,6 +8,12 @@
   */
  
  #include "tu_queue.h"
 +#include "tu_amaral_readback_lab.h"
-+#include "util/log.h"
++#include "util/detect_os.h"
 +#include <chrono>
++#if DETECT_OS_ANDROID
++#include <android/log.h>
++#endif
  
  #include <inttypes.h>
  
-@@ -418,6 +421,30 @@
+@@ -338,11 +344,54 @@
+    return VK_SUCCESS;
+ }
+ 
++/* Android-only, A7xx laboratory probe. This prints the actual device IDs
++ * before the A740/Eden counter gate and bypasses Mesa logging controls. Bounded
++ * to one line per process every 10 s, shared by both queue submit callbacks.
++ * A7xx is the diagnostic observation scope; readback counts stay A740-gated.
++ */
++static void
++amaral_readback_queue_heartbeat(struct tu_device *device, const char *path)
++{
++#if DETECT_OS_ANDROID
++   if (device->physical_device->info->chip != 7)
++      return;
++   const auto &lab_id = device->physical_device->dev_id;
++   const auto &app = device->instance->vk.app_info;
++   const uint64_t entries = amaral_rb_submit_entries.fetch_add(1, std::memory_order_relaxed) + 1;
++   const uint64_t now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
++      std::chrono::steady_clock::now().time_since_epoch()).count();
++   if (!amaral_readback_report_due(now_ms))
++      return;
++   const auto &rb = amaral_rb_totals;
++   __android_log_print(ANDROID_LOG_INFO, "AmaralRB",
++      "AMARAL_RB_V3 path=%s gpu=%u chip=%llx app_match=%u engine_match=%u "
++      "scope=%u queue_entries=%llu regions=%llu layers=%llu row_layers=%llu "
++      "runs=%llu requested_bytes=%llu r3d_regions=%llu last_vk_format=%u",
++      path, lab_id.gpu_id, (unsigned long long)lab_id.chip_id,
++      unsigned(amaral_readback_app(app.app_name)),
++      unsigned(amaral_readback_app(app.engine_name)),
++      unsigned(amaral_readback_scope(lab_id.gpu_id, lab_id.chip_id,
++                                     app.app_name, app.engine_name)),
++      (unsigned long long)entries,
++      (unsigned long long)rb.regions.load(std::memory_order_relaxed),
++      (unsigned long long)rb.layers.load(std::memory_order_relaxed),
++      (unsigned long long)rb.row_layers.load(std::memory_order_relaxed),
++      (unsigned long long)rb.runs.load(std::memory_order_relaxed),
++      (unsigned long long)rb.requested_bytes.load(std::memory_order_relaxed),
++      (unsigned long long)rb.r3d_regions.load(std::memory_order_relaxed),
++      rb.last_vk_format.load(std::memory_order_relaxed));
++#else
++   (void)device;
++   (void)path;
++#endif
++}
++
+ static VkResult
+ queue_submit_sparse(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
+ {
+    struct tu_queue *queue = list_entry(_queue, struct tu_queue, vk);
+    struct tu_device *device = queue->device;
++   amaral_readback_queue_heartbeat(device, "sparse");
+ 
+    pthread_mutex_lock(&device->submit_mutex);
+ 
+@@ -418,6 +467,7 @@
     MESA_TRACE_FUNC();
     struct tu_queue *queue = list_entry(_queue, struct tu_queue, vk);
     struct tu_device *device = queue->device;
-+   const auto &lab_id = device->physical_device->dev_id;
-+   if (amaral_readback_gpu(lab_id.gpu_id, lab_id.chip_id)) {
-+      const auto &app = device->instance->vk.app_info;
-+      const uint64_t entries = amaral_rb_submit_entries.fetch_add(1, std::memory_order_relaxed) + 1;
-+      const uint64_t now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-+         std::chrono::steady_clock::now().time_since_epoch()).count();
-+      if (amaral_readback_report_due(now_ms)) {
-+         const auto &rb = amaral_rb_totals;
-+         mesa_logi("AMARAL_RB_V2 gpu=%u chip=%llx app_match=%u engine_match=%u "
-+                   "submit_entries=%llu regions=%llu layers=%llu row_layers=%llu "
-+                   "runs=%llu requested_bytes=%llu r3d_regions=%llu last_vk_format=%u",
-+                   lab_id.gpu_id, (unsigned long long)lab_id.chip_id,
-+                   unsigned(amaral_readback_app(app.app_name)),
-+                   unsigned(amaral_readback_app(app.engine_name)),
-+                   (unsigned long long)entries,
-+                   (unsigned long long)rb.regions.load(std::memory_order_relaxed),
-+                   (unsigned long long)rb.layers.load(std::memory_order_relaxed),
-+                   (unsigned long long)rb.row_layers.load(std::memory_order_relaxed),
-+                   (unsigned long long)rb.runs.load(std::memory_order_relaxed),
-+                   (unsigned long long)rb.requested_bytes.load(std::memory_order_relaxed),
-+                   (unsigned long long)rb.r3d_regions.load(std::memory_order_relaxed),
-+                   rb.last_vk_format.load(std::memory_order_relaxed));
-+      }
-+   }
++   amaral_readback_queue_heartbeat(device, "graphics");
     bool u_trace_enabled = u_trace_should_process(&queue->device->trace_context);
     struct util_dynarray dump_cmds;
     struct tu_cs *autotune_cs = NULL;
