@@ -1,90 +1,78 @@
-# A740 Readback Lab 5.7.10.1
+# A740 Readback Lab 5.7.11.1 — V2
 
-Objetivo: identificar o caminho de cópia antes de otimizar. Base exata 5.7.8.1
-Standard, Mesa 4b0f64ceac6a86af38c1e69cd38cf29f84ba611d. Não inclui o patch
-PROFILED da Lab 5.7.9.1. Não altera barreiras, comandos GPU, UBWC, extensões,
-precisão, clocks ou a escolha dos caminhos de cópia. Não é build de performance.
+Base Standard 5.7.8.1, Mesa 4b0f64ceac6a86af38c1e69cd38cf29f84ba611d.
+Autotuner original, sem PROFILED. Diagnóstico, não otimização de desempenho.
+Barreiras, comandos GPU, extensões, clocks e seleção do caminho de cópia preservados.
 
-## Evidência e hipótese
+## Por que revisar
 
-Na captura 230715, 5.7.8.1 carregou corretamente e registrou 44,89 FPS contra
-40,80 da captura Lab 224224. Os workloads e readbacks diferem; não é um A/B
-qualificado. PROFILED permanece fora do main sem benefício demonstrado.
+A 5.7.10.1 não produziu AMARAL_RB_V1 na captura 003041. Seu limiar de 512 regiões
+por thread e ausência de heartbeat tornaram o resultado inconclusivo. Ver
+[resultado anterior](READBACK-FIRST-RESULT.md). Não concluir que não houve cópias.
 
-A captura 230715 registrou 20.666 esperas texture_download, 212 s de wall time
-na thread GPU. Esses 212 s não são duração exclusiva de cópias nem tempo que
-pode ser removido: o fence espera trabalho anterior também. Os tempos de threads
-se sobrepõem. Não se conclui que banda de memória ou o blitter seja o gargalo.
+## V2
 
-No APK 6b592ecbea, TextureCache::DownloadMemory pode copiar imagens completas e
-chamar runtime.Finish() por imagem antes de SwizzleImage no CPU. Existem outros
-chamadores de Finish; o rótulo texture_download não identifica o chamador.
-Em tu_copy_image_to_buffer, pitch ou endereço desalinhado a 64 bytes exige
-cópias por linha, com possível operação adicional no limite MAX_VIEWPORT_SIZE.
-O caminho geral usa r2d; certos formatos usam r3d. Os diagnósticos anteriores
-não registram qual desses caminhos realmente ocorreu.
-
-Referências:
-- https://github.com/rickamaral94/Logs_eden/blob/6b592ecbeaac9631ffef1cb5735931ed1083189b/src/video_core/texture_cache/texture_cache.h
-- https://github.com/rickamaral94/Logs_eden/blob/6b592ecbeaac9631ffef1cb5735931ed1083189b/src/video_core/renderer_vulkan/vk_texture_cache.cpp
-- https://github.com/chaotic-cx/mesa-mirror/blob/4b0f64ceac6a86af38c1e69cd38cf29f84ba611d/src/freedreno/vulkan/tu_clear_blit.cc
-
-## Instrumentação
-
-Gate: IDs A740 conhecidos e app/engine exatamente yuzu Emulator. Contadores
-thread-local, sem locks, alocação dinâmica ou waits. Uma linha AMARAL_RB_V1 a cada
-512 regiões de cópia gravadas por thread. Não registra endereços ou conteúdo.
+O callback queue_submit registra AMARAL_RB_V2 na primeira entrada e, enquanto
+houver novas submissões, no máximo uma vez a cada 10 segundos. O heartbeat roda
+somente nos IDs A740 conhecidos, mesmo quando o filtro de aplicativo falha.
+Não depende de atingir um número mínimo de cópias. As chamadas de cópia usam o
+mesmo filtro A740 e app/engine exatamente yuzu Emulator da V1.
 
 Campos:
-- regions: regiões gravadas no lote, normalmente 512;
-- layers: camadas processadas;
-- row_layers: camadas que entraram no fallback por linha;
-- runs: chamadas reais a ops->run, incluindo sobras de linha;
-- requested_bytes: bytes lógicos das regiões após conversão de blocos comprimidos,
-  excluindo padding; não mede tráfego de memória, compressão ou bytes concluídos;
-- r3d_regions: regiões que usaram o caminho r3d;
-- dominant_vk_format / dominant_regions: formato VkFormat mais frequente entre
-  os enums 0..255 nesse lote e sua contagem;
-- other_format_regions: enums fora de 0..255, contados sem indexar o array.
+- gpu / chip: identificação numérica recebida pelo driver;
+- app_match / engine_match: resultado de cada comparação, sem registrar nomes;
+- submit_entries: entradas no callback de submissão A740, não submissões concluídas;
+- regions, layers, row_layers, runs: regiões gravadas, camadas, camadas com fallback
+  por linha e chamadas a ops->run;
+- requested_bytes: bytes lógicos, excluindo padding; não são tráfego de memória;
+- r3d_regions: regiões gravadas pelo caminho r3d;
+- last_vk_format: último formato observado, não formato dominante do intervalo.
 
-São contagens de gravação do command buffer, não de execução GPU: um buffer
-reutilizado pode executar mais vezes; um buffer descartado pode não executar.
-Lotes parciais ficam fora do log. As mensagens podem chegar depois do trabalho
-que descrevem e parte do lote pode anteceder a captura. Não calcular banda ou
-correlação por frame com esses totais. Threads diferentes não compartilham lote.
+Contadores cumulativos compartilhados por todas as threads e unidades C++ da
+biblioteca. Contam dispositivos elegíveis do processo em conjunto; não são
+separados por dispositivo. Só se admite interpretar uma captura de um único
+processo/dispositivo. Usam atomics relaxed lock-free; a leitura dos vários campos
+não é uma transação. Campos podem refletir instantes ligeiramente diferentes.
 
-Log periódico evita depender da mensagem de inicialização que o APK atual perde.
-O custo de contagem/log é diagnóstico e pode afetar desempenho; não usar FPS
-desta build como resultado de uma otimização. Testes cobrem scope, soma, reset e
-formatos fora do intervalo. Compilação/reprodutibilidade não substituem CTS.
+Para avaliar a janela, subtrair snapshots consecutivos do mesmo processo, nunca
+somar snapshots nem usar o primeiro total como atividade da captura. Copias
+anteriores à captura entram no total. Lotes com uma única região são visíveis;
+o final após o último heartbeat pode ficar fora do log. Sem submissões posteriores,
+não há flush final. Command buffers reutilizados/descartados não equivalem a
+execuções GPU. Não calcular banda ou duração GPU com estes contadores.
 
-## Teste no Odin sem APK novo
+Clock de CPU é consultado em cada entrada A740 para limitar logs. Atomics,
+clock e logging adicionam custo. Não usar o FPS da Lab como ganho ou regressão
+de tuning. Nenhuma espera GPU, barreira ou lock de diagnóstico foi adicionado.
 
-1. Baixar verified-standard da execução lab-readback.yml e extrair o ZIP externo.
-2. Importar o ZIP interno 5.7.10.1 no Eden e selecionar apenas em Little Nightmares.
-3. Reiniciar o processo, percorrer o trecho e aquecer o cache normalmente.
-4. Iniciar diagnóstico e jogar 3–5 minutos na rota com quedas; exportar o ZIP.
-5. Procurar AMARAL_RB_V1 em logs/driver_logcat.txt. Com poucas cópias ou lotes
-   incompletos pode não haver linhas; isso não é prova de zero readbacks.
-6. Voltar à 5.7.8.1 Standard após a investigação. Não usar OneUI no Odin.
+## Teste no Odin
 
-O APK não envia o título ao Vulkan: instalação global também afeta outros jogos
-Eden/yuzu no A740. Outros IDs/engines não entram na contagem. Nenhuma mudança no
-Eden foi feita; o coletor existente pode capturar as mensagens periódicas.
+1. Baixar verified-standard, extrair ZIP externo e importar o ZIP interno 5.7.11.1.
+2. Selecionar somente no Little Nightmares e reiniciar o processo Eden.
+3. Aquecer o cache, capturar 3–5 minutos no trecho problemático e exportar ZIP.
+4. Esperar linhas AMARAL_RB_V2 em logs/driver_logcat.txt a aproximadamente cada
+   10 segundos enquanto houver submissões. Não precisa de APK novo.
+5. Voltar à 5.7.8.1 Standard depois do diagnóstico.
 
-## Decisão após a captura
+O APK usa identidade Vulkan genérica: instalação global alcança outros jogos
+Eden/yuzu no A740. OneUI não é a variante para o Odin.
 
-- Muitos row_layers/runs: investigar alinhamento de staging/stride e custo do
-  fallback antes de propor uma alternativa com resultados equivalentes.
-- Predomínio de cópias alinhadas r2d: não otimizar um fallback que não ocorre;
-  medir execução GPU das cópias e trabalho anterior ao fence.
-- r3d relevante: identificar formato/aspecto e exigências de correção antes de
-  mudar engine de cópia.
-- Nenhum caso autoriza remover Finish, waits, flushes ou barreiras por flag.
+## Interpretação e próximo gate
 
-Para decompor o fence futuramente, o Eden precisará registrar chamador, tamanho,
-formato, número de imagens e duração separada de cópia GPU, espera e swizzle CPU.
-Essa instrumentação será proposta ao dono antes de alterar o APK.
+- Heartbeat ausente: verificar logging, IDs e callback; resultado inconclusivo.
+- app_match ou engine_match igual a 0: filtro não atendeu à identidade efetiva;
+  não interpretar regions=0 como ausência de cópias.
+- Matches=1 e regions sem aumento: nenhuma nova região elegível observada entre
+  snapshots; não prova ausência de outros tipos de transferência.
+- row_layers/runs crescendo muito: investigar alinhamento/stride antes de tuning.
+- Cópias alinhadas: investigar duração GPU e trabalho anterior às esperas.
 
-Branch de laboratório somente, com duas builds por variante e sem publicação
-ou promoção automática. Meta de 60 FPS continua pendente.
+Esta versão ainda não separa tempo GPU de render passes e cópias. Essa etapa
+exigirá instrumentação de timestamps apropriada, potencialmente no Eden, que
+será apresentada ao proprietário antes de alterar o APK. Não remover fences ou
+Finish, não forçar GMEM/SYSMEM e não anunciar 60 FPS com base nestes contadores.
+
+Testes locais executam o header real do patch, filtros positivos/negativos,
+intervalo do heartbeat, contagens concorrentes e estado compartilhado entre
+unidades de compilação. CI exige duas builds independentes por variante e
+comparação ZIP/ELF. Compatibilidade em hardware e CTS continuam pendentes.

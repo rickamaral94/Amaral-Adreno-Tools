@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "amaral_revision": "5.7.10.1",
+  "amaral_revision": "5.7.11.1",
   "mesa": {
     "repository": "https://gitlab.freedesktop.org/mesa/mesa.git",
     "branch": "main",
