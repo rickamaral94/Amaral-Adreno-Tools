@@ -18,7 +18,7 @@ selecionadas sem publicar logs brutos.
 | Readback Lab 5.7.10.1 | Contar cópias de imagem, fallback por linha e r2d/r3d em lotes de 512 por thread. | 41,28 FPS; 3 esperas `texture_download` em 27 ms; nenhum contador `AMARAL_RB_V1` apareceu. | Instrumentação inconclusiva. |
 | Readback Lab 5.7.11.1 | Heartbeat de submissão e contadores cumulativos visíveis mesmo com poucas cópias. | 44,01 FPS em 817,61 s; o ELF correto carregou, mas nenhuma linha `AMARAL_RB_V2` apareceu. | Investigar filtro/log; sem release. |
 | Readback Lab 5.7.12.1 | Registrar IDs internos e resultado do filtro antes do gate A740 nas filas A7xx, com log Android direto. | 45 heartbeats revelaram `chip=0x43050a01`, `gpu=6760`, app/engine corretos e `scope=0`. O filtro rejeitou este FD740. | Corrigir somente o gate deste chip; sem conclusão de FPS. |
-| Readback Lab 5.7.13.1 | Aceitar os chip IDs FD740 conhecidos no gate diagnóstico mesmo com `gpu_id=6760`; preservar filtro Eden e demais caminhos. | Build Standard reproduzível; teste no Odin pendente. | Lab isolada; verificar `scope=1` e incrementos de cópia antes de qualquer decisão sobre otimização. |
+| Readback Lab 5.7.13.1 | Aceitar os chip IDs FD740 conhecidos no gate diagnóstico mesmo com `gpu_id=6760`; preservar filtro Eden e demais caminhos. | 85 heartbeats `scope=1`; +890 regiões e +33 camadas no fallback por linha entre primeiro e último registro. 40,16 FPS observados. | Instrumentação validada no Odin; não otimizar o fallback por linha nem alegar ganho de FPS. |
 
 Todos os labs usam o mesmo Mesa `4b0f64ceac6a86af38c1e69cd38cf29f84ba611d`
 da candidata 5.7.8.1. A Latest usa
@@ -41,6 +41,7 @@ físico nesta série; nenhuma conclusão A740 foi estendida a essas famílias.
 | `20261021-003041-0627` | Readback Lab 5.7.10.1 | 667,16 s | 41,28 | 14 / 25,5 / 26,5 | 679 | Manifesto verificado |
 | `20261021-144443-7278` | Readback Lab 5.7.11.1 | 817,61 s | 44,01 | 14,25 / 25,75 / 27,75 | 680 | Manifesto verificado |
 | `20261021-162833-1341` | Readback Lab 5.7.12.1 | 453,98 s | 41,06 | 13,75 / 26,25 / 29,75 | 680 | Manifesto verificado |
+| `20261021-170236-7310` | Readback Lab 5.7.13.1 | 851,74 s | 40,16 | 15 / 27,75 / 32,25 | 679,34 | Manifesto verificado |
 
 ¹ O arquivo bruto dessas duas capturas não está disponível no ambiente atual;
 identidade e valores foram transcritos da análise anterior. O registro deixa o
@@ -68,7 +69,7 @@ A Standard 5.7.8.1 registrou 20.666 esperas `texture_download` somando cerca de
 threads se sobrepõem e o fence pode esperar trabalho anterior. As cenas diferem;
 não é prova de otimização. O contador V1 não confirmou se houve cópia por linha.
 A [Lab V2](https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/26) foi
-preparada para medir isso no próximo diagnóstico.
+preparada para medir isso, mas só a V4 confirmou a ativação dos contadores.
 
 ## Captura V2 de 21/10 às 14:44 UTC
 
@@ -122,7 +123,42 @@ campo legado `gpu_id`, mantendo o caso `gpu_id=740, chip_id=0` separado. A
 faz essa correção apenas no filtro diagnóstico. O CI compilou a Standard duas
 vezes e confirmou ZIP e ELF idênticos; SHA-256 do ELF:
 `eb5d61626888b414d0a2a003a68440a961685f0739fbfeaf1b6d46e9ee988975`.
-Ainda não existe captura de hardware V4.
+
+## Captura V4 de 21/10 às 17:02 UTC
+
+O ZIP `20261021-170236-7310` passou na verificação de todos os arquivos do
+manifesto; SHA-256 `9619c563cde20f64087c0683e746bfde7bbfe66cc498583747d967a6d4cbfa2c`.
+O ELF carregado tem o SHA-256 da Standard Lab 5.7.13.1 acima. Eden commit
+`6b592ecbeaac9631ffef1cb5735931ed1083189b` e hash **efetivo** de
+configurações, fornecido pelo Eden, `1337a7f3ed7ba6f34966a9a3f4a1dbdaaa09f2f8b80f3c8bd56007b8057b5406`.
+O coletor guardou 143 linhas, sem perdas, incluindo **85 `AMARAL_RB_V3`**.
+Todas trazem `path=graphics`, `gpu=6760`, `chip=43050a01`,
+`app_match=engine_match=scope=1`. A correção de identidade funcionou.
+
+Os contadores são cumulativos no processo e já marcavam 185 regiões no primeiro
+heartbeat, 5,56 s após o início da captura. Entre o primeiro e o último, foram
+**+890 regiões, +46.870 camadas, +33 camadas no fallback por linha, +47.048
+chamadas `ops->run` e +1.916.163.548 bytes solicitados**. O último contador
+totalizava 1.075 regiões. `r3d_regions` ficou em zero nos 85 registros. A
+fração de camadas adicionais que entrou no fallback por linha foi ~0,07%; isso
+não mede tempo GPU, mas retira a base para alterar globalmente esse caminho.
+Os bytes são tamanho solicitado na gravação de comandos, não tráfego medido.
+
+Em 851,74 s, o Eden registrou 40,16 FPS, GPU p50/p90/p99 de 15/27,75/32,25 ms,
+526,45 draws e 120,99 render passes por quadro. Houve 872 esperas
+`texture_download`, somando 10,27 s em sua thread, e 117 pipelines criados. Em
+9 das 10 janelas de hitch não houve novo miss de pipeline. O diagnóstico
+identificou 34,28% dos passes reabrindo o mesmo alvo do passe anterior;
+1.263.041 dessas reaberturas vieram após operação fora do render pass. Isso
+gera uma **hipótese** de custo por stores/loads em GMEM, não prova um defeito do
+Turnip. As regiões de cópia medidas não estão correlacionadas quadro a quadro
+com essas reaberturas ou esperas. Não forçar GMEM/SYSMEM por esses totais.
+
+O clock médio KGSL foi 679,34 MHz (mínimo isolado 401, máximo 680), status
+térmico Android 0 e bateria até 34 °C; falta temperatura interna e gate térmico
+pré-definido. A diferença entre 40,16 FPS desta Lab e 41,06 FPS na V3 não é
+A/B: as cenas, duração e estado do cache diferem. Não houve falha de pipeline,
+tradução de shader ou device lost registrada, nem inspeção visual sistemática.
 
 Nenhum teste CTS/VVL ou inspeção visual sistemática acompanhou estas capturas.
 Não há 1% low verdadeiro nem temperatura interna da GPU. Timestamps GPU não
@@ -131,8 +167,11 @@ interpretar KGSL busy repetido como capacidade ociosa, nem somar waits de
 threads diferentes. As capturas ainda não justificam Latest, ganho de FPS ou
 ajuste global de GMEM/SYSMEM.
 
-Decisão atual: **2 — atualizar controle/evidências**. Próximo teste: instalar a
-Standard Lab 5.7.13.1 no Odin e verificar se `scope=1` e os contadores
-de cópia aumentam. Só então investigar alinhamento ou tempo GPU. Para uma afirmação de ganho,
-repetir 5.7.8.1 contra uma candidata com cena marcada, cinco rodadas balanceadas,
-clocks/cache/temperatura controlados e verificação visual.
+Decisão atual: **2 — atualizar controle/evidências**. A Lab cumpriu o objetivo
+diagnóstico, sem justificar novo tuning Turnip. O próximo dado útil é uma cena
+marcada e a razão de fechamento/reabertura dos render passes no Eden, com
+eventos de cópia, dispatch e query correlacionados aos quadros. Então comparar
+Standard 5.7.8.1 e, se houver hipótese específica, um experimento GMEM/SYSMEM
+**somente nesse workload** em cinco rodadas balanceadas, com cache, clocks,
+temperatura e verificação visual controlados. Nenhum resultado aqui autoriza
+Latest, 60 FPS prometidos ou mudança global em A6xx/A7xx/A8xx.

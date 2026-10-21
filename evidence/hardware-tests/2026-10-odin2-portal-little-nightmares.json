@@ -80,8 +80,8 @@
       "mesa_commit": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
       "elf_sha256": "eb5d61626888b414d0a2a003a68440a961685f0739fbfeaf1b6d46e9ee988975",
       "proposal": "Aceitar chip IDs FD740 já conhecidos no gate diagnóstico independentemente do gpu_id legado; manter app/engine Eden e contadores restritos ao A740, sem alterar comandos GPU ou autotuner.",
-      "hardware_result": null,
-      "status": "awaiting-hardware",
+      "hardware_result": "40,16 FPS em 851,74 s; 85 heartbeats scope=1. Entre primeiro e último, +890 regiões, +46.870 camadas, +33 camadas no fallback por linha e +0 regiões r3d. Instrumentação funciona; nenhum ganho de FPS comprovado.",
+      "status": "observed",
       "patchset_sha256": "9dace7c334ba671da4bf43a1b336d1082a96d5475f40756dd1c0e277c1746a2d",
       "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/26"
     }
@@ -350,7 +350,50 @@
         "Contadores zero resultam do filtro rejeitado; não demonstram ausência de cópias.",
         "Eden restaurou 372 pipelines e criou 20; cena/cache diferem das capturas anteriores."
       ]
+    },
+    {
+      "capture_id": "20261021-170236-7310",
+      "driver_id": "lab-5.7.13.1",
+      "driver_identity": "elf-sha256",
+      "archive_sha256": "9619c563cde20f64087c0683e746bfde7bbfe66cc498583747d967a6d4cbfa2c",
+      "payload_integrity": "payload-hashes-verified",
+      "emulator_commit": "6b592ecbeaac9631ffef1cb5735931ed1083189b",
+      "settings_sha256": "1337a7f3ed7ba6f34966a9a3f4a1dbdaaa09f2f8b80f3c8bd56007b8057b5406",
+      "duration_s": 851.738,
+      "fps_avg": 40.16,
+      "gpu_ms_p50": 15.0,
+      "gpu_ms_p90": 27.75,
+      "gpu_ms_p99": 32.25,
+      "gpu_clock_mhz_avg": 679.34,
+      "draws_per_frame": 526.45,
+      "render_passes_per_frame": 120.99,
+      "same_target_reopen_pct": 34.28,
+      "pipelines_created": 117,
+      "texture_download_waits": 872,
+      "texture_download_wait_s": 10.266743,
+      "driver_log_lines": 143,
+      "driver_log_dropped": 0,
+      "readback_v3_lines": 85,
+      "readback_v3_gpu_id": 6760,
+      "readback_v3_chip_id": "0x43050a01",
+      "readback_v3_scope": 1,
+      "readback_first_regions": 185,
+      "readback_last_regions": 1075,
+      "readback_delta_layers": 46870,
+      "readback_delta_row_layers": 33,
+      "readback_delta_runs": 47048,
+      "readback_delta_requested_bytes": 1916163548,
+      "readback_delta_r3d_regions": 0,
+      "loaded_elf_sha256": "eb5d61626888b414d0a2a003a68440a961685f0739fbfeaf1b6d46e9ee988975",
+      "source": "docs/tests/2026-10-odin2-portal-little-nightmares.md",
+      "comparison_grade": "observation",
+      "notes": [
+        "Contadores cumulativos por processo; primeiro heartbeat já registrava 185 regiões. Deltas medem apenas o intervalo visível entre heartbeats, não toda a captura nem tempo de GPU.",
+        "33 de 46.870 camadas adicionais passaram pelo fallback por linha (~0,07%); não há evidência para tuning global deste caminho. r3d_regions permaneceu zero neste escopo.",
+        "Eden reportou 34,28% dos render passes reabrindo o alvo anterior e 120,99 passes/quadro; hipótese de custo em GMEM exige cena marcada e teste controlado. 117 pipelines criados; 9 de 10 janelas de hitch não tinham misses.",
+        "Comparação de FPS com V3 não é A/B: cenas/cache diferem. Nenhuma inspeção visual sistemática nem gate térmico interno."
+      ]
     }
   ],
-  "overall_assessment": "Onze observações A740 sem A/B de cinco rodadas ou gate térmico interno. V3 identificou o chip FD740 e gpu_id interno 6760 que o filtro anterior rejeitava; readback ainda sem contagens. Nenhuma versão atingiu 60 FPS comprovados. Sem nova qualificação A6xx, A750 ou A8xx."
+  "overall_assessment": "Doze observações A740 sem A/B de cinco rodadas ou gate térmico interno. V4 confirmou instrumentação FD740/Eden: scope=1, contadores avançam; fallback por linha raro nas camadas medidas, sem evidência de ganho de FPS ou motivo para mudar caminho de cópia globalmente. Meta de 60 FPS pendente. Sem nova qualificação A6xx, A750 ou A8xx."
 }

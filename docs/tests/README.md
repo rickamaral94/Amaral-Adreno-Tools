@@ -3,16 +3,16 @@
 Esta seção responde, para cada experimento: **qual binário foi testado, em qual
 aparelho, o que a mudança pretendia resolver, o que ocorreu e o que ainda não
 podemos concluir**. O [registro de Little Nightmares no Odin 2 Portal](2026-10-odin2-portal-little-nightmares.md)
-contém as onze capturas Eden recebidas até 21/10/2026. Os fatos selecionados
+contém as doze capturas Eden recebidas até 21/10/2026. Os fatos selecionados
 ficam também em [JSON estruturado](../../evidence/hardware-tests/2026-10-odin2-portal-little-nightmares.json)
 para auditoria e futuras análises.
 
 | Hardware / carga | Drivers observados | Conclusão atual |
 |---|---|---|
-| Odin 2 Portal, A740, Android 13, Little Nightmares no Eden | Latest 4.7.7.2, Standard 5.7.8.1, Labs 5.7.9.1–5.7.12.1 | Há execução real, mas ainda não há ganho de FPS demonstrado por A/B controlado. Meta de 60 FPS pendente. |
+| Odin 2 Portal, A740, Android 13, Little Nightmares no Eden | Latest 4.7.7.2, Standard 5.7.8.1, Labs 5.7.9.1–5.7.13.1 | Há execução real, mas ainda não há ganho de FPS demonstrado por A/B controlado. Meta de 60 FPS pendente. |
 | Odin 2 Portal, A740, Little Nightmares | Readback Lab 5.7.11.1 | Binário carregado; nenhum heartbeat V2 apareceu, portanto o caminho de cópia continua sem medição. |
 | Odin 2 Portal, A740, Little Nightmares | Readback Lab 5.7.12.1 | 45 heartbeats revelaram `chip=0x43050a01`, `gpu=6760` e `scope=0`: o filtro rejeitou o ID recebido. |
-| Odin 2 Portal, A740, Little Nightmares | Readback Lab 5.7.13.1 | Standard reproduzível; aguarda captura física para confirmar `scope=1` e contar regiões de cópia. |
+| Odin 2 Portal, A740, Little Nightmares | Readback Lab 5.7.13.1 | 85 heartbeats `scope=1` e contadores avançando; fallback por linha em ~0,07% das camadas adicionais observadas. Sem ganho de FPS comprovado. |
 | A6xx, A750, A8xx | — | Nenhum resultado novo de hardware neste registro. |
 | Cemu Fork Amaral | — | Código e relatos públicos estudados; nenhum ZIP bruto de gameplay analisado nesta etapa. |
 
