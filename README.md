@@ -62,3 +62,11 @@ Consulte [política](docs/EVIDENCE-POLICY.md), [processo](docs/UPSTREAM-UPDATES.
 
 A [reavaliação com logs Eden e fontes Cemu](docs/audits/2026-10-20-diagnostics.md)
 detalha o benefício esperado por família e as limitações da candidata 5.7.8.1.
+
+## Testes em hardware
+
+O [registro de testes](docs/tests/README.md) reúne driver, aparelho, proposta,
+resultado observado e limites da comparação. Inclui as capturas de Little
+Nightmares no Odin 2 Portal e um [modelo](docs/tests/TEMPLATE.md) para novos
+testes A6xx, A7xx e A8xx. Os dados públicos são selecionados e não contêm logs
+brutos ou informações privadas do dispositivo.

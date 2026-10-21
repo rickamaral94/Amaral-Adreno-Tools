@@ -9,6 +9,7 @@ from release_version import (
     normalize_mesa_version,
     patchset_fingerprint,
 )
+from validate_hardware_tests import validate_all as validate_hardware_tests
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
@@ -218,6 +219,7 @@ def main():
     assert "broad-emulator-driconf" in candidate_ids
     assert "community-turnip-stability-fixes" in candidate_ids
 
+    validate_hardware_tests()
     print("Project metadata and evidence gates are valid.")
     return 0
 

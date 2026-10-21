@@ -1,0 +1,273 @@
+{
+  "schema": 1,
+  "title": "Little Nightmares / Odin 2 Portal / A740 — outubro de 2026",
+  "context": {
+    "hardware": "AYN Odin 2 Portal",
+    "soc": "QCS8550 / Snapdragon 8 Gen 2",
+    "gpu": "Adreno 740",
+    "gpu_family": "A7xx",
+    "android": "13",
+    "kmd": "KGSL",
+    "abi": "arm64-v8a",
+    "game": "Little Nightmares",
+    "game_title_id": "01002FC00412C000",
+    "frontend": "Eden",
+    "resolution_note": "Eden em 1×; swapchain 1920×1080 nas capturas documentadas. Cena não marcada."
+  },
+  "drivers": {
+    "latest-4.7.7.2": {
+      "name": "Amaral Adreno Tools Latest 4.7.7.2 Standard",
+      "mesa_commit": "378a5dc61b982b7d36e744cf44407e6b55dc98b7",
+      "elf_sha256": "2f54e22a9b1868a8c0e2d2af2944fc9689af1c9e9839e2754a030bd8c8fd1a99",
+      "proposal": "Controle estável anterior; nenhuma mudança experimental testada nesses registros.",
+      "hardware_result": "Executou Little Nightmares nas capturas; FPS observado variou com APK/clocks/cena. Não qualifica nova candidata.",
+      "status": "observed",
+      "patchset_sha256": "01078851b363a40806c1d67d64daa838ffeaf9a65324e71a93db8f7e7280860e",
+      "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/releases/tag/mesa-26.3.0-devel-v4.7.7.2"
+    },
+    "candidate-5.7.8.1": {
+      "name": "Amaral Adreno Tools Candidate 5.7.8.1 Standard",
+      "mesa_commit": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
+      "elf_sha256": "e554cff65c6fdfcb2b4d30275c8a21b6ea3289d01fc4e5e4a3fbbcc1559933e9",
+      "proposal": "Avaliar correções Mesa de bindless, push constants, NIR/IR3 e patchset conservador; sem tuning específico de Little Nightmares.",
+      "hardware_result": "44,27 e 44,89 FPS em duas capturas A740; sem ganho certificado nem 60 FPS. Uma sessão registrou 20.666 esperas texture_download.",
+      "status": "observed",
+      "patchset_sha256": "cc52dbd9ae58c1e39089a1277d5e9f39aca9c4fa7d9402e1301456f88d44fce6",
+      "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/releases/tag/mesa-27.0.0-devel-v5.7.8.1"
+    },
+    "lab-5.7.9.1": {
+      "name": "A740 PROFILED Lab 5.7.9.1 Standard",
+      "mesa_commit": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
+      "elf_sha256": "1038279f89312dc7f5a9dedd033000b8ed94ae6e36b878e7ecbe5210695ce077",
+      "proposal": "Trocar default do autotuner BANDWIDTH por PROFILED no A740 com app/engine yuzu Emulator; medir GMEM/SYSMEM pelo mecanismo existente.",
+      "hardware_result": "37,77 e 40,80 FPS observados; cenas/carga diferentes. Nenhuma melhoria comprovada; não integrado.",
+      "status": "observed",
+      "patchset_sha256": "e2ea3afd831137057cc9d8bfb10794667a3f0b0897fb85ce34e2fb4bb571eb7a",
+      "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/25"
+    },
+    "lab-5.7.10.1": {
+      "name": "A740 Readback Lab 5.7.10.1 Standard",
+      "mesa_commit": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
+      "elf_sha256": "ef52ff521329242cc86ab0da451511b3c6a734a365d728311e99742f017a0abb",
+      "proposal": "Contar regiões de cópia de imagem, fallback por linha e caminhos r2d/r3d a cada 512 regiões por thread.",
+      "hardware_result": "41,28 FPS observado; apenas 3 esperas texture_download (27 ms); nenhum AMARAL_RB_V1 capturado. Diagnóstico inconclusivo.",
+      "status": "observed",
+      "patchset_sha256": "66feffbee6c5c21e8069db63d74bfacccac0b889fa0252892e587e4c2bb11710",
+      "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/26"
+    },
+    "lab-5.7.11.1": {
+      "name": "A740 Readback Lab 5.7.11.1 Standard",
+      "mesa_commit": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
+      "elf_sha256": "dd8472af1125fc9295fc1b433eedfbe94694cd0232f171600e538312e56e8f47",
+      "proposal": "Heartbeat de submissão no A740 até a cada 10 s e contadores cumulativos de cópia entre threads; medir a ativação do filtro Eden.",
+      "hardware_result": null,
+      "status": "awaiting-hardware",
+      "patchset_sha256": "ad753c5591c2e50d629550b5a8238576ceead8340949c46be7b63b18668752f2",
+      "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/26"
+    }
+  },
+  "captures": [
+    {
+      "capture_id": "20261018-190237-1964",
+      "driver_id": "latest-4.7.7.2",
+      "driver_identity": "elf-sha256",
+      "archive_sha256": "1a86ed95c077e7ad86d9d97e52fdaf71ba3821cb07ee4a86655c1094dacf821a",
+      "payload_integrity": "payload-hashes-verified",
+      "emulator_commit": "cd8a63f196ffc8caba5ebb9f8a40bd2c9b507a1b",
+      "settings_sha256": "5ac92a435252cf3f4a6ab7087a5593dc506df6b29a444acea97c525ef7891584",
+      "duration_s": 122.359,
+      "fps_avg": 34.28,
+      "gpu_ms_p50": 19.25,
+      "gpu_ms_p90": 29.5,
+      "gpu_ms_p99": 36.5,
+      "gpu_clock_mhz_avg": 401,
+      "source": "docs/audits/2026-10-20-diagnostics.md",
+      "comparison_grade": "observation",
+      "notes": [
+        "Captura sob cenas e condições próprias; não constitui A/B de driver."
+      ],
+      "loaded_elf_sha256": "2f54e22a9b1868a8c0e2d2af2944fc9689af1c9e9839e2754a030bd8c8fd1a99"
+    },
+    {
+      "capture_id": "20261018-204032-7062",
+      "driver_id": "latest-4.7.7.2",
+      "driver_identity": "elf-sha256",
+      "archive_sha256": "9ddc8541fcb254d73b01ce69df334af297b18e33d3ce6677b09ca58378bcce1b",
+      "payload_integrity": "payload-hashes-verified",
+      "emulator_commit": "812551b8cb71a7cca14b292233c068896eaeaf63",
+      "settings_sha256": "d4df6d93ab968035691f835c993a377cb7a9aba976178e1e93b89258ccd0ba76",
+      "duration_s": 458.951,
+      "fps_avg": 45.49,
+      "gpu_ms_p50": 12.5,
+      "gpu_ms_p90": 24.25,
+      "gpu_ms_p99": 30.25,
+      "gpu_clock_mhz_avg": 680,
+      "source": "docs/audits/2026-10-20-diagnostics.md",
+      "comparison_grade": "observation",
+      "notes": [
+        "Captura sob cenas e condições próprias; não constitui A/B de driver."
+      ],
+      "loaded_elf_sha256": "2f54e22a9b1868a8c0e2d2af2944fc9689af1c9e9839e2754a030bd8c8fd1a99"
+    },
+    {
+      "capture_id": "20261018-185740-4897",
+      "driver_id": "latest-4.7.7.2",
+      "driver_identity": "elf-sha256",
+      "archive_sha256": "829c577e1aea3d961ea176b09460a4b94a54fad870d0a913015425fbd785d30c",
+      "payload_integrity": "payload-hashes-verified",
+      "emulator_commit": "cd8a63f196ffc8caba5ebb9f8a40bd2c9b507a1b",
+      "settings_sha256": "5ac92a435252cf3f4a6ab7087a5593dc506df6b29a444acea97c525ef7891584",
+      "duration_s": 284.869,
+      "fps_avg": 37.47,
+      "gpu_ms_p50": 19.5,
+      "gpu_ms_p90": 27.75,
+      "gpu_ms_p99": 38.25,
+      "gpu_clock_mhz_avg": 417,
+      "source": "docs/audits/2026-10-20-diagnostics.md",
+      "comparison_grade": "observation",
+      "notes": [
+        "Captura sob cenas e condições próprias; não constitui A/B de driver."
+      ],
+      "loaded_elf_sha256": "2f54e22a9b1868a8c0e2d2af2944fc9689af1c9e9839e2754a030bd8c8fd1a99"
+    },
+    {
+      "capture_id": "20261018-143900-6562",
+      "driver_id": "latest-4.7.7.2",
+      "driver_identity": "mesa-version-only",
+      "archive_sha256": "1d0fbdbdb5afff948e4101360f234fafab947b4009aa5e170286d23fc79f9e72",
+      "payload_integrity": "manifest-unavailable",
+      "emulator_commit": "d95a60f58d6de8b83982da85f2bd4af5b927dc13",
+      "settings_sha256": "06954028104d7346cf9c7239d425a96c4bc92173d6bdcb37e4b6b83b89555676",
+      "duration_s": 312.395,
+      "fps_avg": 41.23,
+      "gpu_ms_p50": null,
+      "gpu_ms_p90": null,
+      "gpu_ms_p99": null,
+      "gpu_clock_mhz_avg": null,
+      "source": "docs/audits/2026-10-20-diagnostics.md",
+      "comparison_grade": "observation",
+      "notes": [
+        "Anexo 4 não comprova o ELF carregado."
+      ],
+      "loaded_elf_sha256": null
+    },
+    {
+      "capture_id": "20261020-143555-9611",
+      "driver_id": "candidate-5.7.8.1",
+      "driver_identity": "elf-sha256",
+      "archive_sha256": "65635f6ff47715a908579fa14a817740588daa3cda7a1939ecb8a7c3eb80249c",
+      "payload_integrity": "payload-hashes-verified",
+      "emulator_commit": "6b592ecbeaac9631ffef1cb5735931ed1083189b",
+      "settings_sha256": "1337a7f3ed7ba6f34966a9a3f4a1dbdaaa09f2f8b80f3c8bd56007b8057b5406",
+      "duration_s": 162.751,
+      "fps_avg": 44.27,
+      "gpu_ms_p50": 15.75,
+      "gpu_ms_p90": 24.75,
+      "gpu_ms_p99": 39.0,
+      "gpu_clock_mhz_avg": 680,
+      "draws_per_frame": 371.9,
+      "pipelines_created": 100,
+      "source": "https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/25",
+      "comparison_grade": "observation",
+      "notes": [
+        "Cenas e cache diferiram; 65% mais draws/quadro na Lab. Diferença de FPS não prova regressão."
+      ],
+      "loaded_elf_sha256": "e554cff65c6fdfcb2b4d30275c8a21b6ea3289d01fc4e5e4a3fbbcc1559933e9"
+    },
+    {
+      "capture_id": "20261020-152817-1977",
+      "driver_id": "lab-5.7.9.1",
+      "driver_identity": "elf-sha256",
+      "archive_sha256": "a1e942bbeb4ae8c3b88e1b791b1bf48278bdc750114753f4a56867b2f3e0e098",
+      "payload_integrity": "payload-hashes-verified",
+      "emulator_commit": "6b592ecbeaac9631ffef1cb5735931ed1083189b",
+      "settings_sha256": "1337a7f3ed7ba6f34966a9a3f4a1dbdaaa09f2f8b80f3c8bd56007b8057b5406",
+      "duration_s": 297.908,
+      "fps_avg": 37.77,
+      "gpu_ms_p50": 15.25,
+      "gpu_ms_p90": 27.5,
+      "gpu_ms_p99": 35.0,
+      "gpu_clock_mhz_avg": 680,
+      "draws_per_frame": 613.9,
+      "pipelines_created": 85,
+      "source": "https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/25",
+      "comparison_grade": "observation",
+      "notes": [
+        "Cenas e cache diferiram; 65% mais draws/quadro na Lab. Diferença de FPS não prova regressão."
+      ],
+      "loaded_elf_sha256": "1038279f89312dc7f5a9dedd033000b8ed94ae6e36b878e7ecbe5210695ce077"
+    },
+    {
+      "capture_id": "20261020-224224-7212",
+      "driver_id": "lab-5.7.9.1",
+      "driver_identity": "elf-sha256",
+      "archive_sha256": null,
+      "payload_integrity": "prior-review-only",
+      "emulator_commit": "6b592ecbeaac9631ffef1cb5735931ed1083189b",
+      "settings_sha256": "1337a7f3ed7ba6f34966a9a3f4a1dbdaaa09f2f8b80f3c8bd56007b8057b5406",
+      "duration_s": 690.03,
+      "fps_avg": 40.8,
+      "gpu_ms_p50": 14.5,
+      "gpu_ms_p90": 27.5,
+      "gpu_ms_p99": 29.75,
+      "draws_per_frame": 464,
+      "pipelines_created": 1,
+      "source": "https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/25",
+      "comparison_grade": "observation",
+      "notes": [
+        "Transcrito da revisão anterior; arquivo bruto indisponível neste ambiente. Workload difere do controle subsequente."
+      ],
+      "loaded_elf_sha256": "1038279f89312dc7f5a9dedd033000b8ed94ae6e36b878e7ecbe5210695ce077"
+    },
+    {
+      "capture_id": "20261020-230715-1086",
+      "driver_id": "candidate-5.7.8.1",
+      "driver_identity": "elf-sha256",
+      "archive_sha256": null,
+      "payload_integrity": "prior-review-only",
+      "emulator_commit": "6b592ecbeaac9631ffef1cb5735931ed1083189b",
+      "settings_sha256": "1337a7f3ed7ba6f34966a9a3f4a1dbdaaa09f2f8b80f3c8bd56007b8057b5406",
+      "duration_s": 784.25,
+      "fps_avg": 44.89,
+      "gpu_ms_p50": 14.75,
+      "gpu_ms_p90": 23.0,
+      "gpu_ms_p99": 28.75,
+      "draws_per_frame": 526,
+      "pipelines_created": 50,
+      "texture_download_waits": 20666,
+      "texture_download_wait_s": 212.02,
+      "source": "docs/tests/2026-10-odin2-portal-little-nightmares.md",
+      "comparison_grade": "observation",
+      "notes": [
+        "Transcrito da revisão anterior; arquivo bruto indisponível neste ambiente. Readbacks solicitados 9,99 MB/quadro; não é tráfego medido."
+      ],
+      "loaded_elf_sha256": "e554cff65c6fdfcb2b4d30275c8a21b6ea3289d01fc4e5e4a3fbbcc1559933e9"
+    },
+    {
+      "capture_id": "20261021-003041-0627",
+      "driver_id": "lab-5.7.10.1",
+      "driver_identity": "elf-sha256",
+      "archive_sha256": "eea1cb04ed5eb98f79e6604f25706c426d7dca32231842281797760685d9e9ad",
+      "payload_integrity": "payload-hashes-verified",
+      "emulator_commit": "6b592ecbeaac9631ffef1cb5735931ed1083189b",
+      "settings_sha256": "1337a7f3ed7ba6f34966a9a3f4a1dbdaaa09f2f8b80f3c8bd56007b8057b5406",
+      "duration_s": 667.159,
+      "fps_avg": 41.28,
+      "gpu_ms_p50": 14.0,
+      "gpu_ms_p90": 25.5,
+      "gpu_ms_p99": 26.5,
+      "gpu_clock_mhz_avg": 679,
+      "draws_per_frame": 526.4,
+      "pipelines_created": 0,
+      "texture_download_waits": 3,
+      "texture_download_wait_s": 0.026891,
+      "source": "https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/26",
+      "comparison_grade": "observation",
+      "notes": [
+        "AMARAL_RB_V1 ausente; threshold de 512 regiões/thread torna instrumento inconclusivo. Build diagnóstica tem overhead."
+      ],
+      "loaded_elf_sha256": "ef52ff521329242cc86ab0da451511b3c6a734a365d728311e99742f017a0abb"
+    }
+  ],
+  "overall_assessment": "Observações A740 sem teste AB/BA de cinco rodadas nem gate térmico interno. Nenhuma versão atingiu 60 FPS comprovados. Nenhum dado novo qualifica A6xx, A750 ou A8xx."
+}
