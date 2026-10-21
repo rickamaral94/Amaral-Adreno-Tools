@@ -1,0 +1,213 @@
+From: Amaral Adreno Tools <rickamaral94@users.noreply.github.com>
+Subject: [LAB ONLY] tu: count FD740 readbacks using observed KGSL chip ID
+
+The V3 hardware capture reported chip 0x43050a01, gpu_id 6760 and scope=0.
+V4 trusts only the exact FD740 chip IDs in the existing Mesa device database
+(or the legacy gpu_id=740 with chip_id=0) for readback counting. Bounded
+A7xx Android heartbeat remains to verify scope on hardware.
+No GPU command, barrier, autotuner or copy-path selection changes.
+
+--- a/src/freedreno/vulkan/tu_clear_blit.cc
++++ b/src/freedreno/vulkan/tu_clear_blit.cc
+@@ -6,6 +6,7 @@
+  *    Jonathan Marek <jonathan@marek.ca>
+  */
+ 
++#include "tu_amaral_readback_lab.h"
+ #include "tu_clear_blit.h"
+ 
+ #include "nir/nir_builder.h"
+@@ -3139,6 +3140,11 @@
+                         bool *unaligned_store)
+ {
+    struct tu_cs *cs = &cmd->cs;
++   const auto &lab_id = cmd->device->physical_device->dev_id;
++   const auto &lab_app = cmd->device->instance->vk.app_info;
++   const bool lab = amaral_readback_scope(lab_id.gpu_id, lab_id.chip_id,
++                                         lab_app.app_name, lab_app.engine_name);
++   uint64_t lab_runs = 0, lab_row_layers = 0;
+    uint32_t layers = MAX2(info->imageExtent.depth,
+                           vk_image_subresource_layer_count(&src_image->vk,
+                                                            &info->imageSubresource));
+@@ -3198,6 +3204,7 @@
+ 
+       uint64_t dst_va = vk_buffer_address(&dst_buffer->vk, info->bufferOffset) + layer_size * i;
+       if ((dst_va & 63) || (pitch & 63)) {
++         if (lab) ++lab_row_layers;
+          for (uint32_t y = 0; y < extent.height; y++) {
+             uint32_t x = (dst_va & 63) / block_size;
+             uint32_t excess_width = 0;
+@@ -3213,6 +3220,7 @@
+             ops->dst_buffer(cs, dst_format, dst_va & ~63, 0, src_format);
+             buffer_row_coords<CHIP>(ops, cmd, cs, false, copy_rot, offset, extent, y, x, 0, clamped_width);
+             ops->run(cmd, cs);
++            if (lab) ++lab_runs;
+ 
+             if (excess_width) {
+                uint64_t dst_va_overflow = (dst_va + clamped_width * block_size);
+@@ -3221,6 +3229,7 @@
+                buffer_row_coords<CHIP>(ops, cmd, cs, false, copy_rot, offset, extent, y, 0, clamped_width,
+                                        excess_width);
+                ops->run(cmd, cs);
++               if (lab) ++lab_runs;
+             }
+ 
+             dst_va += pitch;
+@@ -3234,10 +3243,18 @@
+             coords(ops, cmd, cs, (VkOffset3D) { 0, 0 }, offset, extent);
+          }
+          ops->run(cmd, cs);
++         if (lab) ++lab_runs;
+       }
+    }
+ 
+    ops->teardown(cmd, cs);
++
++   if (lab) {
++      amaral_rb_totals.add(static_cast<uint32_t>(src_image->vk.format), layers,
++                           lab_row_layers, lab_runs,
++                           uint64_t(extent.width) * extent.height * block_size * layers,
++                           ops == &r3d_ops<CHIP>);
++   }
+ }
+ 
+ template <chip CHIP>
+--- a/src/freedreno/vulkan/tu_queue.cc
++++ b/src/freedreno/vulkan/tu_queue.cc
+@@ -8,6 +8,12 @@
+  */
+ 
+ #include "tu_queue.h"
++#include "tu_amaral_readback_lab.h"
++#include "util/detect_os.h"
++#include <chrono>
++#if DETECT_OS_ANDROID
++#include <android/log.h>
++#endif
+ 
+ #include <inttypes.h>
+ 
+@@ -338,11 +344,54 @@
+    return VK_SUCCESS;
+ }
+ 
++/* Android-only, A7xx laboratory probe. This prints the actual device IDs
++ * before the A740/Eden counter gate and bypasses Mesa logging controls. Bounded
++ * to one line per process every 10 s, shared by both queue submit callbacks.
++ * A7xx is the diagnostic observation scope; readback counts stay A740-gated.
++ */
++static void
++amaral_readback_queue_heartbeat(struct tu_device *device, const char *path)
++{
++#if DETECT_OS_ANDROID
++   if (device->physical_device->info->chip != 7)
++      return;
++   const auto &lab_id = device->physical_device->dev_id;
++   const auto &app = device->instance->vk.app_info;
++   const uint64_t entries = amaral_rb_submit_entries.fetch_add(1, std::memory_order_relaxed) + 1;
++   const uint64_t now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
++      std::chrono::steady_clock::now().time_since_epoch()).count();
++   if (!amaral_readback_report_due(now_ms))
++      return;
++   const auto &rb = amaral_rb_totals;
++   __android_log_print(ANDROID_LOG_INFO, "AmaralRB",
++      "AMARAL_RB_V3 path=%s gpu=%u chip=%llx app_match=%u engine_match=%u "
++      "scope=%u queue_entries=%llu regions=%llu layers=%llu row_layers=%llu "
++      "runs=%llu requested_bytes=%llu r3d_regions=%llu last_vk_format=%u",
++      path, lab_id.gpu_id, (unsigned long long)lab_id.chip_id,
++      unsigned(amaral_readback_app(app.app_name)),
++      unsigned(amaral_readback_app(app.engine_name)),
++      unsigned(amaral_readback_scope(lab_id.gpu_id, lab_id.chip_id,
++                                     app.app_name, app.engine_name)),
++      (unsigned long long)entries,
++      (unsigned long long)rb.regions.load(std::memory_order_relaxed),
++      (unsigned long long)rb.layers.load(std::memory_order_relaxed),
++      (unsigned long long)rb.row_layers.load(std::memory_order_relaxed),
++      (unsigned long long)rb.runs.load(std::memory_order_relaxed),
++      (unsigned long long)rb.requested_bytes.load(std::memory_order_relaxed),
++      (unsigned long long)rb.r3d_regions.load(std::memory_order_relaxed),
++      rb.last_vk_format.load(std::memory_order_relaxed));
++#else
++   (void)device;
++   (void)path;
++#endif
++}
++
+ static VkResult
+ queue_submit_sparse(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
+ {
+    struct tu_queue *queue = list_entry(_queue, struct tu_queue, vk);
+    struct tu_device *device = queue->device;
++   amaral_readback_queue_heartbeat(device, "sparse");
+ 
+    pthread_mutex_lock(&device->submit_mutex);
+ 
+@@ -418,6 +467,7 @@
+    MESA_TRACE_FUNC();
+    struct tu_queue *queue = list_entry(_queue, struct tu_queue, vk);
+    struct tu_device *device = queue->device;
++   amaral_readback_queue_heartbeat(device, "graphics");
+    bool u_trace_enabled = u_trace_should_process(&queue->device->trace_context);
+    struct util_dynarray dump_cmds;
+    struct tu_cs *autotune_cs = NULL;
+--- /dev/null
++++ b/src/freedreno/vulkan/tu_amaral_readback_lab.h
+@@ -0,0 +1,58 @@
++/* SPDX-License-Identifier: MIT */
++#ifndef TU_AMARAL_READBACK_LAB_H
++#define TU_AMARAL_READBACK_LAB_H
++#include <atomic>
++#include <cstdint>
++#include <string_view>
++
++static inline bool
++amaral_readback_gpu(uint32_t gpu, uint64_t chip)
++{
++   return (gpu == 740 && chip == 0) ||
++      chip == 0x43050a01ULL || chip == 0xffff43050a01ULL;
++}
++static inline bool amaral_readback_app(const char *name)
++{
++   return name && std::string_view(name) == "yuzu Emulator";
++}
++static inline bool
++amaral_readback_scope(uint32_t gpu, uint64_t chip, const char *app, const char *engine)
++{
++   return amaral_readback_gpu(gpu, chip) && amaral_readback_app(app) &&
++          amaral_readback_app(engine);
++}
++
++/* Process-wide diagnostic counts for eligible devices. Independent relaxed
++ * loads are not an atomic snapshot. Counts describe recording, not execution.
++ * No reset: subtract successive snapshots; never attribute totals to one frame.
++ */
++struct amaral_readback_totals {
++   std::atomic<uint64_t> regions{0}, layers{0}, row_layers{0}, runs{0};
++   std::atomic<uint64_t> requested_bytes{0}, r3d_regions{0};
++   std::atomic<uint32_t> last_vk_format{0};
++   void add(uint32_t format, uint64_t layer_count, uint64_t row_count,
++            uint64_t run_count, uint64_t bytes, bool r3d)
++   {
++      layers.fetch_add(layer_count, std::memory_order_relaxed);
++      row_layers.fetch_add(row_count, std::memory_order_relaxed);
++      runs.fetch_add(run_count, std::memory_order_relaxed);
++      requested_bytes.fetch_add(bytes, std::memory_order_relaxed);
++      r3d_regions.fetch_add(r3d, std::memory_order_relaxed);
++      last_vk_format.store(format, std::memory_order_relaxed);
++      regions.fetch_add(1, std::memory_order_relaxed);
++   }
++};
++static_assert(std::atomic<uint64_t>::is_always_lock_free);
++/* Inline variables deliberately share state across clear/blit and queue TUs. */
++inline amaral_readback_totals amaral_rb_totals;
++inline std::atomic<uint64_t> amaral_rb_submit_entries{0};
++inline std::atomic<uint64_t> amaral_rb_last_report_ms{0};
++static inline bool amaral_readback_report_due(uint64_t now_ms)
++{
++   auto previous = amaral_rb_last_report_ms.load(std::memory_order_relaxed);
++   if (now_ms == 0 || (previous && (now_ms < previous || now_ms - previous < 10000)))
++      return false;
++   return amaral_rb_last_report_ms.compare_exchange_strong(
++      previous, now_ms, std::memory_order_relaxed);
++}
++#endif

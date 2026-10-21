@@ -1,3 +1,8 @@
+# A740 Readback Lab 5.7.13.1
+
+Build de diagnóstico baseada na 5.7.8.1, sem o perfil PROFILED.
+Leia [protocolo e limites](docs/READBACK-LAB.md).
+
 # Amaral Adreno Tools
 
 Turnip universal para Android/Qualcomm A6xx, A7xx e A8xx.
