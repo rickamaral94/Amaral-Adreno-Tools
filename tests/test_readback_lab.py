@@ -46,10 +46,13 @@ int main() {
   assert(amaral_readback_scope(0, 0x43050a01ULL, eden, eden));
   assert(amaral_readback_scope(0, 0xffff43050a01ULL, eden, eden));
   assert(amaral_readback_scope(740, 0x43050a01ULL, eden, eden));
+  assert(amaral_readback_scope(6760, 0x43050a01ULL, eden, eden));
+  assert(amaral_readback_scope(6760, 0xffff43050a01ULL, eden, eden));
   for (auto gpu : {630, 650, 660, 710, 720, 730, 750, 810, 825, 830, 840})
     assert(!amaral_readback_scope(gpu, 0, eden, eden));
   assert(!amaral_readback_scope(0, 0xffff43050c01ULL, eden, eden));
-  assert(!amaral_readback_scope(750, 0x43050a01ULL, eden, eden));
+  assert(amaral_readback_scope(750, 0x43050a01ULL, eden, eden));
+  assert(!amaral_readback_scope(6760, 0x43050b00ULL, eden, eden));
   assert(!amaral_readback_scope(740, 0x44030000ULL, eden, eden));
   assert(!amaral_readback_scope(0, 0, eden, eden));
   assert(!amaral_readback_scope(740, 0, nullptr, eden));

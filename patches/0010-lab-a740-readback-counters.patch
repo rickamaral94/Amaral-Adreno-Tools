@@ -1,9 +1,10 @@
 From: Amaral Adreno Tools <rickamaral94@users.noreply.github.com>
-Subject: [LAB ONLY] tu: expose A7 queue identity before gated readback counters
+Subject: [LAB ONLY] tu: count FD740 readbacks using observed KGSL chip ID
 
-The 5.7.11.1 heartbeat never appeared on the Odin despite the correct ELF.
-V3 observes actual A7xx IDs and queue path using bounded direct Android logcat
-output, before the A740/Eden counting gate. Counting remains A740/Eden-only.
+The V3 hardware capture reported chip 0x43050a01, gpu_id 6760 and scope=0.
+V4 trusts only the exact FD740 chip IDs in the existing Mesa device database
+(or the legacy gpu_id=740 with chip_id=0) for readback counting. Bounded
+A7xx Android heartbeat remains to verify scope on hardware.
 No GPU command, barrier, autotuner or copy-path selection changes.
 
 --- a/src/freedreno/vulkan/tu_clear_blit.cc
@@ -163,7 +164,7 @@ No GPU command, barrier, autotuner or copy-path selection changes.
 +amaral_readback_gpu(uint32_t gpu, uint64_t chip)
 +{
 +   return (gpu == 740 && chip == 0) ||
-+      ((chip == 0x43050a01ULL || chip == 0xffff43050a01ULL) && (gpu == 0 || gpu == 740));
++      chip == 0x43050a01ULL || chip == 0xffff43050a01ULL;
 +}
 +static inline bool amaral_readback_app(const char *name)
 +{
