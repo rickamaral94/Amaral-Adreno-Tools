@@ -18,6 +18,7 @@ selecionadas sem publicar logs brutos.
 | Readback Lab 5.7.10.1 | Contar cópias de imagem, fallback por linha e r2d/r3d em lotes de 512 por thread. | 41,28 FPS; 3 esperas `texture_download` em 27 ms; nenhum contador `AMARAL_RB_V1` apareceu. | Instrumentação inconclusiva. |
 | Readback Lab 5.7.11.1 | Heartbeat de submissão e contadores cumulativos visíveis mesmo com poucas cópias. | 44,01 FPS em 817,61 s; o ELF correto carregou, mas nenhuma linha `AMARAL_RB_V2` apareceu. | Investigar filtro/log; sem release. |
 | Readback Lab 5.7.12.1 | Registrar IDs internos e resultado do filtro antes do gate A740 nas filas A7xx, com log Android direto. | 45 heartbeats revelaram `chip=0x43050a01`, `gpu=6760`, app/engine corretos e `scope=0`. O filtro rejeitou este FD740. | Corrigir somente o gate deste chip; sem conclusão de FPS. |
+| Readback Lab 5.7.13.1 | Aceitar os chip IDs FD740 conhecidos no gate diagnóstico mesmo com `gpu_id=6760`; preservar filtro Eden e demais caminhos. | Build Standard reproduzível; teste no Odin pendente. | Lab isolada; verificar `scope=1` e incrementos de cópia antes de qualquer decisão sobre otimização. |
 
 Todos os labs usam o mesmo Mesa `4b0f64ceac6a86af38c1e69cd38cf29f84ba611d`
 da candidata 5.7.8.1. A Latest usa
@@ -116,7 +117,12 @@ fosse 0 ou 740. O valor recebido foi 6760. Isso explica por que V1/V2 não
 contaram cópias nem emitiram heartbeat V2. Os campos `regions=0` são resultado
 do filtro rejeitado; **não provam ausência de cópias de imagem**. A próxima Lab
 deve aceitar somente os chip IDs FD740 já conhecidos independentemente do
-campo legado `gpu_id`, mantendo o caso `gpu_id=740, chip_id=0` separado.
+campo legado `gpu_id`, mantendo o caso `gpu_id=740, chip_id=0` separado. A
+[Lab 5.7.13.1](https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/26)
+faz essa correção apenas no filtro diagnóstico. O CI compilou a Standard duas
+vezes e confirmou ZIP e ELF idênticos; SHA-256 do ELF:
+`eb5d61626888b414d0a2a003a68440a961685f0739fbfeaf1b6d46e9ee988975`.
+Ainda não existe captura de hardware V4.
 
 Nenhum teste CTS/VVL ou inspeção visual sistemática acompanhou estas capturas.
 Não há 1% low verdadeiro nem temperatura interna da GPU. Timestamps GPU não
@@ -125,8 +131,8 @@ interpretar KGSL busy repetido como capacidade ociosa, nem somar waits de
 threads diferentes. As capturas ainda não justificam Latest, ganho de FPS ou
 ajuste global de GMEM/SYSMEM.
 
-Decisão atual: **2 — atualizar controle/evidências**. Próximo teste: corrigir o
-gate específico FD740 em Lab isolada e verificar se `scope=1` e os contadores
+Decisão atual: **2 — atualizar controle/evidências**. Próximo teste: instalar a
+Standard Lab 5.7.13.1 no Odin e verificar se `scope=1` e os contadores
 de cópia aumentam. Só então investigar alinhamento ou tempo GPU. Para uma afirmação de ganho,
 repetir 5.7.8.1 contra uma candidata com cena marcada, cinco rodadas balanceadas,
 clocks/cache/temperatura controlados e verificação visual.
