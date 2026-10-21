@@ -60,8 +60,8 @@
       "mesa_commit": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
       "elf_sha256": "dd8472af1125fc9295fc1b433eedfbe94694cd0232f171600e538312e56e8f47",
       "proposal": "Heartbeat de submissão no A740 até a cada 10 s e contadores cumulativos de cópia entre threads; medir a ativação do filtro Eden.",
-      "hardware_result": null,
-      "status": "awaiting-hardware",
+      "hardware_result": "44,01 FPS observados no A740 em 817,61 s; nenhuma linha AMARAL_RB_V2 em 27 linhas do coletor, sem descarte reportado. O filtro/caminho de log continua inconclusivo; não há ganho de desempenho demonstrado.",
+      "status": "observed",
       "patchset_sha256": "ad753c5591c2e50d629550b5a8238576ceead8340949c46be7b63b18668752f2",
       "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/26"
     }
@@ -267,7 +267,37 @@
         "AMARAL_RB_V1 ausente; threshold de 512 regiões/thread torna instrumento inconclusivo. Build diagnóstica tem overhead."
       ],
       "loaded_elf_sha256": "ef52ff521329242cc86ab0da451511b3c6a734a365d728311e99742f017a0abb"
+    },
+    {
+      "capture_id": "20261021-144443-7278",
+      "driver_id": "lab-5.7.11.1",
+      "driver_identity": "elf-sha256",
+      "archive_sha256": "b1295d18f1ddd1b150d1e59657c2bd9d3d36af400b4e4cdc76949b04bf18b723",
+      "payload_integrity": "payload-hashes-verified",
+      "emulator_commit": "6b592ecbeaac9631ffef1cb5735931ed1083189b",
+      "settings_sha256": "1337a7f3ed7ba6f34966a9a3f4a1dbdaaa09f2f8b80f3c8bd56007b8057b5406",
+      "duration_s": 817.607,
+      "fps_avg": 44.01,
+      "gpu_ms_p50": 14.25,
+      "gpu_ms_p90": 25.75,
+      "gpu_ms_p99": 27.75,
+      "gpu_clock_mhz_avg": 680,
+      "draws_per_frame": 591.0,
+      "pipelines_created": 0,
+      "texture_download_waits": 240,
+      "texture_download_wait_s": 3.292211,
+      "driver_log_lines": 27,
+      "driver_log_dropped": 0,
+      "readback_v2_lines": 0,
+      "loaded_elf_sha256": "dd8472af1125fc9295fc1b433eedfbe94694cd0232f171600e538312e56e8f47",
+      "source": "docs/tests/2026-10-odin2-portal-little-nightmares.md",
+      "comparison_grade": "observation",
+      "notes": [
+        "V2 heartbeat ausente após 817,61 s apesar de 155.736 submits reportados pelo Eden. Sem mensagens, não se mede o caminho de cópia ou prova falha do driver.",
+        "Cache aquecido: 372 pipelines restaurados e zero novos; 591,0 draws e 116,9 render passes por quadro. Diferente das capturas anteriores.",
+        "Captura encerrada pelo usuário; status térmico 0 e bateria até 31 C não são gate térmico de chip."
+      ]
     }
   ],
-  "overall_assessment": "Observações A740 sem teste AB/BA de cinco rodadas nem gate térmico interno. Nenhuma versão atingiu 60 FPS comprovados. Nenhum dado novo qualifica A6xx, A750 ou A8xx."
+  "overall_assessment": "Dez observações A740 sem teste AB/BA de cinco rodadas nem gate térmico interno. A V2 carregou, mas não emitiu heartbeat, portanto o caminho de cópia permanece sem medição. Nenhuma versão atingiu 60 FPS comprovados. Nenhum dado novo qualifica A6xx, A750 ou A8xx."
 }

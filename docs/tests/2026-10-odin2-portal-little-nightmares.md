@@ -16,7 +16,7 @@ selecionadas sem publicar logs brutos.
 | Candidate 5.7.8.1 | Mesa novo com correções bindless, push constants e IR3; patchset conservador, sem tuning específico do jogo. | 44,27 e 44,89 FPS; uma captura registrou 20.666 esperas `texture_download`. | Manter para comparação, sem ganho certificado. |
 | PROFILED Lab 5.7.9.1 | Trocar default do autotuner BANDWIDTH por PROFILED somente no A740/Eden. | 37,77 e 40,80 FPS observados em cargas distintas; melhora não demonstrada. | Não integrar o tuning. |
 | Readback Lab 5.7.10.1 | Contar cópias de imagem, fallback por linha e r2d/r3d em lotes de 512 por thread. | 41,28 FPS; 3 esperas `texture_download` em 27 ms; nenhum contador `AMARAL_RB_V1` apareceu. | Instrumentação inconclusiva. |
-| Readback Lab 5.7.11.1 | Heartbeat de submissão e contadores cumulativos visíveis mesmo com poucas cópias. | **Aguardando captura física.** Duas builds idênticas por variante na CI. | Continuar diagnóstico; sem release. |
+| Readback Lab 5.7.11.1 | Heartbeat de submissão e contadores cumulativos visíveis mesmo com poucas cópias. | 44,01 FPS em 817,61 s; o ELF correto carregou, mas nenhuma linha `AMARAL_RB_V2` apareceu. | Investigar filtro/log; sem release. |
 
 Todos os labs usam o mesmo Mesa `4b0f64ceac6a86af38c1e69cd38cf29f84ba611d`
 da candidata 5.7.8.1. A Latest usa
@@ -37,6 +37,7 @@ físico nesta série; nenhuma conclusão A740 foi estendida a essas famílias.
 | `20261020-224224-7212` | PROFILED Lab 5.7.9.1 | 690,03 s | 40,80 | 14,5 / 27,5 / 29,75 | indisponível | Transcrito da revisão anterior¹ |
 | `20261020-230715-1086` | Candidate 5.7.8.1 | 784,25 s | 44,89 | 14,75 / 23 / 28,75 | indisponível | Transcrito da revisão anterior¹ |
 | `20261021-003041-0627` | Readback Lab 5.7.10.1 | 667,16 s | 41,28 | 14 / 25,5 / 26,5 | 679 | Manifesto verificado |
+| `20261021-144443-7278` | Readback Lab 5.7.11.1 | 817,61 s | 44,01 | 14,25 / 25,75 / 27,75 | 680 | Manifesto verificado |
 
 ¹ O arquivo bruto dessas duas capturas não está disponível no ambiente atual;
 identidade e valores foram transcritos da análise anterior. O registro deixa o
@@ -66,6 +67,34 @@ não é prova de otimização. O contador V1 não confirmou se houve cópia por 
 A [Lab V2](https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/26) foi
 preparada para medir isso no próximo diagnóstico.
 
+## Captura V2 de 21/10 às 14:44 UTC
+
+O ZIP `20261021-144443-7278` passou na verificação dos hashes do manifesto;
+SHA-256 do arquivo: `b1295d18f1ddd1b150d1e59657c2bd9d3d36af400b4e4cdc76949b04bf18b723`.
+O ELF carregado tem SHA-256
+`dd8472af1125fc9295fc1b433eedfbe94694cd0232f171600e538312e56e8f47`,
+exatamente o Standard 5.7.11.1 da build reproduzível. Eden commit
+`6b592ecbeaac9631ffef1cb5735931ed1083189b` e hash efetivo de settings
+`1337a7f3ed7ba6f34966a9a3f4a1dbdaaa09f2f8b80f3c8bd56007b8057b5406`.
+O cache restaurou 372 pipelines e não houve novas criações; a captura terminou
+por ação do usuário, sem falhas de criação/tradução registradas.
+
+O jogo registrou 44,01 FPS, GPU p50/p90/p99 de 14,25/25,75/27,75 ms, 591,0
+draws e 116,9 passes por quadro. Foram 240 esperas `texture_download`, somando
+3,29 s; `guest_sync` somou 433,76 s em outra thread, sem adição entre threads.
+O coletor capturou 27 linhas, informou zero descartes e **não registrou nenhum
+`AMARAL_RB_V2`**. O Eden reportou 155.736 chamadas de submit durante a captura;
+elas não provam quais callbacks Turnip foram executados. A ausência do heartbeat
+impede interpretar os contadores: o gate de ID, o callback efetivo ou o destino
+do log ainda precisam ser isolados. Não declarar ausência de cópias nem bug de
+readback a partir disso.
+
+O relógio GPU reportou 680 MHz nas 407 amostras, bateria até 31 °C e thermal
+status 0. Não há temperatura interna do chip nem cena marcada. A diferença
+entre 44,01 FPS desta Lab e 41,28/44,89 FPS de outras capturas não é efeito
+causal demonstrado: a carga e a instrumentação diferem. Nenhuma melhoria de
+desempenho foi qualificada.
+
 Nenhum teste CTS/VVL ou inspeção visual sistemática acompanhou estas capturas.
 Não há 1% low verdadeiro nem temperatura interna da GPU. Timestamps GPU não
 incluem o blit de apresentação; p99 do histograma não equivale a 1% low. Não
@@ -73,8 +102,8 @@ interpretar KGSL busy repetido como capacidade ociosa, nem somar waits de
 threads diferentes. As capturas ainda não justificam Latest, ganho de FPS ou
 ajuste global de GMEM/SYSMEM.
 
-Decisão atual: **2 — atualizar controle/evidências**. Próximo teste: carregar
-5.7.11.1 Standard somente neste jogo, aquecer e capturar a mesma rota; analisar
-`AMARAL_RB_V2` antes de propor mudança de driver. Para uma afirmação de ganho,
+Decisão atual: **2 — atualizar controle/evidências**. Próximo passo: investigar
+no código o gate do ID A740, o callback de fila e o logging Android; só depois
+preparar outra instrumentação ou pedir nova captura. Para uma afirmação de ganho,
 repetir 5.7.8.1 contra uma candidata com cena marcada, cinco rodadas balanceadas,
 clocks/cache/temperatura controlados e verificação visual.
