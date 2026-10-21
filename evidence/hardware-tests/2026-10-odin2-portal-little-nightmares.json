@@ -70,8 +70,8 @@
       "mesa_commit": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
       "elf_sha256": "b3aa76d16b409bded16c8c6d083b12b006f0c71c8933d0d89cc7bef5edc447cc",
       "proposal": "Registrar IDs e resultado do filtro antes do gate A740 nos callbacks de fila A7xx, com log Android direto. Contagem de cópias continua A740/Eden.",
-      "hardware_result": null,
-      "status": "awaiting-hardware",
+      "hardware_result": "41,06 FPS em 453,98 s. 45 heartbeats V3: chip FD740 0x43050a01, gpu_id interno 6760, app/engine match=1, scope=0. O gate rejeitou o ID de GPU e impediu as contagens de cópia; não há medição de readback nem ganho certificado.",
+      "status": "observed",
       "patchset_sha256": "0f26945e13d457bd605b20a58db0509ee73d608c1f94dc060f51c26019023b8c",
       "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/26"
     }
@@ -307,7 +307,40 @@
         "Cache aquecido: 372 pipelines restaurados e zero novos; 591,0 draws e 116,9 render passes por quadro. Diferente das capturas anteriores.",
         "Captura encerrada pelo usuário; status térmico 0 e bateria até 31 C não são gate térmico de chip."
       ]
+    },
+    {
+      "capture_id": "20261021-162833-1341",
+      "driver_id": "lab-5.7.12.1",
+      "driver_identity": "elf-sha256",
+      "archive_sha256": "980c156cbcc264ebcc86be30b4c6757bbc4c88de91f404c5288808e46c42c4bb",
+      "payload_integrity": "payload-hashes-verified",
+      "emulator_commit": "6b592ecbeaac9631ffef1cb5735931ed1083189b",
+      "settings_sha256": "1337a7f3ed7ba6f34966a9a3f4a1dbdaaa09f2f8b80f3c8bd56007b8057b5406",
+      "duration_s": 453.982,
+      "fps_avg": 41.06,
+      "gpu_ms_p50": 13.75,
+      "gpu_ms_p90": 26.25,
+      "gpu_ms_p99": 29.75,
+      "gpu_clock_mhz_avg": 680,
+      "draws_per_frame": 557.4,
+      "pipelines_created": 20,
+      "texture_download_waits": 1,
+      "texture_download_wait_s": 0.007407,
+      "driver_log_lines": 70,
+      "driver_log_dropped": 0,
+      "readback_v3_lines": 45,
+      "readback_v3_gpu_id": 6760,
+      "readback_v3_chip_id": "0x43050a01",
+      "readback_v3_scope": 0,
+      "loaded_elf_sha256": "b3aa76d16b409bded16c8c6d083b12b006f0c71c8933d0d89cc7bef5edc447cc",
+      "source": "docs/tests/2026-10-odin2-portal-little-nightmares.md",
+      "comparison_grade": "observation",
+      "notes": [
+        "O chip ID confirma a entrada FD740, mas o gpu_id interno 6760 não passa no gate que aceitava somente 0 ou 740; todas as 45 linhas registraram app_match=engine_match=1 e scope=0.",
+        "Contadores zero resultam do filtro rejeitado; não demonstram ausência de cópias.",
+        "Eden restaurou 372 pipelines e criou 20; cena/cache diferem das capturas anteriores."
+      ]
     }
   ],
-  "overall_assessment": "Dez observações A740 sem teste AB/BA de cinco rodadas nem gate térmico interno. A V2 carregou, mas não emitiu heartbeat, portanto o caminho de cópia permanece sem medição. Nenhuma versão atingiu 60 FPS comprovados. Nenhum dado novo qualifica A6xx, A750 ou A8xx."
+  "overall_assessment": "Onze observações A740 sem A/B de cinco rodadas ou gate térmico interno. V3 identificou o chip FD740 e gpu_id interno 6760 que o filtro anterior rejeitava; readback ainda sem contagens. Nenhuma versão atingiu 60 FPS comprovados. Sem nova qualificação A6xx, A750 ou A8xx."
 }

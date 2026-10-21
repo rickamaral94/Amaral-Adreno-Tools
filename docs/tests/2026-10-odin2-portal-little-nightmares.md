@@ -17,7 +17,7 @@ selecionadas sem publicar logs brutos.
 | PROFILED Lab 5.7.9.1 | Trocar default do autotuner BANDWIDTH por PROFILED somente no A740/Eden. | 37,77 e 40,80 FPS observados em cargas distintas; melhora não demonstrada. | Não integrar o tuning. |
 | Readback Lab 5.7.10.1 | Contar cópias de imagem, fallback por linha e r2d/r3d em lotes de 512 por thread. | 41,28 FPS; 3 esperas `texture_download` em 27 ms; nenhum contador `AMARAL_RB_V1` apareceu. | Instrumentação inconclusiva. |
 | Readback Lab 5.7.11.1 | Heartbeat de submissão e contadores cumulativos visíveis mesmo com poucas cópias. | 44,01 FPS em 817,61 s; o ELF correto carregou, mas nenhuma linha `AMARAL_RB_V2` apareceu. | Investigar filtro/log; sem release. |
-| Readback Lab 5.7.12.1 | Registrar IDs internos e resultado do filtro antes do gate A740 nas filas A7xx, com log Android direto. | **Aguardando captura física.** Standard/OneUI reproduzíveis em CI; nenhuma conclusão de desempenho. | Lab diagnóstica. |
+| Readback Lab 5.7.12.1 | Registrar IDs internos e resultado do filtro antes do gate A740 nas filas A7xx, com log Android direto. | 45 heartbeats revelaram `chip=0x43050a01`, `gpu=6760`, app/engine corretos e `scope=0`. O filtro rejeitou este FD740. | Corrigir somente o gate deste chip; sem conclusão de FPS. |
 
 Todos os labs usam o mesmo Mesa `4b0f64ceac6a86af38c1e69cd38cf29f84ba611d`
 da candidata 5.7.8.1. A Latest usa
@@ -39,6 +39,7 @@ físico nesta série; nenhuma conclusão A740 foi estendida a essas famílias.
 | `20261020-230715-1086` | Candidate 5.7.8.1 | 784,25 s | 44,89 | 14,75 / 23 / 28,75 | indisponível | Transcrito da revisão anterior¹ |
 | `20261021-003041-0627` | Readback Lab 5.7.10.1 | 667,16 s | 41,28 | 14 / 25,5 / 26,5 | 679 | Manifesto verificado |
 | `20261021-144443-7278` | Readback Lab 5.7.11.1 | 817,61 s | 44,01 | 14,25 / 25,75 / 27,75 | 680 | Manifesto verificado |
+| `20261021-162833-1341` | Readback Lab 5.7.12.1 | 453,98 s | 41,06 | 13,75 / 26,25 / 29,75 | 680 | Manifesto verificado |
 
 ¹ O arquivo bruto dessas duas capturas não está disponível no ambiente atual;
 identidade e valores foram transcritos da análise anterior. O registro deixa o
@@ -96,6 +97,27 @@ entre 44,01 FPS desta Lab e 41,28/44,89 FPS de outras capturas não é efeito
 causal demonstrado: a carga e a instrumentação diferem. Nenhuma melhoria de
 desempenho foi qualificada.
 
+## Captura V3 de 21/10 às 16:28 UTC
+
+O ZIP `20261021-162833-1341` passou no manifesto; SHA-256
+`980c156cbcc264ebcc86be30b4c6757bbc4c88de91f404c5288808e46c42c4bb`.
+O ELF carregado `b3aa76d16b409bded16c8c6d083b12b006f0c71c8933d0d89cc7bef5edc447cc`
+confirma a Standard Lab 5.7.12.1. Mesmo commit Eden e hash efetivo de settings
+das capturas recentes. Em 453,98 s, houve 41,06 FPS, GPU p50/p90/p99 de
+13,75/26,25/29,75 ms, 557,4 draws/quadro e 20 pipelines novos. Uma espera
+`texture_download` somou 7,4 ms. Nenhum desses valores forma A/B com as outras
+cenas ou permite atribuir o FPS à mudança diagnóstica.
+
+O logcat registrou **45 linhas `AMARAL_RB_V3`**, sem descarte. Todas mostraram
+`path=graphics`, `gpu=6760`, `chip=43050a01`, `app_match=1`, `engine_match=1`
+e `scope=0`. O perfil Mesa FD740 reconhece esse chip ID KGSL, mas a função
+`amaral_readback_gpu` da Lab aceitava esse chip apenas se o campo `gpu_id`
+fosse 0 ou 740. O valor recebido foi 6760. Isso explica por que V1/V2 não
+contaram cópias nem emitiram heartbeat V2. Os campos `regions=0` são resultado
+do filtro rejeitado; **não provam ausência de cópias de imagem**. A próxima Lab
+deve aceitar somente os chip IDs FD740 já conhecidos independentemente do
+campo legado `gpu_id`, mantendo o caso `gpu_id=740, chip_id=0` separado.
+
 Nenhum teste CTS/VVL ou inspeção visual sistemática acompanhou estas capturas.
 Não há 1% low verdadeiro nem temperatura interna da GPU. Timestamps GPU não
 incluem o blit de apresentação; p99 do histograma não equivale a 1% low. Não
@@ -103,9 +125,8 @@ interpretar KGSL busy repetido como capacidade ociosa, nem somar waits de
 threads diferentes. As capturas ainda não justificam Latest, ganho de FPS ou
 ajuste global de GMEM/SYSMEM.
 
-Decisão atual: **2 — atualizar controle/evidências**. Próximo teste: executar
-a [Lab V3 5.7.12.1](https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/26)
-no Odin e verificar `AMARAL_RB_V3`, IDs e `scope` no log. Se o heartbeat continuar
-ausente, investigar o callback/coletor antes de qualquer tuning. Para uma afirmação de ganho,
+Decisão atual: **2 — atualizar controle/evidências**. Próximo teste: corrigir o
+gate específico FD740 em Lab isolada e verificar se `scope=1` e os contadores
+de cópia aumentam. Só então investigar alinhamento ou tempo GPU. Para uma afirmação de ganho,
 repetir 5.7.8.1 contra uma candidata com cena marcada, cinco rodadas balanceadas,
 clocks/cache/temperatura controlados e verificação visual.
