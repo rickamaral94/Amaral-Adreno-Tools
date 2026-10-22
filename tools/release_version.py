@@ -217,8 +217,10 @@ def update_lock(lock, state, meta, version):
 
 def update_patch_apply_evidence(commit):
     evidence = load_json(EVIDENCE_PATH)
+    manifest = load_json(ROOT / "config/patches.json")
+    distributed = set(manifest["standard"] + manifest["oneui_extra"])
     for item in evidence["candidates"]:
-        if item.get("patch"):
+        if item.get("patch") in distributed:
             item["patch_apply_verified_on_mesa"] = commit
     save_json(EVIDENCE_PATH, evidence)
 

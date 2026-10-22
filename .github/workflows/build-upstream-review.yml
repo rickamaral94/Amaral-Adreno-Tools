@@ -1,0 +1,9 @@
+name: Build reviewed upstream candidate
+on:
+  push:
+    branches: [candidate/5.7.14.1-upstream-review]
+permissions:
+  contents: read
+jobs:
+  build:
+    uses: ./.github/workflows/build-candidate.yml
