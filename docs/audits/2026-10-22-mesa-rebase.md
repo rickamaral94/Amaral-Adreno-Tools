@@ -27,7 +27,9 @@ podem afetar Turnip, mas não são evidência de ganho no Little Nightmares. WSI
 X11, Intel e RADV não são melhorias diretas do driver Android/Qualcomm.
 
 **Decisão: 3 — criar candidata para avaliação.** A aplicação dos patches passou;
-a versão 5.7.14.1 fica em branch isolado. Builds Standard/OneUI duas vezes,
-inspeção do pacote e testes em hardware seguem como gates independentes.
+a versão 5.7.14.1 fica em branch isolado. As builds Standard/OneUI duas vezes
+passaram com ZIP/ELF idênticos e pacote validado; hashes e run estão nas
+[notas da candidata](../releases/mesa-27.0.0-devel-v5.7.14.1.md). CTS/VVL e
+testes em hardware seguem como gates independentes.
 Manter Latest 4.7.7.2 e a Candidate 5.7.8.1 publicadas como controles; não
 inferir 60 FPS de um Mesa mais novo.
