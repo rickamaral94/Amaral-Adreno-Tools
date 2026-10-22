@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "status": "patch-apply-review",
+  "current_lock": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
+  "proposed_commit": "69f1f21f0258a77046dbaeb8ed7a8ad37a683006",
+  "proposed_commit_date_utc": "2026-10-22T05:47:33Z",
+  "version": "27.0.0-devel",
+  "checked_at_utc": "2026-10-22T08:25:00Z",
+  "comparison": "216 commits ahead, zero behind; verified ancestry in chaotic-cx/mesa-mirror, read-only 5-minute mirror of Mesa GitLab",
+  "evidence": [
+    "b35f16697172b660dadd5b646958c89d8f2ed214",
+    "761d5c8a54f93b3d43608f718910ed742983dd0b",
+    "cadc7e42fb72",
+    "4f6314dc9cb11ee105a1cb6f656b4d1cadc736e4",
+    "14656cee8c37",
+    "7638039f12d5",
+    "69f1f21f0258a77046dbaeb8ed7a8ad37a683006"
+  ]
+}

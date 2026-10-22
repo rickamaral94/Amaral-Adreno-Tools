@@ -1,0 +1,39 @@
+name: Verify proposed Mesa rebase
+on:
+  push:
+    branches: [candidate/5.7.14.1-upstream-review]
+permissions:
+  contents: read
+jobs:
+  apply-patches:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [standard, oneui]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Fetch exact proposed Mesa commit from canonical GitLab
+        run: |
+          commit=$(python3 -c 'import json; print(json.load(open("config/mesa-proposal.json"))["proposed_commit"])')
+          git init work/mesa
+          git -C work/mesa remote add origin https://gitlab.freedesktop.org/mesa/mesa.git
+          git -C work/mesa fetch --depth=1 origin "$commit"
+          git -C work/mesa checkout --detach FETCH_HEAD
+          test "$(git -C work/mesa rev-parse HEAD)" = "$commit"
+      - name: Check reviewed patches and Mesa policies
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          lock_path = Path('config/mesa-lock.json')
+          proposal = json.loads(Path('config/mesa-proposal.json').read_text())
+          lock = json.loads(lock_path.read_text())
+          assert lock['mesa']['commit'] == proposal['current_lock']
+          lock['mesa']['commit'] = proposal['proposed_commit']
+          lock_path.write_text(json.dumps(lock, indent=2) + '\n')
+          PY
+          python3 tools/apply_patches.py work/mesa --variant '${{ matrix.variant }}'
+          python3 tools/check_a840_topology.py work/mesa
+          python3 tools/check_vulkan_roadmap.py work/mesa
