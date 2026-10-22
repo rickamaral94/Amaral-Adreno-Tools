@@ -4,8 +4,11 @@ O lock atual é `4b0f64ceac6a86af38c1e69cd38cf29f84ba611d`. O commit
 proposto `69f1f21f0258a77046dbaeb8ed7a8ad37a683006` mantém Mesa
 `27.0.0-devel` e está 216 commits à frente, sem divergência de ancestralidade,
 no espelho público `chaotic-cx/mesa-mirror` do GitLab Mesa. O workflow
-`verify-mesa-rebase.yml` confirma o SHA no GitLab canônico e tenta aplicar
-separadamente Standard e OneUI antes de alterar o lock de distribuição.
+`verify-mesa-rebase.yml` confirmou o SHA no GitLab canônico e aplicou
+separadamente Standard e OneUI no
+[CI de rebase](https://github.com/rickamaral94/Amaral-Adreno-Tools/actions/runs/39765675756).
+O patch experimental A825 exigiu ajuste de contexto porque as entradas A830
+foram reorganizadas upstream. Seus valores e chip ID ficaram iguais.
 
 ## Mudanças aplicáveis observadas no código upstream
 
@@ -23,7 +26,8 @@ matrix, além de evitar afinidade CPU herdada na thread de submit Vulkan. Elas
 podem afetar Turnip, mas não são evidência de ganho no Little Nightmares. WSI
 X11, Intel e RADV não são melhorias diretas do driver Android/Qualcomm.
 
-**Decisão provisória: 3 — criar candidata somente após os gates.** Aplicação dos
-patches, CI, builds Standard/OneUI duas vezes, inspeção do pacote e testes em
-hardware são necessários. Manter Latest 4.7.7.2 e Candidate 5.7.8.1 intactas
-até esses resultados; não inferir 60 FPS de um Mesa mais novo.
+**Decisão: 3 — criar candidata para avaliação.** A aplicação dos patches passou;
+a versão 5.7.14.1 fica em branch isolado. Builds Standard/OneUI duas vezes,
+inspeção do pacote e testes em hardware seguem como gates independentes.
+Manter Latest 4.7.7.2 e a Candidate 5.7.8.1 publicadas como controles; não
+inferir 60 FPS de um Mesa mais novo.
