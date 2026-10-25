@@ -13,7 +13,8 @@ para auditoria e futuras análises.
 | Odin 2 Portal, A740, Little Nightmares | Readback Lab 5.7.11.1 | Binário carregado; nenhum heartbeat V2 apareceu, portanto o caminho de cópia continua sem medição. |
 | Odin 2 Portal, A740, Little Nightmares | Readback Lab 5.7.12.1 | 45 heartbeats revelaram `chip=0x43050a01`, `gpu=6760` e `scope=0`: o filtro rejeitou o ID recebido. |
 | Odin 2 Portal, A740, Little Nightmares | Readback Lab 5.7.13.1 | 85 heartbeats `scope=1` e contadores avançando; fallback por linha em ~0,07% das camadas adicionais observadas. Sem ganho de FPS comprovado. |
-| A6xx, A750, A8xx | — | Nenhum resultado novo de hardware neste registro. |
+| [Samsung SM-F971B, A840 (três slices), Android 17, MUA3 no Eden](2026-10-sm8850-a840-marvel-ultimate-alliance-3.md) | Candidate 5.7.14.1 Standard | Primeira observação A8xx: estável no limite de 30 FPS; desempenho não testado. Imagem relatada como pixelada, causa não isolada. OneUI tem perfil A840 idêntico. |
+| A6xx, A750 | — | Nenhum resultado novo de hardware neste registro. |
 | Cemu Fork Amaral | — | Código e relatos públicos estudados; nenhum ZIP bruto de gameplay analisado nesta etapa. |
 
 ## Como acrescentar um teste

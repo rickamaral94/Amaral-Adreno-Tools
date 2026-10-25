@@ -1,0 +1,29 @@
+Amaral A840 diagnostic lab: force TU_DEBUG=sysmem on the three-slice Adreno 840
+
+Laboratório, não release. Base: candidata 5.7.14.1 (Mesa 69f1f21).
+Degrau: L0, chip KGSL 0x44050a31 (e 0xffff44050a31). Demais GPUs inalteradas.
+Objetivo: isolar a pixelização relatada no MUA3 em SM8850/A840.
+
+diff --git a/src/freedreno/vulkan/tu_device.cc b/src/freedreno/vulkan/tu_device.cc
+index c317ed1b034..6cf4f6c531b 100644
+--- a/src/freedreno/vulkan/tu_device.cc
++++ b/src/freedreno/vulkan/tu_device.cc
+@@ -1742,6 +1742,18 @@ tu_physical_device_init(struct tu_physical_device *device,
+       device->dev_info = info;
+       device->info = &device->dev_info;
+ 
++      /* Amaral A840 diagnostic lab (sysmem): force TU_DEBUG=sysmem only on the
++       * three-slice Adreno 840 (KGSL chip 0x44050a31) to isolate a reported
++       * pixelation. Not a fix and never distributed as a release.
++       */
++      if (device->dev_id.chip_id == 0x44050a31 ||
++          device->dev_id.chip_id == 0xffff44050a31) {
++         tu_env.start_debug |= TU_DEBUG_SYSMEM;
++         tu_env.debug.fetch_or(TU_DEBUG_SYSMEM, std::memory_order_acq_rel);
++         mesa_logi("Amaral A840 lab: TU_DEBUG sysmem forced for chip 0x%" PRIx64,
++                   device->dev_id.chip_id);
++      }
++
+       device->usable_gmem_size_gmem =
+          fd6_calc_gmem_cache_offsets(&info, device->gmem_size,
+                                      &device->config_gmem,
