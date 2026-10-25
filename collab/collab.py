@@ -221,6 +221,13 @@ def board(items, now=None):
     return list(rows.values())
 
 
+SHOWN_DIR = ROOT.parent / ".collab-cache"
+
+
+def shown_path(agent):
+    return SHOWN_DIR / f"{agent}.shown"
+
+
 def cursor_path(agent):
     return STATE / f"{agent}.seen"
 
@@ -276,6 +283,12 @@ def cmd_inbox(a):
     print(f"{len(new)} mensagem(ns) nova(s) para {a.agent}\n")
     for m in new:
         show(m)
+    # Registra fora de collab/ (não versionado) o que foi mostrado: o `seen`
+    # só marca isso, e uma mensagem que chegue entre inbox e seen continua nova.
+    SHOWN_DIR.mkdir(parents=True, exist_ok=True)
+    shown = shown_path(me)
+    previous = set(shown.read_text(encoding="utf-8").split()) if shown.is_file() else set()
+    shown.write_text("\n".join(sorted(previous | {m["id"] for m in new})) + "\n", encoding="utf-8")
     if items:
         print(f"Depois de ler e responder: collab.py seen --agent {a.agent}")
 
@@ -286,9 +299,21 @@ def cmd_seen(a):
         return
     STATE.mkdir(parents=True, exist_ok=True)
     me = canonical(a.agent)
-    ids = sorted(seen_ids(me) | {m["id"] for m in items})
+    shown = shown_path(me)
+    shown_ids = set(shown.read_text(encoding="utf-8").split()) if shown.is_file() else set()
+    def addressed(m):
+        return me in [canonical(x) for x in m["to"].split(",")] or m["to"] == "all"
+    # Marca só: o que o inbox mostrou, as próprias mensagens e as que não são
+    # para este agente. Mensagem para ele ainda não mostrada continua pendente.
+    marked = {m["id"] for m in items
+              if m["id"] in shown_ids or canonical(m["from"]) == me or not addressed(m)}
+    pending = [m["id"] for m in items if addressed(m) and canonical(m["from"]) != me
+               and m["id"] not in marked and m["id"] not in seen_ids(me)]
+    ids = sorted(seen_ids(me) | marked)
     cursor_path(me).write_text("\n".join(ids) + "\n", encoding="utf-8")
     print(f"{me}: {len(ids)} mensagens marcadas como lidas")
+    if pending:
+        print(f"ATENÇÃO: {len(pending)} mensagem(ns) para você ainda não mostrada(s); rode inbox: {', '.join(pending)}")
 
 
 def cmd_sync_report(a):
