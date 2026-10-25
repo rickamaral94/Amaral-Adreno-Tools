@@ -18,7 +18,10 @@ para não reutilizar os identificadores 9–13 empregados pelas Labs A740.
 
 - A6xx: `GRAS_MODE_CNTL` corrigido para um caso A650 reproduzido de hang e
   renderização incorreta com draws instanciados e sample mask; invalidação de
-  constantes compartilhadas antes de desativá-las ao trocar pipelines.
+  constantes compartilhadas antes de desativá-las ao trocar pipelines. Esta
+  última correção (`cadc7e4`, MR !45447) trata a causa que o autor investigava
+  na MR !41860, fechada sem merge; o workaround externo de query XFB não faz
+  parte da candidata. O caso Risk of Rain 2 ainda exige teste em A6xx.
 - Turnip: verificação sem sinal do limite de texel buffer emulado, evitando
   acesso antes da view com offset negativo; liberação de referência local a BO
   nos patchpoints de visibility stream.
@@ -56,7 +59,8 @@ e validou pacote, catálogo de GPUs e manifestos. Resultados do commit
 CTS/VVL e teste de hardware ainda são necessários. As observações de Little
 Nightmares no A740 não demonstram que estes commits elevem FPS; o experimento
 readback ainda aponta a necessidade de cena marcada e correlação no Eden.
-Para A6xx, reproduzir o caso sample mask e trocas de pipeline; testar tesselação
+Para A6xx, reproduzir o caso sample mask, trocas de pipeline e XFB com queries;
+testar tesselação
 em A6xx/A7xx/A8xx com `dEQP-VK.tessellation.*`; para A8xx,
 testar draws indiretos/`DrawID` em hardware real. Não promover para Latest
 nem afirmar compatibilidade universal com base apenas na build.

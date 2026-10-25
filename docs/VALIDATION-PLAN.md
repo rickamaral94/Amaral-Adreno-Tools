@@ -11,7 +11,11 @@ exige bisecção em builds de laboratório antes de atribuir causa.
 2. CTS dirigido: descriptors/invalidação, push constants graphics/compute/GPL,
    constantes indiretas e offsets próximos de 511; IR3 int64/vector shrinking;
    `dEQP-VK.tessellation.*` dirigido, incluindo TCS com vértices de saída e pontos
-   de controle diferentes (Mesa af60682 / MR !45416).
+   de controle diferentes (Mesa af60682 / MR !45416). Em A6xx, cobrir
+   `dEQP-VK.transform_feedback.*` com queries e alternância de pipelines com e
+   sem shared consts (Mesa cadc7e4 / MR !45447); se possível, reproduzir
+   Risk of Rain 2 por DXVK. A MR !41860 foi fechada sem merge e seu patch de
+   invalidação antes da query não está distribuído.
 3. Regressão KGSL: wait-any/all, timeout zero, TS/FD mistos, submit, readback,
    teardown e device lost. MR 44838 permanece upstream.
 4. A740/Odin 2 Portal Standard: Eden/Citron MK8D, BOTW/TOTK; Cemu Amaral Wind Waker HD,
