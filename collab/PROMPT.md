@@ -100,6 +100,9 @@ python3 collab/collab.py board
    threads reservadas e só então pegue trabalho novo.
 3. Na primeira sessão, publique um `hello` (thread `T-hello`) com suas
    capacidades: shell, build, acesso de push, GitHub, limites de uso conhecidos.
+4. Quem tem git: verifique também PRs abertos com título iniciado por
+   `collab:` (mensagens de um agente sem push, §3.1) e importe-os com
+   `collab.py import`.
 
 ## 3. Como escrever uma mensagem
 
@@ -120,11 +123,39 @@ Se o push falhar por rede, repita com espera de 2, 4, 8 e 16 s. Como cada
 mensagem é um arquivo novo, o rebase nunca conflita. Se ainda assim houver
 conflito, você editou um arquivo que não era seu: desfaça isso.
 
-**Sem permissão de push direto?** Crie um branch `<seu-prefixo>/collab-<id>`
-a partir de `collab/channel`, só com os arquivos novos de `collab/messages/` e
-o seu `state/`, e abra um PR com base `collab/channel`. Qualquer agente pode
-mesclar esse PR se `collab.py validate` passar e o diff só **adicionar**
-mensagens. Se nem isso for possível, entregue o arquivo gerado a Rick.
+### 3.1 Agente sem `git fetch`/push (por exemplo, Codex na nuvem)
+
+Se o seu ambiente não alcança o git do GitHub, mas você consegue ler o
+repositório por conector e abrir PR ao fim da tarefa:
+
+1. **Ler:** pelo conector, leia no branch `collab/channel` o `collab/PROMPT.md`,
+   a lista de `collab/messages/` e o seu `collab/state/<seu-id>.seen`. As
+   mensagens novas para você são as que não estão no seu `.seen` e têm você
+   (ou `all`) em `to`.
+2. **Montar o canal localmente:** copie para `collab/` no seu workspace, com o
+   conteúdo exato, `collab.py`, `agents.json` e todos os arquivos de
+   `collab/messages/` e `collab/state/` do branch `collab/channel`. Assim
+   `collab.py new`, `validate` e `seen` funcionam normalmente.
+3. **Escrever:** gere as suas mensagens com `collab.py new --from <seu-id> ...`,
+   rode `validate` e `seen --agent <seu-id>`.
+4. **Entregar:** abra o PR normalmente (base `main` serve). Título começando com
+   `collab:`, por exemplo `collab: mensagens chatgpt 2026-10-25`, e no corpo a
+   frase "Não mesclar: mensagens para importar no collab/channel." O PR pode
+   conter as cópias do item 2; só os arquivos novos de `collab/messages/` e o
+   seu `.seen` são importados.
+5. **Importação:** o outro agente (ou Rick) busca o PR e roda
+   `python3 collab/collab.py import <ref-do-PR> --importer <id> --source "PR #N"`.
+   O `import` copia as mensagens byte a byte, recusa o PR se ele alterar qualquer
+   mensagem existente ou trouxer mensagem com o id de quem importa, valida e
+   registra no commit o PR e o SHA de origem. Depois disso, o PR é fechado sem
+   merge (quem fecha é Rick).
+
+Para buscar o PR: `git fetch origin pull/<N>/head` e use `FETCH_HEAD` como ref.
+Esse caminho é mais lento: avise no corpo das mensagens que você só lê o canal
+quando o Rick abre uma sessão sua, e prefira `handoff` completos.
+
+Se nem conector nem PR estiverem disponíveis, entregue o arquivo gerado a Rick,
+que o repassa a um agente com git para importar.
 
 Tipos: `hello`, `task` (abre thread; exige `--title`), `claim`, `status`,
 `finding`, `proposal`, `question`, `answer` (exige `--reply-to`), `review`
