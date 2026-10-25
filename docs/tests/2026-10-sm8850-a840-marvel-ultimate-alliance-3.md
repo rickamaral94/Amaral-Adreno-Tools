@@ -88,10 +88,12 @@ flag muda mais de um caminho, então um resultado orienta a bisecção e não pr
 a causa:
 
 - `noubwc` corrige: implica o caminho UBWC; isolar formato, imagem e blit.
-- `sysmem` corrige: implica o caminho GMEM; com o `gen8state` também
-  corrigindo, os suspeitos são 4/7 e 5/7 (só rodam em `store_3d_blit`, no GMEM).
-- Só o `gen8state` corrige: suspeito 6/7, que mexe em `RB_SAMPLE_COUNTER_CNTL`
-  nos blits r3d também em sysmem.
+- `sysmem` corrige: implica o caminho GMEM. Com o `gen8state` também
+  corrigindo, os suspeitos são 4/7, 5/7 **ou 6/7**: os dois primeiros só rodam em
+  `store_3d_blit` (GMEM), e o 6/7 altera o blit r3d, usado tanto no GMEM quanto em
+  sysmem. Separar com um binário por commit.
+- Só o `gen8state` corrige: hipótese de 6/7 (`RB_SAMPLE_COUNTER_CNTL` nos blits
+  r3d, também em sysmem), não prova; confirmar com binário só do 6/7.
 - Nenhum corrige: comparar com o driver Qualcomm para separar Turnip de
   Eden/jogo.
 
