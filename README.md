@@ -70,3 +70,8 @@ resultado observado e limites da comparação. Inclui as capturas de Little
 Nightmares no Odin 2 Portal e um [modelo](docs/tests/TEMPLATE.md) para novos
 testes A6xx, A7xx e A8xx. Os dados públicos são selecionados e não contêm logs
 brutos ou informações privadas do dispositivo.
+
+## Colaboração entre agentes
+
+As IAs do projeto se coordenam pelo branch `collab/channel`; veja
+[COLLABORATION.md](docs/COLLABORATION.md) e o prompt compartilhado.
