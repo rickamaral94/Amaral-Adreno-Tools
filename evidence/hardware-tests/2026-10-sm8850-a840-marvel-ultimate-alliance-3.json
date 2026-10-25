@@ -55,6 +55,16 @@
       "status": "awaiting-hardware",
       "patchset_sha256": "fff8e883133662cacfa6103c6224f7e169f6523bd7bfeedaf04e2cba9df6eadf",
       "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/blob/ccr-05e1d523-htngw2/docs/tests/labs/lab-a840-gen8state.patch"
+    },
+    "lab-5.7.14.1-a840-snapalloc": {
+      "name": "Amaral A840 diagnostic Lab 5.7.14.1-a840lab-snapalloc Standard",
+      "mesa_commit": "69f1f21f0258a77046dbaeb8ed7a8ad37a683006",
+      "elf_sha256": "be0532f5aa62235e89a01538f405a4a50c66344387636e887da81d944aadfc16",
+      "proposal": "Aplicar a MR upstream aberta !44464 (d510c5ab73), rebaseada sobre o patch 0001 do NDK sem mudar o código: o fallback do u_gralloc passa a ler o flag UBWC/linear dos handles SnapAlloc (Snapdragon 8 Elite), que não têm o magic 'gmsm' e hoje viram DRM_FORMAT_MOD_INVALID, levando o Turnip a escolher um layout diferente da alocação do swapchain. Handles QTI com 'gmsm' ficam idênticos; o ramo 'parrot' (SM7435) é heurístico e não foi revisado para candidata. Diagnóstico, não correção; nunca release.",
+      "hardware_result": null,
+      "status": "awaiting-hardware",
+      "patchset_sha256": "812f120ae565b466dfef84ca5ea051c969b324e1b3689ef39ec9af8f3453d44d",
+      "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/blob/ccr-05e1d523-htngw2/docs/tests/labs/lab-a840-snapalloc.patch"
     }
   },
   "captures": [

@@ -82,8 +82,9 @@ Escopo de código (revisão do `chatgpt` em T-a840-pixelation, 25/10/2026):
 | `5.7.14.1-a840lab-noubwc` | `TU_DEBUG=noubwc` | `63f545022ab515e234f4d686a9dc2cad0aff2394e5c28eae3256099bd290d710` | `0546fff7f19871a05381df60fd32914cfe92f0838f6b1264b80c2e2baa9e108d` |
 | `5.7.14.1-a840lab-sysmem` | `TU_DEBUG=sysmem` | `7e2f65c7f43bd6bfe53cf4707b902103010bb3609709f75546aecd1b1be3eb56` | `ed661f2e84dab5414df1f36aa0410e9bd3d52d3dff32cb7cf1073e5039b624de` |
 | `5.7.14.1-a840lab-gen8state` | MR !43940 4/7, 5/7, 6/7 (estado após blit 3D em gen8) | `20fd9db6fb4628603f8ab69b780504ac5ace553e19984e7761fe6c63655e436a` | `2cf55f99dcba098ecd6cf99ae45be57801a39d1610d6d90c2b9d07d51c0e4028` |
+| `5.7.14.1-a840lab-snapalloc` | MR !44464 (detecção de UBWC/linear em handles SnapAlloc) | `35afac66c3a564cad06fe4157f64fd5bf972bdf1dd8bb045bff3033783e79ea1` | `be0532f5aa62235e89a01538f405a4a50c66344387636e887da81d944aadfc16` |
 
-Testar os três labs sempre, na mesma cena e com o mesmo critério visual. Cada
+Testar os quatro labs sempre, na mesma cena e com o mesmo critério visual. Cada
 flag muda mais de um caminho, então um resultado orienta a bisecção e não prova
 a causa:
 
@@ -94,8 +95,28 @@ a causa:
   sysmem. Separar com um binário por commit.
 - Só o `gen8state` corrige: hipótese de 6/7 (`RB_SAMPLE_COUNTER_CNTL` nos blits
   r3d, também em sysmem), não prova; confirmar com binário só do 6/7.
+- Só o `snapalloc` corrige: implica a importação dos buffers do swapchain
+  (modificador do gralloc), não o render do jogo; ver a seção abaixo.
 - Nenhum corrige: comparar com o driver Qualcomm para separar Turnip de
   Eden/jogo.
 
 Qualquer correção real exige binários separados por commit, mecanismo
 identificado, checagem de A7xx e A/B antes de entrar numa candidata.
+
+## Lab SnapAlloc (25/10/2026, auditoria Mesa/MRs em T-a8xx-strategy)
+
+Hipótese com mecanismo identificado no código, ainda sem prova física. O
+SM8850 usa o gralloc SnapAlloc, cujo handle não tem o magic `gmsm` da QTI.
+No Mesa `69f1f21` o build NDK não compila os backends IMapper4/5, e o backend
+`qcom` exige o HAL gralloc1 legado. O caminho ativo é então o fallback, que só
+reconhece `gmsm` e devolve `DRM_FORMAT_MOD_INVALID` para buffers SnapAlloc.
+`vk_android` repassa esse valor como modificador explícito e o Turnip escolhe o
+próprio layout, que pode não ser o da alocação. O efeito esperado é imagem
+embaralhada em blocos em toda saída Vulkan do swapchain, com a UI Android
+intacta. A MR upstream !44464 corrige esse caso; o autor testou na A840.
+
+O lab aplica a MR sem mudar o código, só com o contexto rebaseado sobre o patch
+0001 do NDK. Escopo: handles com `gmsm` (QTI gralloc: A6xx, A7xx, Odin)
+seguem idênticos. O ramo `parrot` da MR (SM7435) usa uma varredura heurística
+que atinge A7xx e precisa de revisão antes de qualquer candidata. Se esta for a
+causa, os labs `noubwc`, `sysmem` e `gen8state` não corrigem a imagem.
