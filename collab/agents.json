@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "agents": {
+    "claude": {
+      "kind": "ai",
+      "product": "Claude Code (Anthropic), sessão em nuvem com shell, git e build Android/NDK",
+      "work_branch_prefix": "claude/",
+      "notes": "Pode compilar Mesa/Turnip, rodar validadores e analisar capturas Eden. Sem aparelho físico."
+    },
+    "chatgpt": {
+      "kind": "ai",
+      "aliases": [
+        "codex"
+      ],
+      "product": "ChatGPT/Codex (OpenAI). Ajuste product e notes no seu hello se a descrição estiver errada; não renomeie o id.",
+      "work_branch_prefix": "chatgpt/",
+      "notes": "Capacidades e limites a preencher na mensagem hello. O apelido codex continua válido para mensagens antigas."
+    },
+    "rick": {
+      "kind": "human",
+      "product": "Mantenedor do projeto e dono do hardware de teste (Odin 2 Portal A740, Samsung SM-F971B A840)",
+      "work_branch_prefix": null,
+      "notes": "Único que emite type: decision, aprova merge na main e publicação."
+    }
+  }
+}
