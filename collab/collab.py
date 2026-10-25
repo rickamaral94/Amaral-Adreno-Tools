@@ -338,23 +338,35 @@ REQUESTS = {"question", "proposal", "review", "handoff", "task", "decision-reque
 
 
 def pending(items, rows, me):
-    """Pedidos ainda sem resposta, nos dois sentidos.
+    """Pedidos ainda sem resposta, nos dois sentidos, como pares (mensagem, indício).
 
-    Um pedido sai da lista quando recebe reply_to ou quando o destinatário
-    escreve depois dele na mesma thread. Com relógios divergentes a ordem pode
-    falhar, mas só para o lado de mostrar a mais, nunca de esconder.
+    Só fecha um pedido o reply_to vindo de um destinatário dele (ou a thread
+    concluída). Mensagem posterior de um destinatário na mesma thread, sem
+    reply_to, vira apenas o indício "possivelmente tratado": a ordem depende de
+    relógios que divergem e o assunto pode ser outro, então nunca esconde nada.
     """
     closed = {r["thread"] for r in rows if r["status"] == "concluída"}
-    def answered(i, m, by_me):
-        return any((x.get("reply_to") == m["id"] or (j > i and x["thread"] == m["thread"]))
-                   and (canonical(x["from"]) == me) == by_me for j, x in enumerate(items))
-    def to_me(m):
-        return m["to"] == "all" or me in [canonical(t) for t in m["to"].split(",")]
-    waiting_me = [m for i, m in enumerate(items) if canonical(m["from"]) != me and m["type"] in REQUESTS
-                  and to_me(m) and m["thread"] not in closed and not answered(i, m, True)]
-    waiting_other = [m for i, m in enumerate(items) if canonical(m["from"]) == me and m["type"] in REQUESTS
-                     and m["type"] != "decision-request" and m["thread"] not in closed
-                     and not answered(i, m, False)]
+    everyone = set(names().values())
+    def recipients(m):
+        if m["to"] == "all":
+            return everyone - {canonical(m["from"])}
+        return {canonical(t) for t in m["to"].split(",")}
+    def status(i, m):
+        to = recipients(m)
+        if any(x.get("reply_to") == m["id"] and canonical(x["from"]) in to for x in items):
+            return None
+        return any(j > i and x["thread"] == m["thread"] and canonical(x["from"]) in to
+                   for j, x in enumerate(items))
+    waiting_me, waiting_other = [], []
+    for i, m in enumerate(items):
+        if m["type"] not in REQUESTS or m["thread"] in closed:
+            continue
+        mine = canonical(m["from"]) == me
+        if not mine and me not in recipients(m):
+            continue
+        hint = status(i, m)
+        if hint is not None:
+            (waiting_other if mine else waiting_me).append((m, hint))
     return waiting_me, waiting_other
 
 
@@ -367,8 +379,10 @@ def cmd_sync_report(a):
     waiting_me, waiting_other = pending(items, rows, me)
     human = [r for r in rows if r["needs_human"]]
     last_sync = [m for m in items if m["type"] == "sync" and canonical(m["from"]) != me]
-    def line(m):
-        return f"- {m['thread']} `{m['id']}` [{m['type']}] {(m.get('title') or m['body'].splitlines()[0])[:90]}"
+    def line(pair):
+        m, hint = pair
+        mark = " (possivelmente tratado)" if hint else ""
+        return f"- {m['thread']} `{m['id']}` [{m['type']}] {(m.get('title') or m['body'].splitlines()[0])[:90]}{mark}"
     out = ["SYNC-AMARAL", "", f"Agente: {me}. Canal: {len(items)} mensagens.", "",
            "## Estado das frentes (preencher em 1 linha cada)",
            "- [A7xx-trava]: ", "- [A8xx-compat]: ", "- Outras: ", "",
@@ -503,18 +517,51 @@ def cmd_selftest(_):
         assert canonical("codex") == "chatgpt" and canonical("chatgpt") == "chatgpt"
         rows = board(load_all(), now=parse_time("2026-01-01T01:00:00Z"))
         assert rows[0]["owner"] == "chatgpt", rows[0]
-        # sync-report: pedido respondido depois na mesma thread, mesmo sem
-        # reply_to, não fica pendente; pedido sem nada depois fica.
+        # sync-report: só reply_to de um destinatário fecha um pedido; atividade
+        # posterior sem referência é indício e nunca remove (review do chatgpt).
+        def ids(pairs):
+            return {m["id"]: hint for m, hint in pairs}
         put("20260101T000300000Z-codex-0005", {"from": "codex", "to": "claude", "type": "review",
             "thread": "T-test", "verdict": "approve", "created": "2026-01-01T00:03:00Z"})
-        items = load_all()
-        me_wait, _ = pending(items, board(items), "claude")
-        assert [m["id"] for m in me_wait] == ["20260101T000300000Z-codex-0005"], me_wait
         put("20260101T000400000Z-claude-0006", {"from": "claude", "to": "chatgpt", "type": "status",
             "thread": "T-test", "created": "2026-01-01T00:04:00Z"})
         items = load_all()
         me_wait, other_wait = pending(items, board(items), "claude")
-        assert me_wait == [] and other_wait == [], (me_wait, other_wait)
+        assert ids(me_wait) == {"20260101T000300000Z-codex-0005": True}, me_wait
+        assert other_wait == [], other_wait  # a task 0001 foi respondida com reply_to em 0004
+        # Pergunta seguida de status do destinatário sobre outro assunto continua pendente.
+        put("20260101T000500000Z-claude-0007", {"from": "claude", "to": "chatgpt", "type": "question",
+            "thread": "T-test", "created": "2026-01-01T00:05:00Z"})
+        put("20260101T000600000Z-codex-0008", {"from": "codex", "to": "claude", "type": "status",
+            "thread": "T-test", "created": "2026-01-01T00:06:00Z"})
+        # Pergunta ao Rick não fecha com mensagem de quem não é destinatário.
+        put("20260101T000700000Z-codex-0009", {"from": "codex", "to": "rick", "type": "question",
+            "thread": "T-test", "created": "2026-01-01T00:07:00Z"})
+        put("20260101T000800000Z-claude-0010", {"from": "claude", "to": "all", "type": "status",
+            "thread": "T-test", "created": "2026-01-01T00:08:00Z"})
+        # Relógio adiantado: status escrito antes, com horário depois da pergunta.
+        put("20260101T000900000Z-claude-0011", {"from": "claude", "to": "chatgpt", "type": "question",
+            "thread": "T-test", "created": "2026-01-01T00:09:00Z"})
+        put("20270101T000000000Z-codex-0012", {"from": "codex", "to": "claude", "type": "status",
+            "thread": "T-test", "created": "2027-01-01T00:00:00Z"})
+        items = load_all()
+        _, other_wait = pending(items, board(items), "claude")
+        assert ids(other_wait) == {"20260101T000500000Z-claude-0007": True,
+                                   "20260101T000900000Z-claude-0011": True}, other_wait
+        _, other_wait = pending(items, board(items), "chatgpt")
+        assert ids(other_wait) == {"20260101T000300000Z-codex-0005": True,
+                                   "20260101T000700000Z-codex-0009": False}, other_wait
+        # Resposta com reply_to do destinatário fecha; a de um terceiro, não.
+        put("20260101T001000000Z-claude-0013", {"from": "claude", "to": "rick", "type": "answer",
+            "thread": "T-test", "reply_to": "20260101T000700000Z-codex-0009", "created": "2026-01-01T00:10:00Z"})
+        put("20260101T001100000Z-codex-0014", {"from": "codex", "to": "claude", "type": "answer",
+            "thread": "T-test", "reply_to": "20260101T000500000Z-claude-0007", "created": "2026-01-01T00:11:00Z"})
+        assert validate() == [], validate()
+        items = load_all()
+        _, other_wait = pending(items, board(items), "chatgpt")
+        assert "20260101T000700000Z-codex-0009" in ids(other_wait), other_wait
+        _, other_wait = pending(items, board(items), "claude")
+        assert "20260101T000500000Z-claude-0007" not in ids(other_wait), other_wait
     MESSAGES = original
     print("selftest ok")
 
