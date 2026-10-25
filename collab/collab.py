@@ -21,6 +21,7 @@ import json
 import pathlib
 import re
 import secrets
+import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent
@@ -307,6 +308,68 @@ def cmd_thread(a):
             show(m)
 
 
+def git_lines(*args):
+    out = subprocess.run(["git", "-C", str(ROOT.parent), *args], check=True,
+                         capture_output=True, text=True).stdout
+    return [line for line in out.splitlines() if line]
+
+
+def git_blob(ref, path):
+    return subprocess.run(["git", "-C", str(ROOT.parent), "show", f"{ref}:{path}"],
+                          check=True, capture_output=True).stdout
+
+
+def cmd_import(a):
+    """Traz mensagens de outro ref (PR de um agente sem push no canal), byte a byte."""
+    ref = a.ref
+    try:
+        files = git_lines("ls-tree", "-r", "--name-only", ref, "--", "collab/messages", "collab/state")
+    except subprocess.CalledProcessError as error:
+        sys.exit(f"ref inválido ou ausente: {ref} ({error.stderr.strip()})")
+    written, conflicts, merged = [], [], []
+    for rel in files:
+        dest = ROOT.parent / rel
+        data = git_blob(ref, rel)
+        if rel.startswith("collab/messages/") and rel.endswith(".md"):
+            if dest.exists():
+                if dest.read_bytes() != data:
+                    conflicts.append(rel)
+                continue
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(data)
+            written.append(dest)
+        elif rel.startswith("collab/state/") and rel.endswith(".seen"):
+            agent = pathlib.Path(rel).stem
+            if canonical(agent) == canonical(a.importer):
+                continue  # o cursor de quem importa é só dele
+            theirs = {l.strip() for l in data.decode().splitlines() if l.strip()}
+            ours = seen_ids(canonical(agent))
+            if not theirs <= ours:
+                STATE.mkdir(parents=True, exist_ok=True)
+                cursor_path(canonical(agent)).write_text("\n".join(sorted(ours | theirs)) + "\n", encoding="utf-8")
+                merged.append(rel)
+    if conflicts:
+        for dest in written:
+            dest.unlink()
+        sys.exit("importação recusada: o ref altera mensagens existentes (só inclusão):\n  " + "\n  ".join(conflicts))
+    errors = validate()
+    bad = [e for e in errors if any(e.startswith(d.name) for d in written)]
+    if bad:
+        for dest in written:
+            dest.unlink()
+        sys.exit("importação recusada, mensagens inválidas:\n  " + "\n  ".join(bad))
+    imported = [load_one for load_one in (parse(d) for d in written)]
+    senders = sorted({canonical(m["from"]) for m in imported})
+    if canonical(a.importer) in senders:
+        for dest in written:
+            dest.unlink()
+        sys.exit("importação recusada: o ref contém mensagens com o seu próprio id; publique-as você mesmo")
+    commit = git_lines("rev-parse", ref)[0]
+    print(f"importadas {len(written)} mensagens de {', '.join(senders) or '-'}; cursores atualizados: {len(merged)}")
+    print(f"origem: {a.source or ref} @ {commit}")
+    print(f'commit sugerido: git add collab && git commit -m "collab: import {len(written)} msg de {a.source or ref} @ {commit[:12]} ({a.importer})"')
+
+
 def cmd_validate(_):
     errors = validate()
     if errors:
@@ -369,10 +432,14 @@ def main():
     t = sub.add_parser("thread")
     t.add_argument("thread")
     sub.add_parser("validate")
+    im = sub.add_parser("import")
+    im.add_argument("ref", help="ref git com as mensagens, ex.: origin/pr/28 ou FETCH_HEAD")
+    im.add_argument("--importer", required=True, help="seu id (quem está importando)")
+    im.add_argument("--source", help="descrição da origem, ex.: 'PR #28'")
     sub.add_parser("selftest")
     a = p.parse_args()
     {"new": cmd_new, "inbox": cmd_inbox, "seen": cmd_seen, "board": cmd_board,
-     "thread": cmd_thread, "validate": cmd_validate, "selftest": cmd_selftest}[a.cmd](a)
+     "thread": cmd_thread, "validate": cmd_validate, "import": cmd_import, "selftest": cmd_selftest}[a.cmd](a)
 
 
 if __name__ == "__main__":
