@@ -45,6 +45,7 @@ TYPES = {
     "decision-request": "precisa de decisão humana (Rick); needs_human: yes",
     "decision": "decisão humana; somente from: rick",
     "done": "conclui a thread com resultado e links",
+    "sync": "resumo padronizado após a palavra SYNC-AMARAL (thread T-sync, ver PROMPT §3.3)",
 }
 REQUIRED = ("id", "from", "to", "type", "thread", "created")
 VERDICTS = {"approve", "changes", "reject"}
@@ -290,6 +291,36 @@ def cmd_seen(a):
     print(f"{me}: {len(ids)} mensagens marcadas como lidas")
 
 
+def cmd_sync_report(a):
+    """Rascunho do corpo da mensagem sync: o mesmo formato para todos os agentes."""
+    me = canonical(a.agent)
+    items = load_all()
+    rows = board(items)
+    by_id = {m["id"]: m for m in items}
+    answered = {m.get("reply_to") for m in items if canonical(m["from"]) == me and m.get("reply_to")}
+    mine = [r for r in rows if r["owner"] == me and r["status"] in {"reservada", "entregue", "lease vencido"}]
+    waiting_me = [m for m in items if canonical(m["from"]) != me and m["type"] in {"question", "proposal", "review", "handoff", "task", "decision-request"}
+                  and (me in [canonical(t) for t in m["to"].split(",")] or m["to"] == "all")
+                  and m["id"] not in answered and not any(r["thread"] == m["thread"] and r["status"] == "concluída" for r in rows)]
+    waiting_other = [m for m in items if canonical(m["from"]) == me and m["type"] in {"question", "proposal", "review", "handoff", "task"}
+                     and not any(x.get("reply_to") == m["id"] and canonical(x["from"]) != me for x in items)]
+    human = [r for r in rows if r["needs_human"]]
+    last_sync = [m for m in items if m["type"] == "sync" and canonical(m["from"]) != me]
+    def line(m):
+        return f"- {m['thread']} `{m['id']}` [{m['type']}] {(m.get('title') or m['body'].splitlines()[0])[:90]}"
+    out = ["SYNC-AMARAL", "", f"Agente: {me}. Canal: {len(items)} mensagens.", "",
+           "## Estado das frentes (preencher em 1 linha cada)",
+           "- [A7xx-trava]: ", "- [A8xx-compat]: ", "- Outras: ", "",
+           "## Em andamento comigo (leases)"]
+    out += [f"- {r['thread']}: {r['status']}" + (f" até {iso(r['lease_until'])}" if r["lease_until"] else "") for r in mine] or ["- nada"]
+    out += ["", "## Aguardando a minha resposta"] + ([line(m) for m in waiting_me] or ["- nada"])
+    out += ["", "## Aguardando o outro agente"] + ([line(m) for m in waiting_other[-12:]] or ["- nada"])
+    out += ["", "## Aguardando o Rick"] + ([f"- {r['thread']}: {r['title'][:90]}" for r in human] or ["- nada (incluir pedidos de teste em hardware)"])
+    out += ["", "## Proposta de próximos passos (quem faz o quê)", "- ", "",
+            "## Último sync do outro agente", (f"- `{last_sync[-1]['id']}`" if last_sync else "- nenhum")]
+    print("\n".join(out))
+
+
 def cmd_board(_):
     rows = board(load_all())
     order = {"P0": 0, "P1": 1, "P2": 2, "P3": 3, "-": 4}
@@ -429,6 +460,8 @@ def main():
         s = sub.add_parser(name)
         s.add_argument("--agent", required=True)
     sub.add_parser("board")
+    sr = sub.add_parser("sync-report")
+    sr.add_argument("--agent", required=True)
     t = sub.add_parser("thread")
     t.add_argument("thread")
     sub.add_parser("validate")
@@ -438,7 +471,7 @@ def main():
     im.add_argument("--source", help="descrição da origem, ex.: 'PR #28'")
     sub.add_parser("selftest")
     a = p.parse_args()
-    {"new": cmd_new, "inbox": cmd_inbox, "seen": cmd_seen, "board": cmd_board,
+    {"new": cmd_new, "inbox": cmd_inbox, "seen": cmd_seen, "board": cmd_board, "sync-report": cmd_sync_report,
      "thread": cmd_thread, "validate": cmd_validate, "import": cmd_import, "selftest": cmd_selftest}[a.cmd](a)
 
 

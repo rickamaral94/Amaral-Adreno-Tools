@@ -105,6 +105,17 @@ python3 collab/collab.py board
    `collab:` (mensagens de um agente sem push, §3.1) e importe-os com
    `collab.py import`.
 
+### 2.1 Prompt de início de sessão (o Rick cola em qualquer agente)
+
+```
+Você é o agente <claude|chatgpt> do projeto rickamaral94/Amaral-Adreno-Tools.
+Leia collab/PROMPT.md no branch collab/channel e siga-o integralmente,
+inclusive §0 (parceria entre iguais), §3.1.1 (entrega direta), §3.3
+(SYNC-AMARAL) e §3.4 (campainha). Rode a rotina do §2, responda o que for
+seu, avance as frentes [A7xx-trava] e [A8xx-compat] e, ao terminar, publique
+status ou handoff no canal e toque a campainha no PR #29.
+```
+
 ## 3. Como escrever uma mensagem
 
 Sempre pela ferramenta, que gera id, horário UTC e valida o cabeçalho:
@@ -201,6 +212,52 @@ ponte tem três peças:
 Ao terminar uma sessão com algo pendente para o outro agente, toque a
 campainha: um comentário curto no PR #29 (com `@codex` se o destinatário for o
 `chatgpt`). Sem nada pendente, não comente.
+
+### 3.3 Palavra de sincronização: `SYNC-AMARAL`
+
+Quando uma mensagem do Rick **começar** com `SYNC-AMARAL`, o agente para o que
+estiver fazendo e sincroniza pelo GitHub. O Rick manda a palavra para os dois
+agentes ao mesmo tempo. O texto depois da palavra, se houver, é o assunto
+prioritário do Rick para a rodada. A palavra no meio de outra frase não conta.
+
+Procedimento, igual para todos os agentes:
+
+1. **Atualizar:** leia o canal mais recente (`git pull` ou conector) e rode
+   `validate` e `inbox --agent <seu-id>`.
+2. **Zerar pendências curtas:** responda o que estiver endereçado a você e
+   couber em poucas linhas. O resto entra no sync como pendência.
+3. **Publicar o sync:** gere o rascunho com
+   `python3 collab/collab.py sync-report --agent <seu-id>`, complete as linhas
+   em branco (estado das frentes e proposta de próximos passos) e publique com
+   `new --type sync --thread T-sync --to all`. Entregue na hora (push ou
+   conector, §3.1.1).
+4. **Esperar o par:** releia o canal a cada 2 minutos, por até 20 minutos (ou
+   até o limite do seu ambiente), procurando o `sync` do outro agente criado no
+   máximo 30 minutos antes do seu.
+5. **Reconciliar:** ao encontrar o sync do outro, responda com `answer`
+   (`--reply-to` o sync dele), item por item: concordo (dizendo o que conferiu)
+   ou discordo (com evidência). Conflito de lease: fica com o lease mais antigo,
+   e o outro vira revisor. Feche a rodada com a lista final de "quem faz o quê
+   até o próximo sync". Divergência que não fechar vira `decision-request`.
+6. **Sem par em 20 minutos:** publique um `status` em `T-sync` dizendo que o
+   sync ficou sem resposta e continue o trabalho. Quem chegar depois responde o
+   sync pendente do outro (até 24 h) em vez de abrir outro.
+7. **Relatar ao Rick:** na conversa com ele, até 8 linhas: o que foi combinado,
+   o que cada agente vai fazer e o que depende dele.
+
+### 3.4 Campainha de cada agente
+
+- **`claude`:** monitora o PR #29 (qualquer comentário o acorda) e tem uma
+  verificação agendada a cada 3 horas (canal, PRs `collab:`, respostas).
+- **`chatgpt`:** na primeira sessão depois desta regra, configure uma
+  verificação recorrente própria a cada 3 horas, se a sua plataforma oferecer
+  (tarefa agendada ou automação do ChatGPT/Codex), com a rotina do §2 e o
+  prompt de sessão do §2.1. Se não houver esse recurso, escreva isso em
+  `T-protocol` com o nome exato do que procurou. A campainha `@codex` no PR #29
+  só funciona quando existir um ambiente Codex ligado ao repositório; se o bot
+  responder "create an environment", registre em `T-protocol`.
+- Em qualquer caso, ao terminar uma sessão com algo pendente para o outro
+  agente, comente uma linha no PR #29 (§3.2).
 
 ## 4. Regras do canal
 
