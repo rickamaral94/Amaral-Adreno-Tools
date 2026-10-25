@@ -58,3 +58,21 @@ compilação de shader. Memória livre mínima do sistema: 1.368 MiB.
    lab é release.
 3. Jogos acima de 30 FPS (MK8D, BOTW, TOTK) com cena marcada, e DX12 via
    Winlator/GameHub para exercitar draws indiretos grandes.
+
+## Labs de diagnóstico gerados em 25/10/2026
+
+Base: candidata 5.7.14.1 (Mesa `69f1f21`), Standard. Uma mudança por build,
+ativa somente nos chips `0x44050a31`/`0xffff44050a31`; as demais GPUs ficam
+com o comportamento da 5.7.14.1. Patches em [`labs/`](labs/), fora do patchset
+distribuído. Build única por lab, com validação de artefato; status
+**aguardando hardware**.
+
+| Lab | Mudança | ZIP SHA-256 | ELF SHA-256 |
+|---|---|---|---|
+| `5.7.14.1-a840lab-noubwc` | `TU_DEBUG=noubwc` | `63f545022ab515e234f4d686a9dc2cad0aff2394e5c28eae3256099bd290d710` | `0546fff7f19871a05381df60fd32914cfe92f0838f6b1264b80c2e2baa9e108d` |
+| `5.7.14.1-a840lab-sysmem` | `TU_DEBUG=sysmem` | `7e2f65c7f43bd6bfe53cf4707b902103010bb3609709f75546aecd1b1be3eb56` | `ed661f2e84dab5414df1f36aa0410e9bd3d52d3dff32cb7cf1073e5039b624de` |
+
+Leitura do resultado: se só `noubwc` corrige a imagem, o problema está na
+compressão UBWC da A840; se só `sysmem` corrige, está no caminho GMEM/tiles;
+se nenhum corrige, comparar com o driver Qualcomm para separar Turnip de
+Eden/jogo. Qualquer correção real exige depois mecanismo identificado e A/B.

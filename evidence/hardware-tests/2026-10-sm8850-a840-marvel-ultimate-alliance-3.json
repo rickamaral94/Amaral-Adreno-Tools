@@ -25,6 +25,26 @@
       "status": "observed",
       "patchset_sha256": "d18f6f9d4888800a6a69b24babe07255a48d48c2ee25e35ed01c49d5a4e921b0",
       "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/27"
+    },
+    "lab-5.7.14.1-a840-noubwc": {
+      "name": "Amaral A840 diagnostic Lab 5.7.14.1-a840lab-noubwc Standard",
+      "mesa_commit": "69f1f21f0258a77046dbaeb8ed7a8ad37a683006",
+      "elf_sha256": "0546fff7f19871a05381df60fd32914cfe92f0838f6b1264b80c2e2baa9e108d",
+      "proposal": "Desligar a compressão UBWC somente no chip 0x44050a31 para isolar a pixelização relatada no MUA3. Diagnóstico, não correção; nunca release.",
+      "hardware_result": null,
+      "status": "awaiting-hardware",
+      "patchset_sha256": "4ed5d24f621114a6c47cbd7c5c1c6c73e9013336f1d80373ae17dd4ac60c2fd0",
+      "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/blob/ccr-05e1d523-htngw2/docs/tests/labs/lab-a840-noubwc.patch"
+    },
+    "lab-5.7.14.1-a840-sysmem": {
+      "name": "Amaral A840 diagnostic Lab 5.7.14.1-a840lab-sysmem Standard",
+      "mesa_commit": "69f1f21f0258a77046dbaeb8ed7a8ad37a683006",
+      "elf_sha256": "ed661f2e84dab5414df1f36aa0410e9bd3d52d3dff32cb7cf1073e5039b624de",
+      "proposal": "Forçar renderização sysmem (sem GMEM) somente no chip 0x44050a31 para isolar a pixelização relatada no MUA3. Diagnóstico, não correção; nunca release.",
+      "hardware_result": null,
+      "status": "awaiting-hardware",
+      "patchset_sha256": "ef0e2fbb9dfe04a64a36c034025ca91ba0154202408c8dd606c51b997049acbe",
+      "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/blob/ccr-05e1d523-htngw2/docs/tests/labs/lab-a840-sysmem.patch"
     }
   },
   "captures": [
