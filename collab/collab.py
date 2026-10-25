@@ -74,6 +74,20 @@ def agents():
     return json.loads(AGENTS.read_text(encoding="utf-8"))["agents"]
 
 
+def names():
+    """Mapa nome-ou-apelido -> id canônico (apelidos evitam quebrar mensagens antigas)."""
+    out = {}
+    for agent_id, info in agents().items():
+        out[agent_id] = agent_id
+        for alias in info.get("aliases", []):
+            out[alias] = agent_id
+    return out
+
+
+def canonical(name):
+    return names().get(name.strip(), name.strip())
+
+
 def parse(path):
     text = path.read_text(encoding="utf-8")
     if not text.startswith("---\n"):
@@ -103,7 +117,7 @@ def load_all():
 
 def validate(items=None):
     items = load_all() if items is None else items
-    known = agents()
+    known = names()
     errors, ids, threads = [], set(), {}
     # A validação não depende da ordem: relógios de agentes diferentes divergem.
     all_ids = {m.get("id") for m in items}
@@ -179,13 +193,13 @@ def board(items, now=None):
         row["last"], row["last_from"] = m["id"], m["from"]
         created = parse_time(m["created"])
         if m["type"] == "claim":
-            row["owner"], row["status"] = m["from"], "reservada"
+            row["owner"], row["status"] = canonical(m["from"]), "reservada"
             row["lease_until"] = created + dt.timedelta(hours=int(m["lease_hours"]))
-        elif m["type"] == "status" and m["from"] == row["owner"] and row["lease_until"]:
+        elif m["type"] == "status" and canonical(m["from"]) == row["owner"] and row["lease_until"]:
             hours = int(m.get("lease_hours", "24"))
             row["lease_until"] = max(row["lease_until"], created + dt.timedelta(hours=hours))
         elif m["type"] == "handoff":
-            row["owner"] = m["to"].split(",")[0].strip()
+            row["owner"] = canonical(m["to"].split(",")[0])
             row["status"], row["lease_until"] = "entregue", created + dt.timedelta(hours=72)
         elif m["type"] == "release":
             row["owner"], row["status"], row["lease_until"] = "-", "aberta", None
@@ -253,9 +267,10 @@ def show(m, full=True):
 
 def cmd_inbox(a):
     items = load_all()
-    seen = seen_ids(a.agent)
-    new = [m for m in items if m["id"] not in seen and m["from"] != a.agent
-           and (a.agent in [t.strip() for t in m["to"].split(",")] or m["to"] == "all")]
+    me = canonical(a.agent)
+    seen = seen_ids(me)
+    new = [m for m in items if m["id"] not in seen and canonical(m["from"]) != me
+           and (me in [canonical(t) for t in m["to"].split(",")] or m["to"] == "all")]
     print(f"{len(new)} mensagem(ns) nova(s) para {a.agent}\n")
     for m in new:
         show(m)
@@ -268,9 +283,10 @@ def cmd_seen(a):
     if not items:
         return
     STATE.mkdir(parents=True, exist_ok=True)
-    ids = sorted(seen_ids(a.agent) | {m["id"] for m in items})
-    cursor_path(a.agent).write_text("\n".join(ids) + "\n", encoding="utf-8")
-    print(f"{a.agent}: {len(ids)} mensagens marcadas como lidas")
+    me = canonical(a.agent)
+    ids = sorted(seen_ids(me) | {m["id"] for m in items})
+    cursor_path(me).write_text("\n".join(ids) + "\n", encoding="utf-8")
+    print(f"{me}: {len(ids)} mensagens marcadas como lidas")
 
 
 def cmd_board(_):
@@ -314,7 +330,7 @@ def cmd_selftest(_):
             "thread": "T-test", "lease_hours": "2", "created": "2026-01-01T00:01:00Z"})
         assert validate() == [], validate()
         rows = board(load_all(), now=parse_time("2026-01-01T01:00:00Z"))
-        assert rows[0]["status"] == "reservada" and rows[0]["owner"] == "codex"
+        assert rows[0]["status"] == "reservada" and rows[0]["owner"] == "chatgpt"
         rows = board(load_all(), now=parse_time("2026-01-01T05:00:00Z"))
         assert rows[0]["status"] == "lease vencido"
         put("20260101T000200000Z-codex-0003", {"from": "codex", "to": "claude", "type": "decision",
@@ -328,6 +344,10 @@ def cmd_selftest(_):
             "created": "2025-12-31T23:59:00Z"})
         assert validate() == [], validate()
         assert "20251231T235900000Z-codex-0004" not in seen_ids("claude-selftest")
+        # Apelido: mensagem para "codex" chega ao id canônico "chatgpt".
+        assert canonical("codex") == "chatgpt" and canonical("chatgpt") == "chatgpt"
+        rows = board(load_all(), now=parse_time("2026-01-01T01:00:00Z"))
+        assert rows[0]["owner"] == "chatgpt", rows[0]
     MESSAGES = original
     print("selftest ok")
 

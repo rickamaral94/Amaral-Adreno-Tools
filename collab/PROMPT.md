@@ -12,8 +12,9 @@ Freedreno, Vulkan) universal para Android/KGSL nas famílias Adreno A6xx, A7xx e
 A8xx. Há pelo menos dois agentes de IA e um humano:
 
 - `claude`: Claude Code (Anthropic).
-- `codex`: a segunda IA. Se você é essa IA e não é o Codex, troque o id e a
-  descrição em `collab/agents.json` no seu primeiro commit no canal.
+- `chatgpt`: ChatGPT/Codex (OpenAI). O apelido `codex` também vale e aponta
+  para o mesmo agente; não renomeie ids em `collab/agents.json`, só complete a
+  sua descrição.
 - `rick`: o mantenedor humano. Só ele decide merge na `main`, publicação,
   promoção para Latest e testes no hardware dele.
 
@@ -23,6 +24,45 @@ regras de generalização L0–L3, o que é proibido e a política de evidência
 no repositório e valem para todos os agentes: `README.md`,
 `docs/EVIDENCE-POLICY.md`, `docs/RESEARCH-PLAN.md`, `docs/VALIDATION-PLAN.md`,
 `docs/tests/README.md`. Leia antes de propor mudanças de driver.
+
+## 0. Parceria entre iguais
+
+Não existe IA que manda e IA que obedece. As duas propõem, executam, revisam e
+contestam, com o mesmo peso.
+
+- **Pedido não é ordem.** Um pedido do outro agente é uma proposta. Antes de
+  executar, avalie se é o melhor caminho. Se concordar, diga por quê em uma
+  linha e faça. Se discordar, responda com a sua alternativa e a evidência
+  (código, MR, log, medição), em vez de executar algo em que não acredita.
+- **Concordar exige motivo.** "Ok" sem verificação não vale como revisão. Ao
+  aprovar, diga o que você conferiu.
+- **Contestar é dever.** Se uma conclusão do outro agente não se sustenta (cena
+  diferente, falta de A/B, mecanismo não demonstrado, generalização de L0 para
+  L3), aponte, mesmo que já esteja em andamento.
+- **Mude de ideia diante de evidência melhor** e diga explicitamente que mudou.
+- **Empate técnico:** cada lado expõe a posição uma vez, com evidência; se
+  continuar dividido, `decision-request` para Rick com as duas opções lado a
+  lado. Só `rick` desempata.
+
+## 0.1 Rumo da colaboração
+
+Compatibilidade primeiro, depois desempenho. As frentes prioritárias, nesta
+ordem:
+
+1. **A7xx: travamentos.** Hangs, device lost, congelamentos e travadas
+   (stutter) em A730/A740/A750, com o Odin 2 Portal (A740) como referência
+   física. Separe primeiro o tipo: hang/device lost, congelamento sem crash ou
+   travada de frametime. Depois separe a origem: driver, sincronização,
+   compilação de shader/pipeline, readback, apresentação ou emulador.
+2. **A8xx: compatibilidade.** Jogos que não abrem, crashes, corrupção ou
+   imagem errada em A810/A825/A829/A830/A840, com o Samsung SM-F971B (A840 de
+   três slices) como referência física. Preferir correções upstream e perfis
+   corretos por chip a hacks comunitários amplos.
+3. **Desempenho** só depois de o caso estar estável e correto, e só com A/B.
+
+Cada thread nova deve dizer a que frente pertence. Trabalho fora dessas
+frentes é bem-vindo como P2/P3, mas não passa à frente delas sem
+`decision` do Rick.
 
 ## 1. Onde a comunicação acontece
 
@@ -40,7 +80,7 @@ collab/state/<id>.seen        ids já lidos; cada agente só edita o seu
 ```
 
 O canal serve para **coordenar**. Código, patches e evidência vão para branches
-de trabalho (`claude/...`, `codex/...`) e PRs contra a `main`, como sempre. As
+de trabalho (`claude/...`, `chatgpt/...`) e PRs contra a `main`, como sempre. As
 mensagens apontam para esses commits, PRs e arquivos.
 
 ## 2. Rotina obrigatória ao iniciar uma sessão
@@ -167,3 +207,18 @@ dois:
 Publique `done` com: o que foi feito, onde está (PR, commit, release, arquivo
 de evidência), o que foi verificado e o que ficou em aberto, que vira nova
 `task` se for o caso. Depois rode `seen` e faça push.
+
+## 8. Melhorando o próprio processo
+
+O protocolo não é fixo. A thread permanente `T-protocol` recebe propostas de
+melhoria do canal, da ferramenta ou deste prompt.
+
+- Qualquer agente pode propor (tipo `proposal`), dizendo qual atrito real
+  observou: mensagem perdida, trabalho duplicado, discussão em loop, lease que
+  venceu cedo demais, campo que faltou.
+- A mudança só entra com `review` `approve` do outro agente. Mudanças em
+  `collab.py` precisam passar em `selftest` e `validate`. Mudanças nas regras
+  de paridade, segurança ou no rumo da seção 0.1 precisam de `decision` do Rick.
+- A cada 10 threads concluídas, ou uma vez por semana de atividade, cada
+  agente publica em `T-protocol` uma retrospectiva curta: o que funcionou, o
+  que atrapalhou e uma melhoria concreta.

@@ -7,11 +7,14 @@
       "work_branch_prefix": "claude/",
       "notes": "Pode compilar Mesa/Turnip, rodar validadores e analisar capturas Eden. Sem aparelho físico."
     },
-    "codex": {
+    "chatgpt": {
       "kind": "ai",
-      "product": "Segunda IA do projeto. Se você não é o Codex, troque este id e a descrição no seu primeiro commit, antes da mensagem hello.",
-      "work_branch_prefix": "codex/",
-      "notes": "Preencher capacidades e limites na mensagem hello."
+      "aliases": [
+        "codex"
+      ],
+      "product": "ChatGPT/Codex (OpenAI). Ajuste product e notes no seu hello se a descrição estiver errada; não renomeie o id.",
+      "work_branch_prefix": "chatgpt/",
+      "notes": "Capacidades e limites a preencher na mensagem hello. O apelido codex continua válido para mensagens antigas."
     },
     "rick": {
       "kind": "human",
