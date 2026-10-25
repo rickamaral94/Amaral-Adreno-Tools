@@ -1,7 +1,6 @@
-name: Verify proposed Mesa rebase
+name: Verify pinned Mesa and reviewed patches
 on:
-  push:
-    branches: [candidate/5.7.14.1-upstream-review]
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -30,11 +29,8 @@ jobs:
           lock_path = Path('config/mesa-lock.json')
           proposal = json.loads(Path('config/mesa-proposal.json').read_text())
           lock = json.loads(lock_path.read_text())
-          if lock['mesa']['commit'] == proposal['current_lock']:
-              lock['mesa']['commit'] = proposal['proposed_commit']
-              lock_path.write_text(json.dumps(lock, indent=2) + '\n')
-          else:
-              assert lock['mesa']['commit'] == proposal['proposed_commit']
+          assert proposal['status'] == 'applied'
+          assert lock['mesa']['commit'] == proposal['proposed_commit']
           PY
           python3 tools/apply_patches.py work/mesa --variant '${{ matrix.variant }}'
           python3 tools/check_a840_topology.py work/mesa

@@ -1,14 +1,17 @@
-# Qualificação 5.7.8.1
+# Qualificação 5.7.14.1
 
-Controle A: Latest 4.7.7.2. Candidata B: 5.7.8.1 Standard; OneUI em Samsung afetado.
-Esta candidata muda Mesa e retira três patches não qualificados. A/B de release
-mede o conjunto, não atribui causalidade a cada alteração. Se houver diferença,
-bisectar em builds de laboratório isolando Mesa, profundidade, GCM/suballoc e Zelda.
+Controle A: Latest 4.7.7.2. Candidata B: 5.7.14.1 Standard; OneUI apenas em
+Samsung afetado. A 5.7.8.1 é controle intermediário. Esta candidata avança o
+Mesa, mantém fora do pacote três patches não qualificados e reposiciona o patch
+experimental A825 sem mudar seus parâmetros. A/B mede o conjunto; uma diferença
+exige bisecção em builds de laboratório antes de atribuir causa.
 
 1. Validar instalação, identidade, extensions/features e hashes. Confirmar retirada
    das duas extensões de profundidade e ausência de perda inesperada adicional.
 2. CTS dirigido: descriptors/invalidação, push constants graphics/compute/GPL,
-   constantes indiretas e offsets próximos de 511; IR3 int64/vector shrinking.
+   constantes indiretas e offsets próximos de 511; IR3 int64/vector shrinking;
+   `dEQP-VK.tessellation.*` dirigido, incluindo TCS com vértices de saída e pontos
+   de controle diferentes (Mesa af60682 / MR !45416).
 3. Regressão KGSL: wait-any/all, timeout zero, TS/FD mistos, submit, readback,
    teardown e device lost. MR 44838 permanece upstream.
 4. A740/Odin 2 Portal Standard: Eden/Citron MK8D, BOTW/TOTK; Cemu Amaral Wind Waker HD,
