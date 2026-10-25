@@ -7,23 +7,11 @@ A [Latest](https://github.com/rickamaral94/Amaral-Adreno-Tools/releases/latest)
 permanece o controle estável publicado. A linha atual de desenvolvimento é uma
 **candidata**, sem CTS/hardware/A-B concluídos. Não há promessa de ganho de FPS.
 
-## Candidata atual: 5.7.9.1
+## Candidata atual
 
 Mesa `27.0.0-devel`, commit `4b0f64ceac6a86af38c1e69cd38cf29f84ba611d`.
 Correções upstream de invalidação bindless, coleta de push constants e IR3
 (offsets de constantes e ordem do lowering) justificam a avaliação.
-
-Além disso, quatro correções upstream ainda pendentes, revisadas e presas à
-família afetada (detalhes nas [notas](docs/releases/mesa-27.0.0-devel-v5.7.9.1.md)):
-
-- **A8xx:** divisão de indirect draws grandes, que causavam GPU fault (MR !44352).
-- **A7xx:** bounds check sem sinal na emulação de texel buffer usada por títulos
-  D3D12 (MR !45204).
-- **A6xx:** invalidação de cache antes da query de transform feedback (MR !41860).
-- **Todas:** liberação de referência de BO nos patchpoints de visibility stream
-  (MR !45369).
-
-Nenhuma delas é tuning de desempenho ou nova capacidade Vulkan.
 
 Os defaults de GCM, suballocadores e regras BOTW/TOTK voltam ao upstream.
 As extensões Amaral de profundidade não são expostas sem qualificação do caminho
@@ -61,7 +49,9 @@ Logs completos ficam nos artifacts da execução por 30 dias.
 
 ## Releases
 
-Toda mudança nasce como pre-release. O workflow de promoção exige qualificação
+Build e publicação são separados: pushes executam checks; `build-candidate.yml`
+compila para avaliação e `publish-candidate.yml` publica somente por execução
+manual após revisão técnica. Toda mudança nasce como pre-release. O workflow de promoção exige qualificação
 revisada, vinculada ao SHA Mesa, fingerprint e hashes dos artefatos, incluindo
 CTS, VVL, hardware, regressões e A/B térmico. Build verde não prova compatibilidade.
 A atualização quinzenal ocorre dias **1 e 16 às 07:07 BRT**, com execução manual,
@@ -69,3 +59,14 @@ e registra triagem upstream sem compilar automaticamente por número de versão.
 
 Consulte [política](docs/EVIDENCE-POLICY.md), [processo](docs/UPSTREAM-UPDATES.md),
 [pesquisa](docs/RESEARCH-PLAN.md) e [protocolo da candidata](docs/VALIDATION-PLAN.md).
+
+A [reavaliação com logs Eden e fontes Cemu](docs/audits/2026-10-20-diagnostics.md)
+detalha o benefício esperado por família e as limitações da candidata 5.7.8.1.
+
+## Testes em hardware
+
+O [registro de testes](docs/tests/README.md) reúne driver, aparelho, proposta,
+resultado observado e limites da comparação. Inclui as capturas de Little
+Nightmares no Odin 2 Portal e um [modelo](docs/tests/TEMPLATE.md) para novos
+testes A6xx, A7xx e A8xx. Os dados públicos são selecionados e não contêm logs
+brutos ou informações privadas do dispositivo.

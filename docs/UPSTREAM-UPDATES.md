@@ -11,8 +11,10 @@ GPUs, regressões e testes. Atualizar lock e preparar candidata com
 Isso preserva stable_version e last_released_mesa_commit; mudanças somente de
 Mesa também podem gerar candidata. Registrar notas técnicas antes do merge.
 
-PRs passam checks rápidos, aplicação em Mesa oficial e revisão. No merge de inputs
-de build, o publicador chama um único workflow reutilizável: Standard e OneUI em
+PRs e pushes passam checks rápidos e aplicação em Mesa oficial. Publicação exige
+execução manual de `publish-candidate.yml` depois da revisão técnica. Para apenas
+compilar, executar `build-candidate.yml`, que não publica. O publicador manual
+chama um único workflow reutilizável: Standard e OneUI em
 paralelo, duas builds independentes por variante. Downloads NDK são verificados
 mesmo quando vêm do cache. Não há cache de compilação no gate de reprodutibilidade.
 

@@ -9,6 +9,7 @@ from release_version import (
     normalize_mesa_version,
     patchset_fingerprint,
 )
+from validate_hardware_tests import validate_all as validate_hardware_tests
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
@@ -183,32 +184,6 @@ def main():
     assert '-             <option name="force_vk_vendor" value="0x1002" />' in vendor_patch
     assert 'application_name_match="mgs4.exe"' in vendor_patch
     assert '+             <option name="force_vk_vendor"' not in vendor_patch
-    # 5.7.9.1: correções upstream pendentes, cada uma presa ao degrau da família.
-    a8xx_draws = read_text("patches/0009-a8xx-split-large-indirect-draws.patch")
-    assert "+   if (CHIP < A8XX)\n+      return UINT32_MAX;" in a8xx_draws
-    assert "assert(CHIP >= A8XX);" in a8xx_draws
-    assert "[PATCH 3/7]" not in a8xx_draws  # draw_id_offset fica fora
-    assert "src/compiler/nir/" not in a8xx_draws
-    assert "lower_draw_id" not in a8xx_draws
-    texel = read_text("patches/0010-a7xx-texel-buffer-emulation-bounds.patch")
-    assert "+   nir_def *oob = nir_uge(b, offset, real_size);" in texel
-    assert texel.count("diff --git") == 1
-    xfb = read_text("patches/0011-a6xx-xfb-query-cache-invalidate.patch")
-    assert "+   if (CHIP == A6XX)\n+      tu_emit_event_write<CHIP>(cmdbuf, cs, FD_CACHE_INVALIDATE);" in xfb
-    assert xfb.count("diff --git") == 1
-    vis = read_text("patches/0012-vis-stream-patchpoint-bo-ref.patch")
-    assert "+         tu_cs_finish(&cs);" in vis
-    assert vis.count("diff --git") == 1
-    for path in (
-        "patches/0009-a8xx-split-large-indirect-draws.patch",
-        "patches/0010-a7xx-texel-buffer-emulation-bounds.patch",
-        "patches/0011-a6xx-xfb-query-cache-invalidate.patch",
-        "patches/0012-vis-stream-patchpoint-bo-ref.patch",
-    ):
-        text = read_text(path)
-        assert "freedreno_devices.py" not in text and "00-turnip-defaults.conf" not in text
-        assert "tu_device.cc" not in text, f"{path} must not change exposed capabilities"
-
     build_script = read_text("scripts/build_universal.sh")
     assert 'apply_patches.py" "${mesa_src}"' in build_script
     manifest = load("config/patches.json")
@@ -244,6 +219,7 @@ def main():
     assert "broad-emulator-driconf" in candidate_ids
     assert "community-turnip-stability-fixes" in candidate_ids
 
+    validate_hardware_tests()
     print("Project metadata and evidence gates are valid.")
     return 0
 

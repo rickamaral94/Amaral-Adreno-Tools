@@ -24,6 +24,11 @@ O workflow confere os hashes reais dos assets antes de promover. A validação
 estrutural do registro não substitui revisão humana dos logs e resultados.
 Nunca preencher pass sem executar o teste. Falta de hardware fica not-run.
 
+Cada ensaio em aparelho deve entrar no [registro de testes](tests/README.md)
+com driver e ELF exatos, hardware, hipótese, método, resultado e limites. Uma
+captura isolada é observação, não A/B qualificado. Logs brutos ficam fora do
+repositório; o registro público mantém métricas selecionadas e hashes disponíveis.
+
 Para A/B: mesma cena, frontend/jogo/configuração, resolução, clocks e estado de
 cache; ordem AB/BA balanceada e cinco rodadas. Definir limite térmico antes do
 ensaio e invalidar rodada que ultrapasse o limite. Registrar pixels, crashes,

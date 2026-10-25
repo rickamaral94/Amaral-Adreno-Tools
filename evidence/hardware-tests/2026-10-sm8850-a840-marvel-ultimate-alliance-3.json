@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "title": "Marvel Ultimate Alliance 3 / Samsung SM-F971B / A840 — outubro de 2026",
+  "context": {
+    "hardware": "Samsung SM-F971B",
+    "soc": "SM8850",
+    "gpu": "Adreno 840 (três slices, chip 0x44050A31)",
+    "gpu_family": "A8xx",
+    "android": "17 (API 37)",
+    "kmd": "KGSL",
+    "abi": "arm64-v8a",
+    "game": "Marvel Ultimate Alliance 3: The Black Order",
+    "game_title_id": "010060700AC50000",
+    "frontend": "Eden",
+    "resolution_note": "Eden 1×; swapchain 2448×1848 (tela interna). Captura 024143 em Handheld com scaling NearestNeighbor; captura 025226 em Docked com perfil do jogo (SgsrEdge, FXAA, EDS3)."
+  },
+  "overall_assessment": "Primeira observação física A8xx do projeto. A 5.7.14.1 Standard carregou no perfil upstream A840 de três slices, sem mensagem do driver, device lost ou falha de pipeline. O jogo ficou no limite de 30 FPS com GPU ocupada cerca de 37% do tempo: estabilidade observada, desempenho não testado. O usuário relata imagem totalmente pixelada; as capturas não registram pixels e a causa não está identificada. A variante OneUI tem perfil A840 idêntico à Standard e não é solução para esta GPU.",
+  "drivers": {
+    "candidate-5.7.14.1": {
+      "name": "Amaral Adreno Tools Candidate 5.7.14.1 Standard",
+      "mesa_commit": "69f1f21f0258a77046dbaeb8ed7a8ad37a683006",
+      "elf_sha256": "7fcdb9fb922357a04c05e8fa7dad128b8b85de7763b6c90901007c8fc76916ab",
+      "proposal": "Avaliar correções Mesa de 22/10 (A6xx, lifetime de BO, texel buffer emulado, split de draws indiretos grandes em A8xx com DrawID contínuo); sem tuning por jogo.",
+      "hardware_result": "Executou MUA3 a 29,87 FPS no limite de 30 do jogo, GPU p50/p99 12,0/20,0 ms, sem erro do driver. Imagem relatada como totalmente pixelada; causa não isolada.",
+      "status": "observed",
+      "patchset_sha256": "d18f6f9d4888800a6a69b24babe07255a48d48c2ee25e35ed01c49d5a4e921b0",
+      "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/27"
+    }
+  },
+  "captures": [
+    {
+      "capture_id": "20261025-024143-0731",
+      "driver_id": "candidate-5.7.14.1",
+      "driver_identity": "elf-sha256",
+      "archive_sha256": "f8401df03563a30995b425a0ed0302c70b77266ff09a476606fc17275746284d",
+      "payload_integrity": "payload-hashes-verified",
+      "emulator_commit": "604cde0b1b964c7bb0092550ec62511545096bc2",
+      "settings_sha256": "a59120a3a4b1deaa97ecd8551da9fa1573334bcc6112f568772938e98bbeca35",
+      "duration_s": 1.21,
+      "fps_avg": 28.62,
+      "gpu_ms_p50": 9.0,
+      "gpu_ms_p90": 11.8,
+      "gpu_ms_p99": 12.3,
+      "gpu_clock_mhz_avg": null,
+      "draws_per_frame": 99.7,
+      "pipelines_created": 0,
+      "source": "docs/tests/2026-10-sm8850-a840-marvel-ultimate-alliance-3.md",
+      "comparison_grade": "observation",
+      "notes": [
+        "Uma amostra de 1,2 s: não serve para medir desempenho.",
+        "Configuração global: Handheld, Res1X, scaling NearestNeighbor, dynamic state desligado.",
+        "Clock da GPU indisponível (leitura do sysfs bloqueada)."
+      ],
+      "loaded_elf_sha256": "7fcdb9fb922357a04c05e8fa7dad128b8b85de7763b6c90901007c8fc76916ab"
+    },
+    {
+      "capture_id": "20261025-025226-4468",
+      "driver_id": "candidate-5.7.14.1",
+      "driver_identity": "elf-sha256",
+      "archive_sha256": "09485a0ed652fd01c540b0adbec4c992b42144d68511dc8ca18b597cd5af667e",
+      "payload_integrity": "payload-hashes-verified",
+      "emulator_commit": "604cde0b1b964c7bb0092550ec62511545096bc2",
+      "settings_sha256": "7566b20a7d7707f372b9baa596d67d087730e7d183d471384a35ab39a2825915",
+      "duration_s": 77.35,
+      "fps_avg": 29.87,
+      "gpu_ms_p50": 12.0,
+      "gpu_ms_p90": 16.5,
+      "gpu_ms_p99": 20.0,
+      "gpu_clock_mhz_avg": null,
+      "draws_per_frame": 76.3,
+      "pipelines_created": 8,
+      "source": "docs/tests/2026-10-sm8850-a840-marvel-ultimate-alliance-3.md",
+      "comparison_grade": "observation",
+      "notes": [
+        "Cena marcada de 37,4 s (1.114 quadros, 29,8 FPS). Frametime p95/p99 33,76/35,32 ms; 1% low 20,77 FPS; um quadro de 116,6 ms sem compilação de shader.",
+        "Limite de 30 FPS do jogo; submissões ocupam 36,9% do tempo de parede: desempenho não testado.",
+        "Assert de mapeamento de memória do Eden antes do reinício do jogo; memória livre mínima do sistema 1.368 MiB.",
+        "Imagem relatada como totalmente pixelada; a captura não contém pixels."
+      ],
+      "loaded_elf_sha256": "7fcdb9fb922357a04c05e8fa7dad128b8b85de7763b6c90901007c8fc76916ab"
+    }
+  ]
+}

@@ -11,10 +11,6 @@ OOM/dados inválidos, compute/graphics/GPL e CTS round-trip. Reutilizar runtime 
 serialização Turnip, com reupload correto; não persistir endereços GPU. API desligada
 até completa. Benefício depende da adoção pelos aplicativos.
 P1: manter KGSL upstream e avaliar A8xx por mecanismo/ID; reduzir stack externa.
-P1: acompanhar MR !44352 3-7/7 (draw_id_offset); quando integrada, trocar 0009
-pelo upstream e remover a limitação de gl_DrawID nos draws divididos em A8xx.
-P2: MR !44325 (SSBO emulation para UE5 em A7xx) depois do lado vkd3d-proton;
-MR !43714 (flush de resolve sysmem) só se o upstream corrigir a CI.
 P2: image_processing3: provar GatherH2/V2/D/4x1 versus SAMGP por disassembly e hardware;
 implementar VTN/NIR/IR3 e format flags apenas com evidência. Toolchain não prova GPU.
 P2: present_id2/present_wait2/fifo_latest_ready: validar Android/WSI de ponta a ponta.
