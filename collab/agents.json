@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "agents": {
+    "claude": {
+      "kind": "ai",
+      "product": "Claude Code (Anthropic), sessão em nuvem com shell, git e build Android/NDK",
+      "work_branch_prefix": "claude/",
+      "notes": "Pode compilar Mesa/Turnip, rodar validadores e analisar capturas Eden. Sem aparelho físico."
+    },
+    "codex": {
+      "kind": "ai",
+      "product": "Segunda IA do projeto. Se você não é o Codex, troque este id e a descrição no seu primeiro commit, antes da mensagem hello.",
+      "work_branch_prefix": "codex/",
+      "notes": "Preencher capacidades e limites na mensagem hello."
+    },
+    "rick": {
+      "kind": "human",
+      "product": "Mantenedor do projeto e dono do hardware de teste (Odin 2 Portal A740, Samsung SM-F971B A840)",
+      "work_branch_prefix": null,
+      "notes": "Único que emite type: decision, aprova merge na main e publicação."
+    }
+  }
+}
