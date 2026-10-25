@@ -22,6 +22,10 @@ para não reutilizar os identificadores 9–13 empregados pelas Labs A740.
 - Turnip: verificação sem sinal do limite de texel buffer emulado, evitando
   acesso antes da view com offset negativo; liberação de referência local a BO
   nos patchpoints de visibility stream.
+- Turnip (A6xx/A7xx/A8xx): programação de `PC_HS_PARAM_0` passa a usar o
+  maior valor entre vértices de saída do hull shader e pontos de controle do
+  patch (Mesa `af60682`, MR !45416). Tesselação precisa de CTS dirigido; o
+  efeito em jogos Switch e DX11/DXVK ainda não foi medido.
 - A8xx: divisão de draws indiretos grandes em múltiplos pacotes quando podem
   causar GPU fault, com continuidade de `DrawID` via alterações coordenadas
   Turnip/IR3/NIR. Não habilita A8xx globalmente nem valida novos IDs por si só.
@@ -52,6 +56,7 @@ e validou pacote, catálogo de GPUs e manifestos. Resultados do commit
 CTS/VVL e teste de hardware ainda são necessários. As observações de Little
 Nightmares no A740 não demonstram que estes commits elevem FPS; o experimento
 readback ainda aponta a necessidade de cena marcada e correlação no Eden.
-Para A6xx, reproduzir o caso sample mask e trocas de pipeline; para A8xx,
+Para A6xx, reproduzir o caso sample mask e trocas de pipeline; testar tesselação
+em A6xx/A7xx/A8xx com `dEQP-VK.tessellation.*`; para A8xx,
 testar draws indiretos/`DrawID` em hardware real. Não promover para Latest
 nem afirmar compatibilidade universal com base apenas na build.
