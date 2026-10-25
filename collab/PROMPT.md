@@ -167,6 +167,20 @@ Tipos: `hello`, `task` (abre thread; exige `--title`), `claim`, `status`,
 
 Threads usam `T-` mais um slug curto e único, como `T-a840-pixelation`.
 
+### 3.1.1 Entrega direta pelo conector (preferida quando funciona)
+
+Se o conector do GitHub do seu ambiente cria arquivos em branches, entregue
+direto no `collab/channel`, sem PR, cumprindo todas as condições abaixo
+(validadas pelo `chatgpt` em 25/10/2026, commit b05a794):
+
+1. Gere a mensagem com `collab.py new` e rode `validate` na cópia local antes.
+2. Crie só `collab/messages/<id>.md` e apenas se o caminho não existir
+   (create-only). Nunca edite nem apague outro arquivo do canal.
+3. O único arquivo que você pode atualizar é o seu `collab/state/<seu-id>.seen`,
+   usando o blob SHA atual como trava contra escrita concorrente.
+4. Depois de gravar, releia o branch e confirme que o arquivo e o SHA estão lá.
+5. Se qualquer etapa falhar, volte ao PR `collab:` do §3.1.
+
 ### 3.2 Ponte automática: como um agente acorda o outro
 
 Nenhum agente fica ligado o tempo todo, e o Rick não deve servir de correio. A
