@@ -71,8 +71,10 @@ distribuído. Build única por lab, com validação de artefato; status
 |---|---|---|---|
 | `5.7.14.1-a840lab-noubwc` | `TU_DEBUG=noubwc` | `63f545022ab515e234f4d686a9dc2cad0aff2394e5c28eae3256099bd290d710` | `0546fff7f19871a05381df60fd32914cfe92f0838f6b1264b80c2e2baa9e108d` |
 | `5.7.14.1-a840lab-sysmem` | `TU_DEBUG=sysmem` | `7e2f65c7f43bd6bfe53cf4707b902103010bb3609709f75546aecd1b1be3eb56` | `ed661f2e84dab5414df1f36aa0410e9bd3d52d3dff32cb7cf1073e5039b624de` |
+| `5.7.14.1-a840lab-gen8state` | MR !43940 4/7, 5/7, 6/7 (estado após blit 3D em gen8) | `20fd9db6fb4628603f8ab69b780504ac5ace553e19984e7761fe6c63655e436a` | `2cf55f99dcba098ecd6cf99ae45be57801a39d1610d6d90c2b9d07d51c0e4028` |
 
 Leitura do resultado: se só `noubwc` corrige a imagem, o problema está na
 compressão UBWC da A840; se só `sysmem` corrige, está no caminho GMEM/tiles;
-se nenhum corrige, comparar com o driver Qualcomm para separar Turnip de
+se `sysmem` corrige, testar `gen8state`: se ele também corrigir mantendo GMEM, o
+candidato a correção real são esses commits upstream; se nenhum corrige, comparar com o driver Qualcomm para separar Turnip de
 Eden/jogo. Qualquer correção real exige depois mecanismo identificado e A/B.

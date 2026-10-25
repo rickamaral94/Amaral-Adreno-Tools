@@ -45,6 +45,16 @@
       "status": "awaiting-hardware",
       "patchset_sha256": "ef0e2fbb9dfe04a64a36c034025ca91ba0154202408c8dd606c51b997049acbe",
       "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/blob/ccr-05e1d523-htngw2/docs/tests/labs/lab-a840-sysmem.patch"
+    },
+    "lab-5.7.14.1-a840-gen8state": {
+      "name": "Amaral A840 diagnostic Lab 5.7.14.1-a840lab-gen8state Standard",
+      "mesa_commit": "69f1f21f0258a77046dbaeb8ed7a8ad37a683006",
+      "elf_sha256": "2cf55f99dcba098ecd6cf99ae45be57801a39d1610d6d90c2b9d07d51c0e4028",
+      "proposal": "Aplicar sem modificação os commits WIP 4/7, 5/7 e 6/7 da MR !43940 (estado de GRAS_SC_BIN_CNTL, GRAS_LRZ_DEPTH_BUFFER_INFO e contadores após store_3d_blit em gen8). Só relevante se a pixelização vier do caminho GMEM; 4/7 e 5/7 também mudam A7xx, por isso só para teste na A840.",
+      "hardware_result": null,
+      "status": "awaiting-hardware",
+      "patchset_sha256": "fff8e883133662cacfa6103c6224f7e169f6523bd7bfeedaf04e2cba9df6eadf",
+      "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/blob/ccr-05e1d523-htngw2/docs/tests/labs/lab-a840-gen8state.patch"
     }
   },
   "captures": [

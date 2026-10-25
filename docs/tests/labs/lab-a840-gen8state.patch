@@ -1,0 +1,221 @@
+Amaral A840 diagnostic lab: gen8 store_3d_blit state fixes (MR !43940 4/7, 5/7, 6/7)
+
+Laboratório, não release. Commits WIP do robclark sem modificação, sobre a 5.7.14.1.
+4/7: salva/restaura GRAS_SC_BIN_CNTL separado de RB_CNTL (em gen8 os campos diferem).
+5/7: salva/restaura GRAS_LRZ_DEPTH_BUFFER_INFO em store_3d_blit (CHIP >= A7XX).
+6/7: CP_BARRIER antes de RB_SAMPLE_COUNTER_CNTL em A8xx.
+Atenção: 4/7 e 5/7 também mudam A7xx; distribuir só para teste na A840.
+
+From 099dd4e86184fe68387c52fe29aa860cedf59439 Mon Sep 17 00:00:00 2001
+From: Rob Clark <rob.clark@oss.qualcomm.com>
+Date: Sat, 22 Aug 2026 08:48:07 -0700
+Subject: [PATCH 4/7] WIP: tu: Split GRAS_SC_BIN_CNTL in scratch ram
+
+On gen8, this reg has some different fields from RB_CNTL, so the cute
+trick of saving the value once and restoring twice doesn't work.
+---
+ src/freedreno/vulkan/tu_clear_blit.cc | 3 ++-
+ src/freedreno/vulkan/tu_scratch_ram.h | 1 +
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/freedreno/vulkan/tu_clear_blit.cc b/src/freedreno/vulkan/tu_clear_blit.cc
+index 722d259e9154..ca7abc68309e 100644
+--- a/src/freedreno/vulkan/tu_clear_blit.cc
++++ b/src/freedreno/vulkan/tu_clear_blit.cc
+@@ -5742,6 +5742,7 @@ store_3d_blit(struct tu_cmd_buffer *cmd,
+     * save/restore them dynamically.
+     */
+    cs->reg_to_scratch(tu_scratch(store_3d_blit.RB_CNTL), RB_CNTL(CHIP), 1);
++   cs->reg_to_scratch(tu_scratch(store_3d_blit.GRAS_SC_BIN_CNTL), GRAS_SC_BIN_CNTL(CHIP), 1);
+ 
+    if (CHIP >= A7XX) {
+       cs->reg_to_scratch(tu_scratch(store_3d_blit.RB_BUFFER_CNTL), RB_BUFFER_CNTL(CHIP), 1);
+@@ -5775,7 +5776,7 @@ store_3d_blit(struct tu_cmd_buffer *cmd,
+ 
+    /* Restore RB_CNTL/GRAS_SC_BIN_CNTL saved above. */
+    cs->scratch_to_reg(RB_CNTL(CHIP), tu_scratch(store_3d_blit.RB_CNTL), 1);
+-   cs->scratch_to_reg(GRAS_SC_BIN_CNTL(CHIP), tu_scratch(store_3d_blit.RB_CNTL), 1);
++   cs->scratch_to_reg(GRAS_SC_BIN_CNTL(CHIP), tu_scratch(store_3d_blit.GRAS_SC_BIN_CNTL), 1);
+ 
+    if (CHIP >= A7XX) {
+       cs->scratch_to_reg(RB_BUFFER_CNTL(CHIP), tu_scratch(store_3d_blit.RB_BUFFER_CNTL), 1);
+diff --git a/src/freedreno/vulkan/tu_scratch_ram.h b/src/freedreno/vulkan/tu_scratch_ram.h
+index 03e14cb4fd52..f989db3c9a72 100644
+--- a/src/freedreno/vulkan/tu_scratch_ram.h
++++ b/src/freedreno/vulkan/tu_scratch_ram.h
+@@ -18,6 +18,7 @@ union tu_scratch_ram {
+     */
+    struct {
+       uint32_t RB_CNTL;
++      uint32_t GRAS_SC_BIN_CNTL;
+       uint32_t RB_BUFFER_CNTL;
+    } store_3d_blit;
+ 
+-- 
+GitLab
+
+
+From 98f0e6c2b6ed5fdc333079c84a628c5d5d4cf6d7 Mon Sep 17 00:00:00 2001
+From: Rob Clark <rob.clark@oss.qualcomm.com>
+Date: Sat, 22 Aug 2026 08:59:51 -0700
+Subject: [PATCH 5/7] WIP: tu: Save/restore GRAS_LRZ_DEPTH_BUFFER_INFO
+
+---
+ src/freedreno/vulkan/tu_clear_blit.cc | 2 ++
+ src/freedreno/vulkan/tu_scratch_ram.h | 1 +
+ 2 files changed, 3 insertions(+)
+
+diff --git a/src/freedreno/vulkan/tu_clear_blit.cc b/src/freedreno/vulkan/tu_clear_blit.cc
+index ca7abc68309e..6b083fe19ab3 100644
+--- a/src/freedreno/vulkan/tu_clear_blit.cc
++++ b/src/freedreno/vulkan/tu_clear_blit.cc
+@@ -5746,6 +5746,7 @@ store_3d_blit(struct tu_cmd_buffer *cmd,
+ 
+    if (CHIP >= A7XX) {
+       cs->reg_to_scratch(tu_scratch(store_3d_blit.RB_BUFFER_CNTL), RB_BUFFER_CNTL(CHIP), 1);
++      cs->reg_to_scratch(tu_scratch(store_3d_blit.GRAS_LRZ_DEPTH_BUFFER_INFO), GRAS_LRZ_DEPTH_BUFFER_INFO(CHIP), 1);
+    }
+ 
+    r3d_setup<CHIP>(cmd, cs, src_format, dst_format, VK_IMAGE_ASPECT_COLOR_BIT,
+@@ -5780,6 +5781,7 @@ store_3d_blit(struct tu_cmd_buffer *cmd,
+ 
+    if (CHIP >= A7XX) {
+       cs->scratch_to_reg(RB_BUFFER_CNTL(CHIP), tu_scratch(store_3d_blit.RB_BUFFER_CNTL), 1);
++      cs->scratch_to_reg(GRAS_LRZ_DEPTH_BUFFER_INFO(CHIP), tu_scratch(store_3d_blit.GRAS_LRZ_DEPTH_BUFFER_INFO), 1);
+    }
+ }
+ 
+diff --git a/src/freedreno/vulkan/tu_scratch_ram.h b/src/freedreno/vulkan/tu_scratch_ram.h
+index f989db3c9a72..0b6fc5943f79 100644
+--- a/src/freedreno/vulkan/tu_scratch_ram.h
++++ b/src/freedreno/vulkan/tu_scratch_ram.h
+@@ -20,6 +20,7 @@ union tu_scratch_ram {
+       uint32_t RB_CNTL;
+       uint32_t GRAS_SC_BIN_CNTL;
+       uint32_t RB_BUFFER_CNTL;
++      uint32_t GRAS_LRZ_DEPTH_BUFFER_INFO;
+    } store_3d_blit;
+ 
+    /**
+-- 
+GitLab
+
+
+From e58f1e312f8d69e65497175ac9ddc1251a1800d6 Mon Sep 17 00:00:00 2001
+From: Rob Clark <rob.clark@oss.qualcomm.com>
+Date: Sat, 22 Aug 2026 10:23:34 -0700
+Subject: [PATCH 6/7] WIP: tu: Flush delta counters before
+ RB_SAMPLE_COUNTER_CNTL
+
+Fixes the remaining dEQP-VK.pipeline.*.multisample.misc.multi_subpass.*
+that were failing in GMEM mode but passing in sysmem.
+
+The load-bearing change is the write in r3d_teardown().  Skipping the
+write fixes the tests.  A WFI either before of after the write fixes the
+tests.
+
+The only actually occlusion counter use is autotune, but this matters
+even with TU_DEBUG=gmem (in which case autotune should not matter).
+
+(The r3d path here is store_3d_blit().. skipping the r3d_teardown() call
+in store_3d_blit() with no other changes, *also* fixes the tests, so it
+doesn't seem like WFI/CP_BARRIER is papering over some other sync
+issue.  Neither cmd->state.predication_active or
+cmd->state.prim_generated_query_running_before_rp is true.)
+---
+ src/freedreno/vulkan/tu_clear_blit.cc |  8 ++++----
+ src/freedreno/vulkan/tu_cs.h          | 14 ++++++++++++++
+ src/freedreno/vulkan/tu_query_pool.cc |  6 ++----
+ 3 files changed, 20 insertions(+), 8 deletions(-)
+
+diff --git a/src/freedreno/vulkan/tu_clear_blit.cc b/src/freedreno/vulkan/tu_clear_blit.cc
+index 6b083fe19ab3..1f234d7b408d 100644
+--- a/src/freedreno/vulkan/tu_clear_blit.cc
++++ b/src/freedreno/vulkan/tu_clear_blit.cc
+@@ -1811,7 +1811,7 @@ r3d_setup(struct tu_cmd_buffer *cmd,
+       .ccusinglecachelinesize = 2));
+ 
+    /* Disable sample counting in order to not affect occlusion query. */
+-   tu_cs_emit_regs(cs, A6XX_RB_SAMPLE_COUNTER_CNTL(.disable = true));
++   tu_write_sample_counter_cntl<CHIP>(cs, {.disable = true});
+ 
+    tu_cs_emit_regs(cs, A6XX_RB_DITHER_CNTL());
+    if (CHIP >= A7XX) {
+@@ -1871,7 +1871,7 @@ r3d_teardown(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
+    }
+ 
+    /* Re-enable sample counting. */
+-   tu_cs_emit_regs(cs, A6XX_RB_SAMPLE_COUNTER_CNTL(.disable = false));
++   tu_write_sample_counter_cntl<CHIP>(cs, {.disable = false});
+ 
+    if (cmd->state.prim_generated_query_running_before_rp) {
+       tu_emit_event_write<CHIP>(cmd, cs, FD_START_PRIMITIVE_CTRS);
+@@ -4405,7 +4405,7 @@ tu_clear_sysmem_attachments(struct tu_cmd_buffer *cmd,
+                     cmd->state.subpass->samples);
+ 
+    /* Disable sample counting in order to not affect occlusion query. */
+-   tu_cs_emit_regs(cs, A6XX_RB_SAMPLE_COUNTER_CNTL(.disable = true));
++   tu_write_sample_counter_cntl<CHIP>(cs, {.disable = true});
+ 
+    if (cmd->state.prim_generated_query_running_before_rp) {
+       tu_emit_event_write<CHIP>(cmd, cs, FD_STOP_PRIMITIVE_CTRS);
+@@ -4530,7 +4530,7 @@ tu_clear_sysmem_attachments(struct tu_cmd_buffer *cmd,
+    }
+ 
+    /* Re-enable sample counting. */
+-   tu_cs_emit_regs(cs, A6XX_RB_SAMPLE_COUNTER_CNTL(.disable = false));
++   tu_write_sample_counter_cntl<CHIP>(cs, {.disable = false});
+ 
+    if (cmd->state.prim_generated_query_running_before_rp) {
+       tu_emit_event_write<CHIP>(cmd, cs, FD_START_PRIMITIVE_CTRS);
+diff --git a/src/freedreno/vulkan/tu_cs.h b/src/freedreno/vulkan/tu_cs.h
+index 0a94086e6432..e173ff83e244 100644
+--- a/src/freedreno/vulkan/tu_cs.h
++++ b/src/freedreno/vulkan/tu_cs.h
+@@ -1094,4 +1094,18 @@ tu_scratch_reg(int idx, uint32_t val = 0)
+    }
+ }
+ 
++template <chip CHIP>
++static inline void
++tu_write_sample_counter_cntl(struct tu_cs *cs, struct A6XX_RB_SAMPLE_COUNTER_CNTL reg = {})
++{
++   if (CHIP >= A8XX) {
++      // TODO possibly we can skip this when enabling sample counts (where we don't care
++      // about previous state?)
++      /* flush RBBM delta counters into perf RAM: */
++      tu_cs_emit_pkt7(cs, CP_BARRIER, 1);
++      tu_cs_emit(cs, 1);
++   }
++   tu_cs_emit_regs(cs, pack_A6XX_RB_SAMPLE_COUNTER_CNTL(reg));
++}
++
+ #endif /* TU_CS_H */
+diff --git a/src/freedreno/vulkan/tu_query_pool.cc b/src/freedreno/vulkan/tu_query_pool.cc
+index 9b89e69a83de..01719759547c 100644
+--- a/src/freedreno/vulkan/tu_query_pool.cc
++++ b/src/freedreno/vulkan/tu_query_pool.cc
+@@ -1108,8 +1108,7 @@ emit_begin_occlusion_query(struct tu_cmd_buffer *cmdbuf,
+ 
+    uint64_t begin_iova = occlusion_query_iova(pool, query, begin);
+ 
+-   tu_cs_emit_regs(cs,
+-                   A6XX_RB_SAMPLE_COUNTER_CNTL(.copy = true));
++   tu_write_sample_counter_cntl<CHIP>(cs, {.copy = true});
+ 
+    if (!cmdbuf->device->physical_device->info->props.has_event_write_sample_count) {
+       tu_cs_emit_regs(cs,
+@@ -1529,8 +1528,7 @@ emit_end_occlusion_query(struct tu_cmd_buffer *cmdbuf,
+       tu_cs_emit_pkt7(cs, CP_WAIT_MEM_WRITES, 0);
+    }
+ 
+-   tu_cs_emit_regs(cs,
+-                   A6XX_RB_SAMPLE_COUNTER_CNTL(.copy = true));
++   tu_write_sample_counter_cntl<CHIP>(cs, {.copy = true});
+ 
+    if (!cmdbuf->device->physical_device->info->props.has_event_write_sample_count) {
+       tu_cs_emit_regs(cs,
+-- 
+GitLab
+
+
