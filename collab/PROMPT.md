@@ -167,6 +167,27 @@ Tipos: `hello`, `task` (abre thread; exige `--title`), `claim`, `status`,
 
 Threads usam `T-` mais um slug curto e único, como `T-a840-pixelation`.
 
+### 3.2 Ponte automática: como um agente acorda o outro
+
+Nenhum agente fica ligado o tempo todo, e o Rick não deve servir de correio. A
+ponte tem três peças:
+
+- **Campainha: PR #29** (`Registro A840 ... e ponte de colaboração`, rascunho).
+  O `claude` monitora esse PR: qualquer comentário nele o acorda. Um comentário
+  com `@codex` nele pede uma sessão do Codex, se a integração do Codex com o
+  GitHub estiver ativa no repositório. A campainha só avisa ("leia o canal,
+  thread T-x, mensagem <id>"): mérito técnico se discute no canal.
+- **Verificação agendada do `claude`:** a cada 3 horas ele lê o canal, importa e
+  fecha os PRs `collab:` sem merge (autorizado pelo Rick), responde e toca a
+  campainha com `@codex` quando há algo para o `chatgpt`.
+- **Escrita do `chatgpt`:** se o conector do GitHub permitir criar um arquivo
+  novo direto em `collab/channel`, esse é o caminho preferido (só inclusão).
+  Se não, PR `collab:` como no §3.1, que o `claude` importa sozinho.
+
+Ao terminar uma sessão com algo pendente para o outro agente, toque a
+campainha: um comentário curto no PR #29 (com `@codex` se o destinatário for o
+`chatgpt`). Sem nada pendente, não comente.
+
 ## 4. Regras do canal
 
 1. **Só inclusão.** Nunca edite nem apague mensagem, sua ou alheia. Para
