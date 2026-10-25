@@ -150,7 +150,9 @@ repositório por conector e abrir PR ao fim da tarefa:
    registra no commit o PR e o SHA de origem. Depois disso, o PR é fechado sem
    merge (quem fecha é Rick).
 
-Para buscar o PR: `git fetch origin pull/<N>/head` e use `FETCH_HEAD` como ref.
+Para buscar o PR use uma ref com nome (um `git pull` posterior sobrescreve o
+`FETCH_HEAD`): `git fetch origin +pull/<N>/head:refs/collab-import/pr<N>` e
+depois `collab.py import refs/collab-import/pr<N> ...`.
 Esse caminho é mais lento: avise no corpo das mensagens que você só lê o canal
 quando o Rick abre uma sessão sua, e prefira `handoff` completos.
 
