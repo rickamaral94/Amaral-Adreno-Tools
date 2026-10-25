@@ -334,19 +334,37 @@ def cmd_seen(a):
         print(f"ATENÇÃO: {len(pending)} mensagem(ns) para você ainda não mostrada(s); rode inbox: {', '.join(pending)}")
 
 
+REQUESTS = {"question", "proposal", "review", "handoff", "task", "decision-request"}
+
+
+def pending(items, rows, me):
+    """Pedidos ainda sem resposta, nos dois sentidos.
+
+    Um pedido sai da lista quando recebe reply_to ou quando o destinatário
+    escreve depois dele na mesma thread. Com relógios divergentes a ordem pode
+    falhar, mas só para o lado de mostrar a mais, nunca de esconder.
+    """
+    closed = {r["thread"] for r in rows if r["status"] == "concluída"}
+    def answered(i, m, by_me):
+        return any((x.get("reply_to") == m["id"] or (j > i and x["thread"] == m["thread"]))
+                   and (canonical(x["from"]) == me) == by_me for j, x in enumerate(items))
+    def to_me(m):
+        return m["to"] == "all" or me in [canonical(t) for t in m["to"].split(",")]
+    waiting_me = [m for i, m in enumerate(items) if canonical(m["from"]) != me and m["type"] in REQUESTS
+                  and to_me(m) and m["thread"] not in closed and not answered(i, m, True)]
+    waiting_other = [m for i, m in enumerate(items) if canonical(m["from"]) == me and m["type"] in REQUESTS
+                     and m["type"] != "decision-request" and m["thread"] not in closed
+                     and not answered(i, m, False)]
+    return waiting_me, waiting_other
+
+
 def cmd_sync_report(a):
     """Rascunho do corpo da mensagem sync: o mesmo formato para todos os agentes."""
     me = canonical(a.agent)
     items = load_all()
     rows = board(items)
-    by_id = {m["id"]: m for m in items}
-    answered = {m.get("reply_to") for m in items if canonical(m["from"]) == me and m.get("reply_to")}
     mine = [r for r in rows if r["owner"] == me and r["status"] in {"reservada", "entregue", "lease vencido"}]
-    waiting_me = [m for m in items if canonical(m["from"]) != me and m["type"] in {"question", "proposal", "review", "handoff", "task", "decision-request"}
-                  and (me in [canonical(t) for t in m["to"].split(",")] or m["to"] == "all")
-                  and m["id"] not in answered and not any(r["thread"] == m["thread"] and r["status"] == "concluída" for r in rows)]
-    waiting_other = [m for m in items if canonical(m["from"]) == me and m["type"] in {"question", "proposal", "review", "handoff", "task"}
-                     and not any(x.get("reply_to") == m["id"] and canonical(x["from"]) != me for x in items)]
+    waiting_me, waiting_other = pending(items, rows, me)
     human = [r for r in rows if r["needs_human"]]
     last_sync = [m for m in items if m["type"] == "sync" and canonical(m["from"]) != me]
     def line(m):
@@ -485,6 +503,18 @@ def cmd_selftest(_):
         assert canonical("codex") == "chatgpt" and canonical("chatgpt") == "chatgpt"
         rows = board(load_all(), now=parse_time("2026-01-01T01:00:00Z"))
         assert rows[0]["owner"] == "chatgpt", rows[0]
+        # sync-report: pedido respondido depois na mesma thread, mesmo sem
+        # reply_to, não fica pendente; pedido sem nada depois fica.
+        put("20260101T000300000Z-codex-0005", {"from": "codex", "to": "claude", "type": "review",
+            "thread": "T-test", "verdict": "approve", "created": "2026-01-01T00:03:00Z"})
+        items = load_all()
+        me_wait, _ = pending(items, board(items), "claude")
+        assert [m["id"] for m in me_wait] == ["20260101T000300000Z-codex-0005"], me_wait
+        put("20260101T000400000Z-claude-0006", {"from": "claude", "to": "chatgpt", "type": "status",
+            "thread": "T-test", "created": "2026-01-01T00:04:00Z"})
+        items = load_all()
+        me_wait, other_wait = pending(items, board(items), "claude")
+        assert me_wait == [] and other_wait == [], (me_wait, other_wait)
     MESSAGES = original
     print("selftest ok")
 
