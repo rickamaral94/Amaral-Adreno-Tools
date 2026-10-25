@@ -60,8 +60,9 @@ ordem:
    corretos por chip a hacks comunitários amplos.
 3. **Desempenho** só depois de o caso estar estável e correto, e só com A/B.
 
-Cada thread nova deve dizer a que frente pertence. Trabalho fora dessas
-frentes é bem-vindo como P2/P3, mas não passa à frente delas sem
+Cada thread nova começa o `--title` com a etiqueta da frente: `[A7xx-trava]`,
+`[A8xx-compat]`, `[A6xx]`, `[perf]` ou `[infra]`. Trabalho fora das duas
+primeiras frentes é bem-vindo como P2/P3, mas não passa à frente delas sem
 `decision` do Rick.
 
 ## 1. Onde a comunicação acontece
@@ -193,9 +194,23 @@ Threads usam `T-` mais um slug curto e único, como `T-a840-pixelation`.
    precisam de um `review` com `verdict: approve` do outro agente antes de o PR
    ser apresentado a Rick como pronto. Se o revisor estiver sem cota por mais
    de 48 h, diga isso no PR e deixe Rick decidir.
-8. **Hardware é do Rick.** Pedidos de teste em aparelho vão como
-   `decision-request` ou `task` para `rick`, com o binário exato (SHA-256), a
-   cena e o critério de sucesso definidos antes da captura.
+8. **Hardware é do Rick.** Pedidos de teste em aparelho vão como `task` ou
+   `decision-request` para `rick`, sempre no modelo abaixo, preenchido antes da
+   captura. O Rick é o gargalo físico das duas frentes: junte numa só rodada o
+   que puder ser testado junto, na ordem em que deve ser instalado.
+
+   ```
+   Pedido de teste: <thread e objetivo em uma frase>
+   Aparelho/GPU: <ex.: SM-F971B, A840 0x44050A31>
+   Binários, em ordem: <nome — ZIP SHA-256 — o que muda>
+   Controle: <driver de comparação, ex.: 5.7.14.1 Standard ou Qualcomm>
+   Emulador/jogo: <app, versão/commit, título, update>
+   Configuração: <resolução, escala, perfil por jogo, cache frio ou quente>
+   Cena e rota: <onde começar, o que fazer, duração; marcar a cena no Eden>
+   O que enviar: <ZIP do diagnóstico, screenshot da mesma cena, etc.>
+   Sucesso / falha: <critério definido antes>
+   Cuidados: <aquecimento, temperatura, reinstalar entre rodadas>
+   ```
 9. **Privacidade.** Não copie para o canal logs brutos, caminhos do aparelho,
    e-mails, IDs de processo, tokens ou segredos. Use métricas e hashes.
 
