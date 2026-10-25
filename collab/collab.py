@@ -86,6 +86,24 @@ def names():
     return out
 
 
+def detect_agent():
+    """Id do agente atual sem o Rick precisar escolher: COLLAB_AGENT, depois marcadores do ambiente."""
+    import os
+    forced = os.environ.get("COLLAB_AGENT", "").strip()
+    if forced:
+        return canonical(forced)
+    if os.environ.get("CLAUDECODE") or any(k.startswith("CLAUDE_CODE_") for k in os.environ):
+        return "claude"
+    if any(k.startswith("CODEX") for k in os.environ):
+        return "chatgpt"
+    sys.exit("não consegui detectar o agente: defina COLLAB_AGENT=<id> ou passe --agent/--from "
+             "(Claude da Anthropic = claude; ChatGPT/Codex da OpenAI = chatgpt)")
+
+
+def resolve(name):
+    return detect_agent() if not name or name == "auto" else canonical(name)
+
+
 def canonical(name):
     return names().get(name.strip(), name.strip())
 
@@ -475,7 +493,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
     n = sub.add_parser("new")
-    n.add_argument("--from", dest="sender", required=True)
+    n.add_argument("--from", dest="sender", default="auto", help="id do agente; padrão: detectado")
     n.add_argument("--to", required=True, help="agente, lista separada por vírgula, ou all")
     n.add_argument("--type", required=True)
     n.add_argument("--thread", required=True)
@@ -483,22 +501,29 @@ def main():
         n.add_argument(f"--{key}", dest=key.replace("-", "_"))
     for name in ("inbox", "seen"):
         s = sub.add_parser(name)
-        s.add_argument("--agent", required=True)
+        s.add_argument("--agent", default="auto", help="id do agente; padrão: detectado")
     sub.add_parser("board")
     sr = sub.add_parser("sync-report")
-    sr.add_argument("--agent", required=True)
+    sr.add_argument("--agent", default="auto", help="id do agente; padrão: detectado")
     t = sub.add_parser("thread")
     t.add_argument("thread")
     sub.add_parser("validate")
+    sub.add_parser("whoami")
     im = sub.add_parser("import")
     im.add_argument("ref", help="ref git com as mensagens, ex.: origin/pr/28 ou FETCH_HEAD")
-    im.add_argument("--importer", required=True, help="seu id (quem está importando)")
+    im.add_argument("--importer", default="auto", help="seu id; padrão: detectado")
     im.add_argument("--source", help="descrição da origem, ex.: 'PR #28'")
     sub.add_parser("selftest")
     a = p.parse_args()
+    for attr in ("sender", "agent", "importer"):
+        if hasattr(a, attr):
+            setattr(a, attr, resolve(getattr(a, attr)))
     {"new": cmd_new, "inbox": cmd_inbox, "seen": cmd_seen, "board": cmd_board, "sync-report": cmd_sync_report,
-     "thread": cmd_thread, "validate": cmd_validate, "import": cmd_import, "selftest": cmd_selftest}[a.cmd](a)
+     "thread": cmd_thread, "validate": cmd_validate, "whoami": lambda _: print(detect_agent()), "import": cmd_import, "selftest": cmd_selftest}[a.cmd](a)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except BrokenPipeError:
+        sys.stderr.close()  # saída cortada por head/less: não é erro

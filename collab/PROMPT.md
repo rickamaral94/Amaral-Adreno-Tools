@@ -105,16 +105,25 @@ python3 collab/collab.py board
    `collab:` (mensagens de um agente sem push, §3.1) e importe-os com
    `collab.py import`.
 
-### 2.1 Prompt de início de sessão (o Rick cola em qualquer agente)
+### 2.1 Início de sessão: basta a palavra `abacaxi`
 
-```
-Você é o agente <claude|chatgpt> do projeto rickamaral94/Amaral-Adreno-Tools.
-Leia collab/PROMPT.md no branch collab/channel e siga-o integralmente,
-inclusive §0 (parceria entre iguais), §3.1.1 (entrega direta), §3.3
-(SYNC-AMARAL) e §3.4 (campainha). Rode a rotina do §2, responda o que for
-seu, avance as frentes [A7xx-trava] e [A8xx-compat] e, ao terminar, publique
-status ou handoff no canal e toque a campainha no PR #29.
-```
+O Rick não precisa colar prompt nem escolher id. Ele manda **`abacaxi`** (sozinha
+ou no início da mensagem, maiúsculas ou minúsculas) para qualquer agente. Os
+arquivos `AGENTS.md` (Codex) e `CLAUDE.md` (Claude Code), na raiz da `main`,
+explicam isso a um agente que chega sem contexto.
+
+Ao receber `abacaxi`:
+
+1. **Descubra o seu id sem perguntar:** `python3 collab/collab.py whoami`. Se a
+   ferramenta não detectar, use a regra fixa: Claude (Anthropic) = `claude`;
+   ChatGPT/Codex (OpenAI) = `chatgpt`. Os comandos aceitam o id omitido e o
+   detectam sozinhos (`COLLAB_AGENT=<id>` força um valor).
+2. Leia este `PROMPT.md` inteiro e siga-o.
+3. Faça a rotina do §2 e, em seguida, a sincronização do §3.3.
+4. Ao terminar, publique status ou handoff, faça push e toque a campainha no
+   PR #29 (§3.4).
+
+`SYNC-AMARAL` continua valendo como sinônimo.
 
 ## 3. Como escrever uma mensagem
 
@@ -213,12 +222,13 @@ Ao terminar uma sessão com algo pendente para o outro agente, toque a
 campainha: um comentário curto no PR #29 (com `@codex` se o destinatário for o
 `chatgpt`). Sem nada pendente, não comente.
 
-### 3.3 Palavra de sincronização: `SYNC-AMARAL`
+### 3.3 Sincronização: `abacaxi` (ou `SYNC-AMARAL`)
 
-Quando uma mensagem do Rick **começar** com `SYNC-AMARAL`, o agente para o que
-estiver fazendo e sincroniza pelo GitHub. O Rick manda a palavra para os dois
-agentes ao mesmo tempo. O texto depois da palavra, se houver, é o assunto
-prioritário do Rick para a rodada. A palavra no meio de outra frase não conta.
+Quando uma mensagem do Rick **começar** com `abacaxi` ou `SYNC-AMARAL`, o
+agente para o que estiver fazendo e sincroniza pelo GitHub. O Rick manda a
+palavra para os dois agentes ao mesmo tempo. O texto depois da palavra, se
+houver, é o assunto prioritário do Rick para a rodada. A palavra no meio de
+outra frase não conta. Use o id detectado (§2.1) em todos os comandos.
 
 Procedimento, igual para todos os agentes:
 
