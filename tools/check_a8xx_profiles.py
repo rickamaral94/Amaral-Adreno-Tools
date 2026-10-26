@@ -47,7 +47,7 @@ def index(records):
     for row in records:
         key = (row["gpu_id"], row["chip_id"])
         if key in result:
-            raise ValueError(f"Duplicate GPU table entry: {key}")
+            raise ValueError(f"Duplicate GPU table entry: ({key[0]:#x}, {key[1]:#x})")
         result[key] = row
     return result
 
@@ -67,15 +67,15 @@ def validate(records, baseline, variant):
         raise ValueError("Unknown variant")
     for key, old in original.items():
         if key not in current:
-            raise ValueError(f"Removed upstream GPU entry: {key}")
+            raise ValueError(f"Removed upstream GPU entry: ({key[0]:#x}, {key[1]:#x})")
         expected = json.loads(json.dumps(old))
         if variant == "oneui" and key[1] in ONEUI_IDS:
             expected["info"]["props"]["enable_tp_ubwc_flag_hint"] = True
         if current[key] != expected:
-            raise ValueError(f"Unreviewed change to upstream profile: {key}")
+            raise ValueError(f"Unreviewed change to upstream profile: ({key[0]:#x}, {key[1]:#x})")
     for key in current.keys() - original.keys():
         if key[0] != 0 or key[1] not in EXTERNAL_IDS:
-            raise ValueError(f"Unreviewed extra GPU entry: {key}")
+            raise ValueError(f"Unreviewed extra GPU entry: ({key[0]:#x}, {key[1]:#x})")
     for chip, values in EXPECTED.items():
         info = resolve(records, chip)
         if info["chip"] != 8:

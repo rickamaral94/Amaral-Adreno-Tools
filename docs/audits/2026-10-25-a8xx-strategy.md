@@ -57,7 +57,7 @@ não de origem para portar uma correção verificável.
 | Perfis Droid-Deck | A810/A829 ganham `disable_gmem`; A825 usa tile width 96 e 32 KiB shared, diferentes de Amaral (64/64 KiB); A845/A850 são aliases da A840 de 3 slices | Não escolher valores por popularidade nem copiar registradores por analogia; requer identificação de chip/topologia, fonte e testes GMEM/SYSMEM por aparelho |
 | Cat4 repeat A845/A850 | `de8bba431f1c` desliga repetição SFU para IDs `0x44041430` e `0x44051431`, citando dessaturação DXVK/Unity | Pista L0, não correção A840. Confirmar fonte/topologia dos novos chips e reprodução; sem adicionar aliases automaticamente |
 | LRZ color mask/flush, resolve CR e hysteresis | Droid-Deck escreve mask por MRT, zera LRZ após flush, acrescenta resolve CR=1 e SP hysteresis constants; escopo A8xx amplo | Avaliar contra MRs upstream, caminho e captura antes de portar. Escrita de registro aparentemente plausível não é evidência de raiz |
-| Gralloc UBWC | Droid-Deck mantém `numInts >= 2` mas remove identificação `gmsm`; stack gen8 antiga remove também a guarda da leitura | Não generalizar layout privado de handle. Preferir implementação do mapper correto, testar importação AHB/format/modifier e compositor |
+| Gralloc UBWC | Droid-Deck mantém `numInts >= 2` mas remove identificação `gmsm`; stack gen8 antiga remove também a guarda da leitura. Na build Android NDK atual, IMapper4/5 não é compilado e o backend qcom requer gralloc1 legado, ausente no Android 17: o fallback é o caminho ativo. A MR Mesa !44464 reconhece o handle SnapAlloc por formato e stride, incluindo um ramo heurístico para SM7435/A710 | Não remover a guarda `gmsm` sem identificar o handle. Testar o lab isolado da !44464 na A840; antes de distribuir, revisar o ramo A710 e testar AHB/format/modifier e compositor. A !44888 (draft) trata outro sintoma, falha de opcode CP em A840/KGSL, sem causa ainda demonstrada |
 
 A retirada do cache IB é rastreável no autor: [Droid-Deck 27bf2ac](https://github.com/Droid-Deck/Drivers/commit/27bf2ac1b386ac3399a7a5604ead18f067f652c3),
 seguida por [Banners 1c8d3bf](https://github.com/The412Banner/Banners-Turnip/commit/1c8d3bf183b9a863e844a7d666d0c1304be0fd4d).
@@ -105,6 +105,8 @@ review. O gate não testa a lógica C de lookup em execução, features Vulkan,
 linkage, firmware, hardware nem desempenho. A correspondência de IDs implementa
 o ramo chip-id revisado dos dois locks; qualquer alteração upstream desse ramo
 exige reavaliar o gate.
+O gate usa `tarfile.extractall(filter="data")`; a execução local requer Python
+3.12+ (ou 3.11.4+ com o backport do filtro). O job `ubuntu-24.04` usa Python 3.12.
 
 Reprodução (na árvore Mesa com os patches do manifesto aplicados):
 
@@ -132,7 +134,9 @@ sem inclusão. Nenhuma medição de ganho ou build de driver novo nesta parte.
 5. CTS/VVL e hardware: A840 de 2 e 3 slices separadas, A825/A810 se disponíveis,
    regressões A6/A7 quando código compartilhado mudar. Só depois decidir distribuição.
 6. Para A840/MUA3, aproveitar a rodada visual já preparada: mesma cena e escala,
-   Standard, Bilinear, noubwc, sysmem, gen8state e controle Qualcomm identificado.
+   Standard, Bilinear, noubwc, sysmem, gen8state, snapalloc e controle Qualcomm
+   identificado. Um resultado visual do lab é hipótese de mecanismo, não validação
+   para incluir a MR no patchset distribuído.
    Dois labs corrigirem a imagem não identificam qual commit é a causa.
 
 Novos pedidos físicos precisam de binários/hashes e critérios antes da captura;
