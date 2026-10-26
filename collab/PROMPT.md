@@ -40,9 +40,10 @@ contestam, com o mesmo peso.
   diferente, falta de A/B, mecanismo não demonstrado, generalização de L0 para
   L3), aponte, mesmo que já esteja em andamento.
 - **Mude de ideia diante de evidência melhor** e diga explicitamente que mudou.
-- **Empate técnico:** cada lado expõe a posição uma vez, com evidência; se
-  continuar dividido, `decision-request` para Rick com as duas opções lado a
-  lado. Só `rick` desempata.
+- **Empate técnico:** reavaliem quando surgir evidência nova (§6.1); não
+  repitam a mesma tese sem dado ou teste novo. Se restarem escolhas
+  incompatíveis sem experimento viável, `decision-request` para Rick com as
+  duas opções lado a lado. Só `rick` desempata.
 
 ## 0.1 Rumo da colaboração
 
@@ -132,7 +133,8 @@ Sempre pela ferramenta, que gera id, horário UTC e valida o cabeçalho:
 ```sh
 python3 collab/collab.py new --from <seu-id> --to <id|id,id|all> \
   --type <tipo> --thread T-<slug> [--title "..."] [--reply-to <id>] \
-  [--closes <id,id>] [--priority P0..P3] [--verdict approve|changes|reject] [--lease-hours N] \
+  [--closes <id,id>] [--awaits <agente>] [--priority P0..P3] \
+  [--verdict approve|changes|reject] [--lease-hours N] \
   [--needs-human yes] [--refs "PR #27, commit abc123"] < corpo.md
 python3 collab/collab.py validate
 python3 collab/collab.py seen --agent <seu-id>
@@ -193,6 +195,9 @@ no próprio sync ou na próxima mensagem com conteúdo, em vez de um `answer`
 curto por item. Pedido para o Rick (teste em hardware, decisão) leva
 `--needs-human yes` e fica em "Aguardando o Rick" até o Rick responder ou o
 autor listá-lo em `--closes`.
+Se uma mensagem de outro tipo pedir contestação do agente nomeado em
+`--awaits`, ela também entra nas pendências até `reply_to` ou `closes` desse
+agente. Use `--needs-human yes` para o Rick, não `--awaits rick`.
 
 ### 3.1.1 Entrega direta pelo conector (preferida quando funciona)
 
@@ -369,6 +374,55 @@ dois:
 - Upstream Mesa (MRs, commits Turnip/IR3/KGSL) e fontes comunitárias: dividam
   por família (A6xx/A7xx/A8xx) ou por fonte e publiquem `finding`s com link
   para a MR/commit e o veredito de aplicabilidade.
+
+### 6.1 Debate técnico que muda uma decisão
+
+Para uma decisão técnica de impacto (driver, perfil de GPU, extensão Vulkan,
+causa raiz ou laboratório físico), em qualquer prioridade, trabalhem em ciclos
+curtos de hipótese, contestação e teste. A análise, o build e os labs podem
+avançar em paralelo ao debate; o acordo é gate para
+incorporar na candidata ou distribuir. Capturas simples para classificar um
+relato podem ser pedidas ao Rick sem esperar um ciclo completo.
+
+1. **Autor:** descreva o sintoma reproduzível, mecanismo proposto, ao menos
+   uma explicação concorrente plausível quando houver, previsão que distingue
+   as duas e o menor teste capaz de derrubar a própria hipótese. Declare chips
+   e caminhos afetados, fonte exata e o que é `verificado` (reproduzido),
+   `relatado` (por terceiros), `hipótese` ou `not-run`. Combine dono, revisor,
+   próximo passo e critério de aceitação no `claim` ou `proposal`.
+2. **Revisor:** primeiro reconstrua a hipótese do autor com precisão; depois
+   procure o contraexemplo mais forte em código, log, contrato, outra família
+   ou controle A/B. Execute uma checagem independente quando viável. Peça um
+   teste que separe as hipóteses, em vez de pedir testes genéricos. Se a tese
+   resistir, diga quais tentativas de refutação fez e qual limite permanece;
+   não invente objeção para parecer crítico. Um `approve` fundamentado vale.
+   Se a sua mensagem `answer` ou `finding` pedir contestação, use
+   `--awaits <agente>` para ela aparecer como pendência do destinatário.
+3. **Autor de volta:** responda à objeção com evidência, revisão do diff ou
+   mudança explícita de posição. Separe demonstrado, compatível com os dados e
+   não testado. O revisor verifica o delta. `approve` vale para o escopo e as
+   afirmações conferidos, nunca para hardware ou famílias não testadas.
+4. **Teste antes de resultado:** para um pedido físico de laboratório, cada
+   agente registra a previsão das hipóteses rivais antes de ver os pixels/logs.
+   Depois comparem previsão e resultado, anotando confundidores e mudança de
+   confiança. É calibração das hipóteses, não placar de pessoas. Pedidos ao
+   Rick trazem primeiro o controle barato, depois os labs necessários.
+5. **Decisão:** quem tem o lease atual da thread (ou, sem lease, quem abriu o
+   `task`) escreve uma `proposal` titulada `[decisão]`
+   com opção escolhida, alternativas descartadas, evidência, risco residual e
+   o fato que faria mudar de ideia; o outro registra `review approve` ou
+   `changes` nela. Acordo entre dois modelos não é prova independente:
+   sustentem a conclusão em código, contrato, teste
+   ou hardware rastreável e rotulem `provisório` se faltar esse apoio. Sem
+   experimento disponível, mantenham lab/hipótese; não promovam correção pela
+   confiança dos agentes. Se a discordância repetir os mesmos argumentos sem
+   evidência nova, registrem as duas posições e o teste decisivo; usem
+   `decision-request` quando Rick precisar escolher prioridade, risco ou
+   direção. Nova rodada de debate exige evidência nova.
+
+Use esse ciclo para decisões de impacto; respostas operacionais curtas continuam
+curtas. O objetivo é encontrar o melhor caminho para correção e compatibilidade,
+não vencer um debate nem aumentar o número de mensagens.
 
 ## 7. Ao terminar uma thread
 
