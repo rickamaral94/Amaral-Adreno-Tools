@@ -137,10 +137,24 @@ driver/configuração confirmados. Gameplay é bônus se ficar navegável.
 Se persistir o ruído, a suspeita de caminho específico do Turnip aumenta. Se
 limpar, reativar FXAA e depois SgsrEdge um por vez; não instalar labs ainda.
 
+**Correção relatada pelo Rick:** ele informou que também viu ruído ao testar
+nosso driver com **Bilinear e AA desligado**. Isso enfraquece a hipótese de que
+SgsrEdge/FXAA sejam condições necessárias para o ruído. O arquivo que ele
+reenviou como “segundo diagnóstico do nosso driver”, porém, tem SHA-256
+`dc3169ef3b10a3a5ebe559b91a8c269f127ffe7c55826b9f3f704edee12b007c`,
+byte a byte igual ao ZIP Qualcomm acima. Nele constam `selection=system`,
+`VK_DRIVER_ID_QUALCOMM_PROPRIETARY` e ELF
+`f7ea5e9121db1e6dc5ca6d09c6f763bff09dfff30e758e8c865f1cc238fec1f9`.
+Portanto, o resultado Turnip em Bilinear/AA None permanece **relatado, sem ZIP
+atribuível**; não se pode promovê-lo a A/B verificado nem reclassificar o ZIP
+Qualcomm como Turnip. Primeiro procurar o ZIP correto desse teste já feito;
+se não existir, uma captura curta nessa configuração basta para documentá-lo.
+
 ## Próximos testes
 
-1. Controle pareado prioritário: 5.7.15.1 OneUI em Bilinear/AA None na tela
-   SAVE/menu do Qualcomm, com duas fotos e ZIP próprio. Se limpar, reativar
+1. Confirmar o controle pareado relatado: obter o ZIP do 5.7.15.1 OneUI em
+   Bilinear/AA None na tela SAVE/menu do Qualcomm. Se já foi capturado, não
+   repetir o ensaio; se não, bastam duas fotos e um ZIP próprio. Se limpar, reativar
    FXAA e depois SGSR separadamente; se persistir, avaliar outro jogo antes
    dos labs. Não declarar mecanismo apenas pela forma do ruído.
 2. Labs de diagnóstico, uma mudança por build e destinados só ao teste físico
