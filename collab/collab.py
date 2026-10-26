@@ -399,6 +399,24 @@ def rick_queue(items):
     return out
 
 
+def sync_pending_lines(pairs, recent_ids, show_all=False):
+    """Mostra pedidos novos por extenso e preserva os IDs antigos em aberto."""
+    def detail(pair):
+        m, hint = pair
+        mark = " (possivelmente tratado)" if hint else ""
+        return f"- {m['thread']} `{m['id']}` [{m['type']}] {(m.get('title') or m['body'].splitlines()[0])[:90]}{mark}"
+
+    if show_all:
+        return [detail(pair) for pair in pairs] or ["- nada"]
+    recent = [pair for pair in pairs if pair[0]["id"] in recent_ids]
+    older = [pair for pair in pairs if pair[0]["id"] not in recent_ids]
+    lines = [detail(pair) for pair in recent]
+    if older:
+        ids = ", ".join(f"`{m['id']}`" for m, _ in older)
+        lines.append(f"- {len(older)} pendência(s) anterior(es) ainda aberta(s): {ids} (detalhes: sync-report --all)")
+    return lines or ["- nada"]
+
+
 def cmd_sync_report(a):
     """Rascunho do corpo da mensagem sync: o mesmo formato para todos os agentes."""
     me = canonical(a.agent)
@@ -407,17 +425,17 @@ def cmd_sync_report(a):
     mine = [r for r in rows if r["owner"] == me and r["status"] in {"reservada", "entregue", "lease vencido"}]
     waiting_me, waiting_other = pending(items, rows, me)
     last_sync = [m for m in items if m["type"] == "sync" and canonical(m["from"]) != me]
-    def line(pair):
-        m, hint = pair
-        mark = " (possivelmente tratado)" if hint else ""
-        return f"- {m['thread']} `{m['id']}` [{m['type']}] {(m.get('title') or m['body'].splitlines()[0])[:90]}{mark}"
+    own_sync = [i for i, m in enumerate(items) if m["type"] == "sync" and canonical(m["from"]) == me]
+    # A ordem é por horário do canal; relógios diferentes podem deslocar uma
+    # mensagem para a seção anterior, mas seu ID nunca desaparece do relatório.
+    recent_ids = {m["id"] for m in items[own_sync[-1] + 1:]} if own_sync else {m["id"] for m in items}
     out = ["SYNC-AMARAL", "", f"Agente: {me}. Canal: {len(items)} mensagens.", "",
-           "## Estado das frentes (preencher em 1 linha cada)",
+           "## Estado das frentes (delta desde o último sync; diga sem mudança se aplicável)",
            "- [A7xx-trava]: ", "- [A8xx-compat]: ", "- Outras: ", "",
            "## Em andamento comigo (leases)"]
     out += [f"- {r['thread']}: {r['status']}" + (f" até {iso(r['lease_until'])}" if r["lease_until"] else "") for r in mine] or ["- nada"]
-    out += ["", "## Aguardando a minha resposta"] + ([line(m) for m in waiting_me] or ["- nada"])
-    out += ["", "## Aguardando o outro agente"] + ([line(m) for m in waiting_other[-12:]] or ["- nada"])
+    out += ["", "## Aguardando a minha resposta"] + sync_pending_lines(waiting_me, recent_ids, a.all)
+    out += ["", "## Aguardando o outro agente"] + sync_pending_lines(waiting_other, recent_ids, a.all)
     rick = [f"- {m['thread']} `{m['id']}` [{m['type']}] {(m.get('title') or m['body'].splitlines()[0])[:90]}"
             for m in rick_queue(items)]
     out += ["", "## Aguardando o Rick"] + (rick or ["- nada (incluir pedidos de teste em hardware)"])
@@ -617,6 +635,13 @@ def cmd_selftest(_):
         put("20260101T001700000Z-claude-0020", {"from": "claude", "to": "all", "type": "status",
             "thread": "T-test", "closes": "20260101T001500000Z-claude-0018", "created": "2026-01-01T00:17:00Z"})
         assert rick_queue(load_all()) == []
+        # Sync incremental não esconde pedidos antigos ainda abertos.
+        older = ({"id": "old", "thread": "T-test", "type": "question", "body": "antigo"}, True)
+        recent = ({"id": "new", "thread": "T-test", "type": "proposal", "body": "novo"}, False)
+        short = sync_pending_lines([older, recent], {"new"})
+        assert "new" in short[0] and "old" in short[1] and "antigo" not in short[1], short
+        full = sync_pending_lines([older, recent], {"new"}, show_all=True)
+        assert "antigo" in full[0] and "novo" in full[1], full
     MESSAGES = original
     print("selftest ok")
 
@@ -637,6 +662,7 @@ def main():
     sub.add_parser("board")
     sr = sub.add_parser("sync-report")
     sr.add_argument("--agent", default="auto", help="id do agente; padrão: detectado")
+    sr.add_argument("--all", action="store_true", help="mostrar todas as pendências abertas por extenso")
     t = sub.add_parser("thread")
     t.add_argument("thread")
     sub.add_parser("validate")

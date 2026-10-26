@@ -249,6 +249,11 @@ Procedimento, igual para todos os agentes:
    em branco (estado das frentes e proposta de próximos passos) e publique com
    `new --type sync --thread T-sync --to all`. Entregue na hora (push ou
    conector, §3.1.1).
+   O relatório destaca pedidos surgidos depois do último sync do agente e
+   conserva os IDs de todos os pedidos antigos ainda abertos. Use
+   `sync-report --all` para ver cada pedido antigo por extenso. Como relógios
+   podem divergir, a classificação novo/antigo é apenas visual; nenhum pedido
+   aberto desaparece do relatório.
 4. **Esperar o par:** releia o canal a cada 2 minutos, por até 20 minutos (ou
    até o limite do seu ambiente), procurando o `sync` do outro agente criado no
    máximo 30 minutos antes do seu.
