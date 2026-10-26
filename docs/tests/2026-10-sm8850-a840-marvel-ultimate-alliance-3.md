@@ -85,14 +85,9 @@ O ZIP não contém imagens dos quadros, nem capturas pareadas com Bilinear,
 5.7.14.1 Standard ou Qualcomm. A tela preta e as colunas de ruído podem vir do
 jogo/decodificação, de um alvo intermediário do Eden, do filtro/presentação ou
 do Turnip; os dados ainda não localizam a etapa defeituosa. Não atribuir raiz a
-SnapAlloc, UBWC, GMEM ou aos três backports da 5.7.15.1 sem controle. O
-controle mais barato para esta observação é repetir uma cena estável com a
-5.7.15.1 OneUI e trocar só SgsrEdge por Bilinear, mantendo FXAA; depois
-comparar com Qualcomm sob os mesmos ajustes. Se o ruído persistir, desligar
-FXAA isoladamente antes de atribuir o resultado a layout. Um segundo jogo no
-mesmo driver testa o alcance. A 5.7.14.1 Standard da etapa 0 anterior entra
-depois, para avaliar regressão entre candidatas. Esses controles ainda não
-foram executados.
+SnapAlloc, UBWC, GMEM ou aos três backports da 5.7.15.1 sem controle. A
+comparação com o Qualcomm chegou depois e mudou a ordem do próximo teste,
+descrita abaixo. Os controles pareados ainda não foram executados.
 
 ### Controle Qualcomm recebido depois (ainda não pareado)
 
@@ -116,30 +111,38 @@ O Rick identificou a [terceira foto](images/a840-20261026/turnip-compiling-noise
 (SHA-256 `9d9db4910c045a543d3635da88489d121ed50ab4738abd9d9a6112eccafb5c24`)
 como teste com nosso driver: há colunas de ruído, mas o overlay indica
 “Compilando 78 Shader(s)” e 0 FPS. As fotos não estão dentro dos ZIPs; a
-atribuição desta foto a uma captura específica é relato do Rick.
+atribuição desta foto a uma captura específica é relato do Rick. As duas
+capturas Turnip anteriores, porém, já mostravam o mesmo ruído a ~30 FPS sem
+compilação no overlay, e o ZIP Turnip de 645 s registrou zero criação/espera
+de pipeline durante a captura: o defeito não se restringe à compilação.
 
 **Ainda não há A/B de driver:** o Turnip anterior usou SgsrEdge/FXAA, o Qualcomm
-usou Bilinear/AA None, e a foto ruim foi tirada durante compilação/loading,
-enquanto as fotos limpas mostram jogo controlável. O ZIP Qualcomm registra uma
+usou Bilinear/AA None; o estágio de menu é comparável entre ZIPs, mas as fotos
+Qualcomm mostram gameplay e a nova foto Turnip mostra compilação. O ZIP Qualcomm registra uma
 falha de criação de pipeline compute (`VK_ERROR_UNKNOWN`) ~102 s após o início
 e um `VK_ERROR_SURFACE_LOST_KHR` ~303 s após o início, próximo à recriação do
 swapchain, mas termina por ação do usuário;
 esses eventos isolados não demonstram causa da corrupção Turnip. FPS das duas
 sessões não é comparável devido a cache/compilação diferentes.
+O Turnip restaurou 33 pipelines do arquivo e a Qualcomm 3; diferenças nas
+features `shaderResourceMinLod`/`shaderResourceResidency` são consequência dos
+drivers e não podem ser igualadas por ajuste do usuário.
 
 Próximo controle prioritário: no Turnip 5.7.15.1 OneUI, reproduzir **Bilinear
-+ AA None** na mesma cena jogável do Qualcomm, após terminar o carregamento;
-duas capturas separadas por ≥10 s e ZIP Eden com driver/configuração confirmados.
++ AA None** na mesma tela SAVE/menu estável alcançada no Qualcomm (relato do
+`claude` em T-a840-pixelation ca82), após terminar o carregamento; se não
+conseguir chegar a ela sem imagem, use o mesmo menu de título estável nos dois
+drivers. Duas capturas separadas por ≥10 s e ZIP Eden próprio com
+driver/configuração confirmados. Gameplay é bônus se ficar navegável.
 Se persistir o ruído, a suspeita de caminho específico do Turnip aumenta. Se
 limpar, reativar FXAA e depois SgsrEdge um por vez; não instalar labs ainda.
 
 ## Próximos testes
 
-1. Screenshot da mesma cena estável com a 5.7.15.1 OneUI atual: SgsrEdge/FXAA,
-   depois Bilinear/FXAA; se o ruído persistir, Bilinear sem FXAA. Reiniciar Eden
-   entre os ajustes e anotar a cena. Comparar também o Qualcomm na configuração
-   original e outro jogo com os mesmos ajustes. Isso prioriza filtros baratos
-   sem declarar mecanismo apenas pela forma do ruído.
+1. Controle pareado prioritário: 5.7.15.1 OneUI em Bilinear/AA None na tela
+   SAVE/menu do Qualcomm, com duas fotos e ZIP próprio. Se limpar, reativar
+   FXAA e depois SGSR separadamente; se persistir, avaliar outro jogo antes
+   dos labs. Não declarar mecanismo apenas pela forma do ruído.
 2. Labs de diagnóstico, uma mudança por build e destinados só ao teste físico
    na A840 (ver o escopo de código de cada um abaixo). Um resultado positivo
    indica o caminho a bisectar, não a causa raiz. Nenhum lab é release.
