@@ -1,0 +1,454 @@
+From afa1aa00b50864aeec5ed5ee3587b3fef442da6d Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Mon, 26 Oct 2026 14:25:13 +0000
+Subject: [PATCH] candidate: 5.7.15.1 test build with three merged upstream
+ fixes
+
+Same Mesa lock (69f1f21) and patch set as 5.7.14.1, plus 29db4909d4e
+(ir3 RA DOUBLE_ONLY limit, A6xx only), 64245a20b78 (MSAA f16 copy path)
+and a1e9f888421 (KGSL BDA capture/replay mapping), applied unedited.
+No A840 diagnostic lab is included. Test pre-release requested by Rick;
+CTS, VVL and hardware are not-run.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01BZiB1ofHang6Zaxurp6i5r
+---
+ config/mesa-lock.json                        |   4 +-
+ config/patches.json                          |   5 +-
+ config/version-state.json                    |   8 +-
+ docs/releases/mesa-27.0.0-devel-v5.7.15.1.md |  55 +++++++
+ patches/upstream-29db4909d4e.patch           |  75 ++++++++++
+ patches/upstream-64245a20b78.patch           | 145 +++++++++++++++++++
+ patches/upstream-a1e9f888421.patch           |  59 ++++++++
+ 7 files changed, 344 insertions(+), 7 deletions(-)
+ create mode 100644 docs/releases/mesa-27.0.0-devel-v5.7.15.1.md
+ create mode 100644 patches/upstream-29db4909d4e.patch
+ create mode 100644 patches/upstream-64245a20b78.patch
+ create mode 100644 patches/upstream-a1e9f888421.patch
+
+diff --git a/config/mesa-lock.json b/config/mesa-lock.json
+index bb38c89..7ee3ab9 100644
+--- a/config/mesa-lock.json
++++ b/config/mesa-lock.json
+@@ -1,13 +1,13 @@
+ {
+   "schema": 1,
+-  "amaral_revision": "5.7.14.1",
++  "amaral_revision": "5.7.15.1",
+   "mesa": {
+     "repository": "https://gitlab.freedesktop.org/mesa/mesa.git",
+     "branch": "main",
+     "commit": "69f1f21f0258a77046dbaeb8ed7a8ad37a683006",
+     "version": "27.0.0-devel",
+     "commit_date_utc": "2026-10-22T05:47:33Z",
+-    "checked_at_utc": "2026-10-22T10:47:22Z"
++    "checked_at_utc": "2026-10-26T14:18:19Z"
+   },
+   "build": {
+     "ndk": "r29",
+diff --git a/config/patches.json b/config/patches.json
+index 8e296a3..40f5ca5 100644
+--- a/config/patches.json
++++ b/config/patches.json
+@@ -4,7 +4,10 @@
+     "patches/0001-android-ndk-r29-compat.patch",
+     "patches/0002-a8xx-experimental-device-support.patch",
+     "patches/0007-community-turnip-stability-fixes.patch",
+-    "patches/0008-remove-mgs4-vendor-spoof.patch"
++    "patches/0008-remove-mgs4-vendor-spoof.patch",
++    "patches/upstream-29db4909d4e.patch",
++    "patches/upstream-64245a20b78.patch",
++    "patches/upstream-a1e9f888421.patch"
+   ],
+   "oneui_extra": [
+     "patches/0003-oneui-ubwc.patch"
+diff --git a/config/version-state.json b/config/version-state.json
+index 20d8cc5..8ef1612 100644
+--- a/config/version-state.json
++++ b/config/version-state.json
+@@ -1,6 +1,6 @@
+ {
+   "schema": 1,
+-  "current_version": "5.7.14.1",
++  "current_version": "5.7.15.1",
+   "stable_version": "4.7.7.2",
+   "mesa": {
+     "generation": 5,
+@@ -10,13 +10,13 @@
+     "generation": 7,
+     "version": "1.4.363"
+   },
+-  "amaral_revision": 14,
++  "amaral_revision": 15,
+   "upstream_revision": 1,
+   "last_released_mesa_commit": "378a5dc61b982b7d36e744cf44407e6b55dc98b7",
+   "stable_patchset_sha256": "01078851b363a40806c1d67d64daa838ffeaf9a65324e71a93db8f7e7280860e",
+   "candidate": {
+-    "version": "5.7.14.1",
+-    "patchset_sha256": "d18f6f9d4888800a6a69b24babe07255a48d48c2ee25e35ed01c49d5a4e921b0",
++    "version": "5.7.15.1",
++    "patchset_sha256": "6405a338a7f6255745534d8c446c6c249f2e936d5d0de677b4ef5a687309f924",
+     "mesa_commit": "69f1f21f0258a77046dbaeb8ed7a8ad37a683006"
+   }
+ }
+diff --git a/docs/releases/mesa-27.0.0-devel-v5.7.15.1.md b/docs/releases/mesa-27.0.0-devel-v5.7.15.1.md
+new file mode 100644
+index 0000000..5941bbd
+--- /dev/null
++++ b/docs/releases/mesa-27.0.0-devel-v5.7.15.1.md
+@@ -0,0 +1,55 @@
++# Turnip Amaral 27.0.0-devel v5.7.15.1
++
++## Classificação
++
++**Pré-release para A/B.**
++
++## Base rastreável
++
++- Mesa: `27.0.0-devel`
++- Mesa commit: `69f1f21f0258a77046dbaeb8ed7a8ad37a683006`
++- Mesa HEAD: tu: upload draw_id_offset through driver_params UBO
++- Commit anterior: `378a5dc61b982b7d36e744cf44407e6b55dc98b7`
++- Vulkan headers: `1.4.363`
++- Backend: Turnip/Freedreno + KGSL
++- ABI: Android AArch64 (`armv8-a`)
++- Toolchain: Android NDK r29
++
++## Mudanças em relação à 5.7.14.1
++
++Pré-release de teste pedido pelo Rick em 26/10/2026. Mesmo lock Mesa e mesmo
++patchset da 5.7.14.1, mais três commits upstream já mesclados, aplicados sem
++edição (`git format-patch`), revisados em `collab/channel` (T-candidate-5.7.14.1,
++propostas fb8a, review e378):
++
++- `29db4909d4e` ir3/ra: corrige o limite do RA no modo `IR3_DOUBLE_ONLY` em
++  A6xx gen1_low/gen3/gen4. Sem efeito em A7xx (reg 96) e A8xx (sem double
++  threadsize).
++- `64245a20b78` tu: reintroduz o caminho 3D f16 nas cópias MSAA, que preserva
++  NaN. Todas as famílias.
++- `a1e9f888421` tu/kgsl: `MAP_FIXED_NOREPLACE` só quando há endereço de
++  capture/replay de BDA. Alocação comum não muda.
++
++Não inclui nenhum lab A840 (SnapAlloc, noubwc, sysmem, gen8state). **Não
++corrige a imagem pixelada da A840/MUA3 e não comprova ganho de FPS no A740.**
++É a base de correções upstream para a próxima candidata.
++
++## Validação
++
++- Build Standard e OneUI, `validate_artifact` e catálogo de GPUs: ok.
++- Reprodutibilidade em dupla build: ver o registro de hashes da integração.
++- CTS (copy_image MS f16), VVL e hardware A6xx/A7xx/A8xx: **not-run**.
++
++## Variantes
++
++- Standard: Android/KGSL universal.
++- OneUI: mesmo código e recursos, com o ajuste UBWC isolado para FD740/KGSL.
++
++## Política desta publicação
++
++Toda mudança passa por candidata. Promoção exige evidência vinculada ao SHA
++Mesa, fingerprint e hashes Standard/OneUI. Build reproduzível não prova
++compatibilidade, conformidade ou ganho de desempenho. Defaults de compiler,
++suballocadores e perfis por título permanecem upstream; patches de pesquisa
++não são aplicados aos pacotes distribuídos.
++
+diff --git a/patches/upstream-29db4909d4e.patch b/patches/upstream-29db4909d4e.patch
+new file mode 100644
+index 0000000..7f1abee
+--- /dev/null
++++ b/patches/upstream-29db4909d4e.patch
+@@ -0,0 +1,75 @@
++From 29db4909d4e808627c8d43767a36476034321a14 Mon Sep 17 00:00:00 2001
++From: Danylo Piliaiev <dpiliaiev@igalia.com>
++Date: Thu, 22 Oct 2026 16:20:11 +0200
++Subject: [PATCH] ir3/ra: fix DOUBLE_ONLY register limit unit
++
++RA counts register pressure in half-register units. One full vec4
++is 8 units (`RA_HALF_VEC4_SIZE * 2`). `ir3_ra_get_reg_file_limits`
++for the DOUBLE_ONLY limit erroneously used 16 units per vec4.
++
++All GPUs with reg_size_vec4 < 96 are affected: a6xx gen1_low,
++gen3 and gen4. A630 and A7xx are not affected.
++
++Also, name related magic numbers along the way.
++
++Closes: https://gitlab.freedesktop.org/mesa/mesa/-/work_items/16214
++Assisted-by: LLM
++Signed-off-by: Danylo Piliaiev <dpiliaiev@igalia.com>
++Part-of: <https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/45517>
++---
++ src/freedreno/ir3/ir3_ra.c | 7 ++++---
++ src/freedreno/ir3/ir3_ra.h | 6 ++++--
++ 2 files changed, 8 insertions(+), 5 deletions(-)
++
++diff --git a/src/freedreno/ir3/ir3_ra.c b/src/freedreno/ir3/ir3_ra.c
++index 34e4bc4cbee..02706b073a2 100644
++--- a/src/freedreno/ir3/ir3_ra.c
+++++ b/src/freedreno/ir3/ir3_ra.c
++@@ -2751,7 +2751,7 @@ calc_cs_barrier_reg_budget(struct ir3_shader_variant *v,
++       (wave_pairs_per_wg * (double_threadsize ? 2 : 1));
++    assert(vec4_regs_per_thread > 0);
++ 
++-   return vec4_regs_per_thread * 4 * 2;
+++   return vec4_regs_per_thread * RA_FULL_VEC4_SIZE;
++ }
++ 
++ struct ir3_pressure
++@@ -2776,7 +2776,8 @@ ir3_ra_get_reg_file_limits(struct ir3_shader_variant *v)
++     */
++    if (v->shader_options.real_wavesize == IR3_DOUBLE_ONLY) {
++       limit_pressure.full =
++-         MIN2(limit_pressure.full, v->compiler->reg_size_vec4 / 2 * 16);
+++         MIN2(limit_pressure.full,
+++              v->compiler->reg_size_vec4 / 2 * RA_FULL_VEC4_SIZE);
++    }
++ 
++    assert(limit_pressure.full <= RA_FULL_SIZE);
++@@ -2848,7 +2849,7 @@ ir3_ra(struct ir3_shader_variant *v)
++    }
++ 
++    /* Both banks come out of one file, in half-units. */
++-   unsigned phys_file_size = v->compiler->reg_size_vec4 * 4 * 2;
+++   unsigned phys_file_size = v->compiler->reg_size_vec4 * RA_FULL_VEC4_SIZE;
++ 
++    if (!v->mergedregs && mesa_shader_stage_is_compute(v->type) &&
++        v->shader->nir->info.uses_control_barrier)
++diff --git a/src/freedreno/ir3/ir3_ra.h b/src/freedreno/ir3/ir3_ra.h
++index 558b81c82c2..d55af1e799b 100644
++--- a/src/freedreno/ir3/ir3_ra.h
+++++ b/src/freedreno/ir3/ir3_ra.h
++@@ -122,8 +122,10 @@ ra_reg_is_predicate(const struct ir3_register *reg)
++ #define ra_foreach_dst(__dstreg, __instr)                                      \
++    ra_foreach_dst_n(__dstreg, __i, __instr)
++ 
++-#define RA_HALF_SIZE     (4 * 48)
++-#define RA_FULL_SIZE     (4 * 48 * 2)
+++#define RA_HALF_VEC4_SIZE 4
+++#define RA_FULL_VEC4_SIZE (RA_HALF_VEC4_SIZE * 2)
+++#define RA_HALF_SIZE     (RA_HALF_VEC4_SIZE * 48)
+++#define RA_FULL_SIZE     (RA_FULL_VEC4_SIZE * 48)
++ #define RA_SHARED_SIZE   (2 * 4 * 8)
++ #define RA_SHARED_HALF_SIZE (4 * 8)
++ #define RA_MAX_FILE_SIZE RA_FULL_SIZE
++-- 
++2.43.0
++
+diff --git a/patches/upstream-64245a20b78.patch b/patches/upstream-64245a20b78.patch
+new file mode 100644
+index 0000000..f398e3d
+--- /dev/null
++++ b/patches/upstream-64245a20b78.patch
+@@ -0,0 +1,145 @@
++From 64245a20b78824634008b240c3f97c29a353ebe3 Mon Sep 17 00:00:00 2001
++From: Karmjit Mahil <karmjit.mahil@igalia.com>
++Date: Mon, 19 Oct 2026 11:41:20 +0100
++Subject: [PATCH] tu: Add back float16 3D path for multisampled copies
++
++A2D can't handle multisampled copies so we need the 3D path here,
++and the float16 specific path to preserve NaNs.
++
++This reverts commit 6237388454045996f58719ad33cd943e55e26a64
++
++Signed-off-by: Karmjit Mahil <karmjit.mahil@igalia.com>
++Part-of: <https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/45366>
++---
++ src/freedreno/vulkan/tu_clear_blit.cc | 38 ++++++++++++++++++++-------
++ src/freedreno/vulkan/tu_device.h      |  1 +
++ 2 files changed, 30 insertions(+), 9 deletions(-)
++
++diff --git a/src/freedreno/vulkan/tu_clear_blit.cc b/src/freedreno/vulkan/tu_clear_blit.cc
++index 714b103b843..4b611ba0eeb 100644
++--- a/src/freedreno/vulkan/tu_clear_blit.cc
+++++ b/src/freedreno/vulkan/tu_clear_blit.cc
++@@ -997,7 +997,7 @@ build_blit_fs_shader(bool zscale, bool swap_coords)
++  * variant for them.
++  */
++ static nir_shader *
++-build_ms_copy_fs_shader(void)
+++build_ms_copy_fs_shader(bool half_float)
++ {
++    nir_builder _b =
++       nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT, NULL,
++@@ -1006,7 +1006,8 @@ build_ms_copy_fs_shader(void)
++ 
++    nir_variable *out_color =
++       nir_create_variable_with_location(b->shader, nir_var_shader_out,
++-                                        FRAG_RESULT_DATA0, glsl_vec4_type());
+++                                        FRAG_RESULT_DATA0,
+++                                        half_float ? glsl_f16vec_type(4) : glsl_vec4_type());
++    nir_variable *in_coords =
++       nir_create_variable_with_location(b->shader, nir_var_shader_in,
++                                         VARYING_SLOT_VAR0, glsl_vec_type(2));
++@@ -1024,7 +1025,7 @@ build_ms_copy_fs_shader(void)
++                              /* Note: since we're just copying data, we rely on
++                               * the HW ignoring the dest_type.
++                                */
++-                             .dest_type = nir_type_int32);
+++                             .dest_type = half_float ? nir_type_float16 : nir_type_int32);
++ 
++    nir_store_var(b, out_color, tex, 0xf);
++    return b->shader;
++@@ -1139,7 +1140,8 @@ tu_init_clear_blit_shaders(struct tu_device *dev)
++    compile_shader(dev, build_blit_fs_shader(true, false), 0, &offset, GLOBAL_SH_FS_BLIT_ZSCALE);
++    compile_shader(dev, build_blit_fs_shader(false, true), 0, &offset, GLOBAL_SH_FS_BLIT_SWAP_COORDS);
++    compile_shader(dev, build_blit_fs_shader(true, true), 0, &offset, GLOBAL_SH_FS_BLIT_ZSCALE_SWAP_COORDS);
++-   compile_shader(dev, build_ms_copy_fs_shader(), 0, &offset, GLOBAL_SH_FS_COPY_MS);
+++   compile_shader(dev, build_ms_copy_fs_shader(false), 0, &offset, GLOBAL_SH_FS_COPY_MS);
+++   compile_shader(dev, build_ms_copy_fs_shader(true), 0, &offset, GLOBAL_SH_FS_COPY_MS_HALF);
++    for (unsigned i = 0; i < 3; i++) {
++       compile_shader(dev, build_ms_resolve_fs_shader(2 << i), 0, &offset,
++                      static_cast<enum global_shader>(GLOBAL_SH_FS_RESOLVE_MS2 + i));
++@@ -1164,6 +1166,7 @@ enum r3d_type {
++    R3D_CLEAR,
++    R3D_BLIT,
++    R3D_MULTI_BLIT,
+++   R3D_COPY_HALF,
++ };
++ 
++ template <chip CHIP>
++@@ -1183,6 +1186,9 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
++ 
++    if (z_scale) {
++       fs_id = swap_coords ? GLOBAL_SH_FS_BLIT_ZSCALE_SWAP_COORDS : GLOBAL_SH_FS_BLIT_ZSCALE;
+++   } else if (type == R3D_COPY_HALF) {
+++      /* Avoid canonicalizing NaNs due to implicit conversions in the shader. */
+++      fs_id = GLOBAL_SH_FS_COPY_MS_HALF;
++    } else if (swap_coords) {
++       fs_id = GLOBAL_SH_FS_BLIT_SWAP_COORDS;
++    } else if (src_samples != VK_SAMPLE_COUNT_1_BIT) {
++@@ -1302,7 +1308,8 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
++          unsigned regid = 0;
++          if (rts_mask & (1u << i))
++             regid = ir3_find_output_regid(fs, FRAG_RESULT_DATA0 + rt++);
++-         tu_cs_emit(cs, A6XX_SP_PS_OUTPUT_REG_REGID(regid));
+++         tu_cs_emit(cs, A6XX_SP_PS_OUTPUT_REG_REGID(regid) |
+++                        COND(regid & HALF_REG_ID, A6XX_SP_PS_OUTPUT_REG_HALF_PRECISION));
++       }
++    }
++ 
++@@ -1927,8 +1934,18 @@ r3d_setup(struct tu_cmd_buffer *cmd,
++       }
++    }
++ 
++-   const enum r3d_type type = (clear) ? R3D_CLEAR :
++-      ((blit_param & R3D_USE_MULTI_BLIT) ? R3D_MULTI_BLIT : R3D_BLIT);
+++   enum r3d_type type;
+++   if (clear) {
+++      type = R3D_CLEAR;
+++   } else if ((blit_param & R3D_COPY) && util_format_is_float16(src_format) &&
+++              dst_samples != VK_SAMPLE_COUNT_1_BIT) {
+++      /* Avoid canonicalizing NaNs in copies by using the special half-float
+++       * path that uses half regs.
+++       */
+++      type = R3D_COPY_HALF;
+++   } else {
+++      type = (blit_param & R3D_USE_MULTI_BLIT) ? R3D_MULTI_BLIT : R3D_BLIT;
+++   }
++    r3d_common<CHIP>(cmd, cs, type, 1, blit_param & R3D_Z_SCALE, src_samples,
++                     dst_samples, blit_param & R3D_SWAP_COORDS);
++ 
++@@ -3388,8 +3405,9 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
++ {
++    const struct blit_ops *ops = &r2d_ops<CHIP>;
++    struct tu_cs *cs = &cmd->cs;
+++   const bool is_msaa = dst_image->layout[0].nr_samples > 1;
++ 
++-   if (dst_image->layout[0].nr_samples > 1)
+++   if (is_msaa)
++       ops = &r3d_ops<CHIP>;
++ 
++    VkOffset3D src_offset = info->srcOffset;
++@@ -3424,7 +3442,9 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
++    /* note: could use "R8_UNORM" when no UBWC */
++    unsigned blit_param = 0;
++    if (dst_format == PIPE_FORMAT_Y8_UNORM ||
++-       src_format == PIPE_FORMAT_Y8_UNORM) {
+++       src_format == PIPE_FORMAT_Y8_UNORM ||
+++       (is_msaa && (util_format_is_float16(src_format) ||
+++                    util_format_is_float16(dst_format)))) {
++       ops = &r3d_ops<CHIP>;
++       blit_param = R3D_COPY;
++    }
++diff --git a/src/freedreno/vulkan/tu_device.h b/src/freedreno/vulkan/tu_device.h
++index 5ef943a684d..cf48f0d1831 100644
++--- a/src/freedreno/vulkan/tu_device.h
+++++ b/src/freedreno/vulkan/tu_device.h
++@@ -52,6 +52,7 @@ enum global_shader {
++    GLOBAL_SH_FS_BLIT_SWAP_COORDS,
++    GLOBAL_SH_FS_BLIT_ZSCALE_SWAP_COORDS,
++    GLOBAL_SH_FS_COPY_MS,
+++   GLOBAL_SH_FS_COPY_MS_HALF,
++    GLOBAL_SH_FS_RESOLVE_MS2,
++    GLOBAL_SH_FS_RESOLVE_MS4,
++    GLOBAL_SH_FS_RESOLVE_MS8,
++-- 
++2.43.0
++
+diff --git a/patches/upstream-a1e9f888421.patch b/patches/upstream-a1e9f888421.patch
+new file mode 100644
+index 0000000..64ae67c
+--- /dev/null
++++ b/patches/upstream-a1e9f888421.patch
+@@ -0,0 +1,59 @@
++From a1e9f888421fcd0b82196d3c29231afb2b56566c Mon Sep 17 00:00:00 2001
++From: Danylo Piliaiev <dpiliaiev@igalia.com>
++Date: Wed, 21 Oct 2026 19:40:49 +0200
++Subject: [PATCH] tu/kgsl: Fix BDA capture/replay failures due to deferred VA
++ frees
++
++On KGSL BO may be destroyed asynchronously. When replay then maps a
++new BO at the captured address, the old range is still occupied and
++KGSL silently places the BO right below it instead, then we fail
++with VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS.
++
++With MAP_FIXED_NOREPLACE, KGSL on overlap flushes the pending frees
++and retries. Kernels before 4.17 ignore the flag and keep treating
++the address as a hint.
++
++Fixes:
++ dEQP-VK.binding_model.buffer_device_address.capture_replay_stress.seed_{3,4,9}
++
++Assisted-by: LLM
++Signed-off-by: Danylo Piliaiev <dpiliaiev@igalia.com>
++Part-of: <https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/45496>
++---
++ src/freedreno/vulkan/tu_knl_kgsl.cc | 15 +++++++++++++--
++ 1 file changed, 13 insertions(+), 2 deletions(-)
++
++diff --git a/src/freedreno/vulkan/tu_knl_kgsl.cc b/src/freedreno/vulkan/tu_knl_kgsl.cc
++index 5580ed82e10..3856e92ac8b 100644
++--- a/src/freedreno/vulkan/tu_knl_kgsl.cc
+++++ b/src/freedreno/vulkan/tu_knl_kgsl.cc
++@@ -191,13 +191,24 @@ static VkResult
++ kgsl_bo_user_map(struct tu_device *dev, struct tu_bo *bo, uint64_t client_iova)
++ {
++    uint64_t offset = bo->gem_handle << 12;
+++   /* KGSL may free the GPU VA of a destroyed BO asynchronously, and without MAP_FIXED_NOREPLACE,
+++    * it then silently places the BO elsewhere. With MAP_FIXED_NOREPLACE, KGSL flushes pending frees
+++    * and retries instead. Kernels older than 4.17 ignore the flag and treat client_iova as a hint.
+++    */
+++   int flags = MAP_SHARED | (client_iova ? MAP_FIXED_NOREPLACE : 0);
++    void *map = mmap(reinterpret_cast<void *>(client_iova), bo->size, PROT_READ | PROT_WRITE,
++-                    MAP_SHARED, dev->physical_device->local_fd, offset);
+++                    flags, dev->physical_device->local_fd, offset);
++    if (map == MAP_FAILED) {
+++      int err = errno;
++       kgsl_bo_finish(dev, bo);
++ 
+++      if (client_iova && err == EEXIST) {
+++         return vk_errorf(dev, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS,
+++                          "mmap could not map the given address");
+++      }
+++
++       return vk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
++-                       "mmap failed (%s)", strerror(errno));
+++                       "mmap failed (%s)", strerror(err));
++    }
++ 
++    if (client_iova && reinterpret_cast<uint64_t>(map) != client_iova) {
++-- 
++2.43.0
++
+-- 
+2.43.0
+
