@@ -44,9 +44,9 @@ compilação de shader. Memória livre mínima do sistema: 1.368 MiB.
 - O split de draws indiretos A8xx não é exercitado: o jogo não gera draws
   indiretos grandes.
 - **Imagem:** o usuário relata imagem totalmente pixelada. As capturas não
-  registram pixels. A configuração global (`NearestNeighbor` ampliando para
-  2448×1848) produz pixelização sem envolver o driver; o perfil do jogo usa
-  SgsrEdge. Causa não isolada.
+  registram pixels. A captura curta usava `NearestNeighbor` global, mas a
+  captura principal de 77 s já usava **SgsrEdge/FXAA** no perfil do jogo; assim,
+  Nearest sozinho não explica o relato persistente. Causa não isolada.
 
 ## Observação visual adicional — 26/10/2026 (em revisão)
 
@@ -54,13 +54,19 @@ O Rick enviou duas capturas do MUA3 no mesmo aparelho: às 17:56:29, o conteúdo
 do jogo aparece preto, com poucos pontos/linhas de ruído na faixa inferior
 ([imagem](images/a840-20261026/175629-black.jpg), SHA-256
 `68f5cf22bcab7387d886a8c7b8f22a5583243885cd0d6dcc204c0c34f4f1df29`);
-às 17:56:42, a maior parte da área do jogo mostra ruído denso em faixas
+às 17:56:42, a maior parte da área do jogo mostra ruído denso em colunas
 ([imagem](images/a840-20261026/175642-noise.jpg), SHA-256
 `9e7696a30aa2fb5e224f16578e8f914ed1b766daf83249cb2c1cb24f180bd870`).
-Os controles virtuais do Eden permanecem legíveis nas duas. Essas imagens
-demonstram corrupção visual observada, não apenas pixels grandes de um filtro
-NearestNeighbor. Não há prova de que as duas imagens sejam o mesmo quadro ou de
-que o jogo já tivesse terminado de carregar na primeira.
+Os controles virtuais do Eden permanecem legíveis nas duas; não há cena do jogo
+reconhecível no ruído. Uma medição independente do perfil médio de luminância
+na região central sem controles (colunas 350–849, linhas 200–499, screenshot
+1280×966) encontra período principal de ~16,7 px na captura, equivalente a
+~31,9 px no swapchain 2448×1848, com harmônico de ~8,3 px na captura. Isso
+é compatível com uma grade no espaço de apresentação, mas não distingue
+memória tiled/comprimida de shader em blocos. Essas imagens demonstram
+corrupção visual observada, não apenas pixels grandes de NearestNeighbor.
+Não há prova de que as duas imagens sejam o mesmo quadro ou de que o jogo já
+tivesse terminado de carregar na primeira.
 
 O ZIP de diagnóstico enviado junto (`20261026-205617-7853`, SHA-256
 `097ddcc251def60a410814c0afee67d7d68fa06adf28fb2183849b319a697e52`)
@@ -76,19 +82,25 @@ pois contém logs brutos. Campos selecionados do `report.json`/`summary.txt`:
 | Captura | 645,39 s, 1 cena registrada sem marcador manual, ~29,9 FPS, GPU p50/p90/p99 12,8/15,5/21,3 ms, nenhuma falha de dispositivo/pipeline registrada, fim por ação do usuário |
 
 O ZIP não contém imagens dos quadros, nem capturas pareadas com Bilinear,
-5.7.14.1 Standard ou Qualcomm. A tela preta e as faixas de ruído podem vir do
+5.7.14.1 Standard ou Qualcomm. A tela preta e as colunas de ruído podem vir do
 jogo/decodificação, de um alvo intermediário do Eden, do filtro/presentação ou
 do Turnip; os dados ainda não localizam a etapa defeituosa. Não atribuir raiz a
-SnapAlloc, UBWC, GMEM ou aos três backports da 5.7.15.1 sem controle. A etapa 0
-aprovada em T-a840-pixelation continua necessária: mesma cena com Nearest e
-Bilinear na 5.7.14.1 Standard, Qualcomm com Nearest, e um segundo jogo com os
-mesmos parâmetros. A OneUI 5.7.15.1 acima é uma observação adicional, não
-substitui esses controles.
+SnapAlloc, UBWC, GMEM ou aos três backports da 5.7.15.1 sem controle. O
+controle mais barato para esta observação é repetir uma cena estável com a
+5.7.15.1 OneUI e trocar só SgsrEdge por Bilinear, mantendo FXAA; depois
+comparar com Qualcomm sob os mesmos ajustes. Se o ruído persistir, desligar
+FXAA isoladamente antes de atribuir o resultado a layout. Um segundo jogo no
+mesmo driver testa o alcance. A 5.7.14.1 Standard da etapa 0 anterior entra
+depois, para avaliar regressão entre candidatas. Esses controles ainda não
+foram executados.
 
 ## Próximos testes
 
-1. Screenshot da mesma cena com: perfil atual; scaling Bilinear; driver Qualcomm
-   do aparelho. Separa escala do Eden, Turnip e o próprio jogo.
+1. Screenshot da mesma cena estável com a 5.7.15.1 OneUI atual: SgsrEdge/FXAA,
+   depois Bilinear/FXAA; se o ruído persistir, Bilinear sem FXAA. Reiniciar Eden
+   entre os ajustes e anotar a cena. Comparar também o Qualcomm na configuração
+   original e outro jogo com os mesmos ajustes. Isso prioriza filtros baratos
+   sem declarar mecanismo apenas pela forma do ruído.
 2. Labs de diagnóstico, uma mudança por build e destinados só ao teste físico
    na A840 (ver o escopo de código de cada um abaixo). Um resultado positivo
    indica o caminho a bisectar, não a causa raiz. Nenhum lab é release.
