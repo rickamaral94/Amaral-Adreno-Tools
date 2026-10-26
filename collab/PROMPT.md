@@ -40,9 +40,10 @@ contestam, com o mesmo peso.
   diferente, falta de A/B, mecanismo não demonstrado, generalização de L0 para
   L3), aponte, mesmo que já esteja em andamento.
 - **Mude de ideia diante de evidência melhor** e diga explicitamente que mudou.
-- **Empate técnico:** cada lado expõe a posição uma vez, com evidência; se
-  continuar dividido, `decision-request` para Rick com as duas opções lado a
-  lado. Só `rick` desempata.
+- **Empate técnico:** reavaliem quando surgir evidência nova (§6.1); não
+  repitam a mesma tese sem dado ou teste novo. Se restarem escolhas
+  incompatíveis sem experimento viável, `decision-request` para Rick com as
+  duas opções lado a lado. Só `rick` desempata.
 
 ## 0.1 Rumo da colaboração
 
@@ -132,7 +133,8 @@ Sempre pela ferramenta, que gera id, horário UTC e valida o cabeçalho:
 ```sh
 python3 collab/collab.py new --from <seu-id> --to <id|id,id|all> \
   --type <tipo> --thread T-<slug> [--title "..."] [--reply-to <id>] \
-  [--closes <id,id>] [--priority P0..P3] [--verdict approve|changes|reject] [--lease-hours N] \
+  [--closes <id,id>] [--awaits <agente>] [--priority P0..P3] \
+  [--verdict approve|changes|reject] [--lease-hours N] \
   [--needs-human yes] [--refs "PR #27, commit abc123"] < corpo.md
 python3 collab/collab.py validate
 python3 collab/collab.py seen --agent <seu-id>
@@ -193,6 +195,9 @@ no próprio sync ou na próxima mensagem com conteúdo, em vez de um `answer`
 curto por item. Pedido para o Rick (teste em hardware, decisão) leva
 `--needs-human yes` e fica em "Aguardando o Rick" até o Rick responder ou o
 autor listá-lo em `--closes`.
+Se uma mensagem de outro tipo pedir contestação do agente nomeado em
+`--awaits`, ela também entra nas pendências até `reply_to` ou `closes` desse
+agente. Use `--needs-human yes` para o Rick, não `--awaits rick`.
 
 ### 3.1.1 Entrega direta pelo conector (preferida quando funciona)
 
@@ -374,8 +379,8 @@ dois:
 
 Para uma decisão técnica de impacto (driver, perfil de GPU, extensão Vulkan,
 causa raiz ou laboratório físico), em qualquer prioridade, trabalhem em ciclos
-curtos de hipótese, contestação e teste. A análise,
-o build e os labs podem avançar em paralelo ao debate; o acordo é gate para
+curtos de hipótese, contestação e teste. A análise, o build e os labs podem
+avançar em paralelo ao debate; o acordo é gate para
 incorporar na candidata ou distribuir. Capturas simples para classificar um
 relato podem ser pedidas ao Rick sem esperar um ciclo completo.
 
@@ -391,6 +396,8 @@ relato podem ser pedidas ao Rick sem esperar um ciclo completo.
    teste que separe as hipóteses, em vez de pedir testes genéricos. Se a tese
    resistir, diga quais tentativas de refutação fez e qual limite permanece;
    não invente objeção para parecer crítico. Um `approve` fundamentado vale.
+   Se a sua mensagem `answer` ou `finding` pedir contestação, use
+   `--awaits <agente>` para ela aparecer como pendência do destinatário.
 3. **Autor de volta:** responda à objeção com evidência, revisão do diff ou
    mudança explícita de posição. Separe demonstrado, compatível com os dados e
    não testado. O revisor verifica o delta. `approve` vale para o escopo e as
@@ -400,9 +407,11 @@ relato podem ser pedidas ao Rick sem esperar um ciclo completo.
    Depois comparem previsão e resultado, anotando confundidores e mudança de
    confiança. É calibração das hipóteses, não placar de pessoas. Pedidos ao
    Rick trazem primeiro o controle barato, depois os labs necessários.
-5. **Decisão:** registrem opção escolhida, alternativas descartadas, evidência,
-   risco residual e o fato que faria mudar de ideia. Acordo entre dois modelos
-   não é prova independente: sustentem a conclusão em código, contrato, teste
+5. **Decisão:** o dono da thread escreve uma `proposal` titulada `[decisão]`
+   com opção escolhida, alternativas descartadas, evidência, risco residual e
+   o fato que faria mudar de ideia; o outro registra `review approve` ou
+   `changes` nela. Acordo entre dois modelos não é prova independente:
+   sustentem a conclusão em código, contrato, teste
    ou hardware rastreável e rotulem `provisório` se faltar esse apoio. Sem
    experimento disponível, mantenham lab/hipótese; não promovam correção pela
    confiança dos agentes. Se a discordância repetir os mesmos argumentos sem
