@@ -135,6 +135,28 @@ def load_all():
     return sorted(items, key=lambda m: (m.get("created", ""), m.get("id", "")))
 
 
+def recipients(m):
+    """Ids canônicos a quem a mensagem se dirige (all = todos menos o autor)."""
+    if m["to"] == "all":
+        return set(names().values()) - {canonical(m["from"])}
+    return {canonical(t) for t in m["to"].split(",")}
+
+
+def needs_human(m):
+    return m.get("needs_human") in {"yes", "true"}
+
+
+def may_close(closer, target):
+    """Só fecha um pedido quem o recebeu; um pedido ao Rick, também o autor.
+
+    Um sync conta como pedido: o segundo sync da rodada fecha o primeiro.
+    """
+    if target["type"] not in REQUESTS | {"sync"} and not needs_human(target):
+        return False
+    who = canonical(closer["from"])
+    return who in recipients(target) or (needs_human(target) and who == canonical(target["from"]))
+
+
 def closes(m):
     """Ids que a mensagem fecha além do reply_to (campo closes: a,b,c)."""
     return [c.strip() for c in m.get("closes", "").split(",") if c.strip()]
@@ -146,6 +168,7 @@ def validate(items=None):
     errors, ids, threads = [], set(), {}
     # A validação não depende da ordem: relógios de agentes diferentes divergem.
     all_ids = {m.get("id") for m in items}
+    by_id = {m.get("id"): m for m in items}
     opened = {m.get("thread") for m in items if m.get("type") == "task"}
     for m in items:
         name = m["path"].name
@@ -184,8 +207,10 @@ def validate(items=None):
         if m.get("reply_to") and m["reply_to"] not in all_ids:
             errors.append(f"{name}: reply_to {m['reply_to']} não existe no canal")
         for closed in closes(m):
-            if closed not in all_ids:
+            if closed not in by_id:
                 errors.append(f"{name}: closes {closed} não existe no canal")
+            elif not may_close(m, by_id[closed]):
+                errors.append(f"{name}: closes {closed} não é um pedido que {m['from']} possa fechar")
         if m["type"] == "review" and m.get("verdict") not in VERDICTS:
             errors.append(f"{name}: review exige verdict approve|changes|reject")
         if m["type"] == "claim":
@@ -354,11 +379,6 @@ def pending(items, rows, me):
     relógios que divergem e o assunto pode ser outro, então nunca esconde nada.
     """
     closed = {r["thread"] for r in rows if r["status"] == "concluída"}
-    everyone = set(names().values())
-    def recipients(m):
-        if m["to"] == "all":
-            return everyone - {canonical(m["from"])}
-        return {canonical(t) for t in m["to"].split(",")}
     def status(i, m):
         to = recipients(m)
         if any((x.get("reply_to") == m["id"] or m["id"] in closes(x)) and canonical(x["from"]) in to
@@ -384,14 +404,15 @@ def rick_queue(items):
 
     Fecha quando o Rick responde (reply_to ou closes) ou quando o próprio autor
     lista o pedido em closes (resultado chegou por outro meio ou foi retirado).
+    Um decision sem reply_to/closes não fecha nada.
     """
     out = []
     for m in items:
-        if canonical(m["from"]) == "rick" or m.get("needs_human") not in {"yes", "true"}:
+        if canonical(m["from"]) == "rick" or not needs_human(m):
             continue
+        # Só fechamento explícito: um decision da mesma thread pode ser de
+        # outro assunto, e a ordem por horário sofre com relógios divergentes.
         done = any((x.get("reply_to") == m["id"] and canonical(x["from"]) == "rick")
-                   or (m["type"] == "decision-request" and x["type"] == "decision"
-                       and x["thread"] == m["thread"] and x["created"] >= m["created"])
                    or (m["id"] in closes(x) and canonical(x["from"]) in {"rick", canonical(m["from"])})
                    for x in items)
         if not done:
@@ -606,6 +627,15 @@ def cmd_selftest(_):
             "thread": "T-test", "closes": "20260101T000000000Z-nobody-0000", "created": "2026-01-01T00:14:00Z"})
         assert any("closes 20260101T000000000Z-nobody-0000" in e for e in validate())
         (MESSAGES / "20260101T001400000Z-claude-0017.md").unlink()
+        # closes inválido: alvo que não é pedido, ou fechador que não é destinatário.
+        put("20260101T001410000Z-claude-0021", {"from": "claude", "to": "chatgpt", "type": "status",
+            "thread": "T-test", "closes": "20260101T000400000Z-claude-0006", "created": "2026-01-01T00:14:10Z"})
+        assert any("não é um pedido" in e for e in validate()), validate()
+        (MESSAGES / "20260101T001410000Z-claude-0021.md").unlink()
+        put("20260101T001420000Z-claude-0022", {"from": "claude", "to": "chatgpt", "type": "status",
+            "thread": "T-test", "closes": "20260101T000700000Z-codex-0009", "created": "2026-01-01T00:14:20Z"})
+        assert any("não é um pedido" in e for e in validate()), validate()
+        (MESSAGES / "20260101T001420000Z-claude-0022.md").unlink()
         # Fila do Rick: qualquer needs_human conta, não só decision-request.
         put("20260101T001500000Z-claude-0018", {"from": "claude", "to": "rick", "type": "status",
             "thread": "T-test", "needs_human": "true", "created": "2026-01-01T00:15:00Z"})
@@ -616,6 +646,15 @@ def cmd_selftest(_):
         assert len(rick_queue(load_all())) == 1
         put("20260101T001700000Z-claude-0020", {"from": "claude", "to": "all", "type": "status",
             "thread": "T-test", "closes": "20260101T001500000Z-claude-0018", "created": "2026-01-01T00:17:00Z"})
+        assert rick_queue(load_all()) == []
+        # decision na mesma thread sem reply_to/closes não fecha decision-request.
+        put("20260101T001800000Z-claude-0023", {"from": "claude", "to": "rick", "type": "decision-request",
+            "thread": "T-test", "needs_human": "yes", "created": "2026-01-01T00:18:00Z"})
+        put("20260101T001900000Z-rick-0024", {"from": "rick", "to": "all", "type": "decision",
+            "thread": "T-test", "created": "2026-01-01T00:19:00Z"})
+        assert [m["id"] for m in rick_queue(load_all())] == ["20260101T001800000Z-claude-0023"]
+        put("20260101T002000000Z-rick-0025", {"from": "rick", "to": "claude", "type": "decision",
+            "thread": "T-test", "reply_to": "20260101T001800000Z-claude-0023", "created": "2026-01-01T00:20:00Z"})
         assert rick_queue(load_all()) == []
     MESSAGES = original
     print("selftest ok")
