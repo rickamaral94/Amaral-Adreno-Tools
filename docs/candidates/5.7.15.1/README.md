@@ -7,7 +7,7 @@ diff e os hashes para a revisão do artefato. Não é merge no PR #27 nem releas
 ## Integração
 
 - Base: `candidate/5.7.14.1-upstream-review` @ `c1977d6`.
-- Commit local de integração: `afa1aa0`, exportado em
+- Commit local de integração: `112a1e9`, exportado em
   [`integration.patch`](integration.patch) (aplique com `git am` sobre `c1977d6`).
 - Mudanças: `patches/upstream-29db4909d4e.patch`, `patches/upstream-64245a20b78.patch`
   e `patches/upstream-a1e9f888421.patch` (`git format-patch` dos commits
@@ -25,15 +25,22 @@ diff e os hashes para a revisão do artefato. Não é merge no PR #27 nem releas
 
 ## Gates
 
+O commit atual difere de `afa1aa0` só por uma linha vazia removida no fim da nota
+de versão (review e7b4); patchset, lock e receita de build são os mesmos, e o
+fingerprint não muda.
+
+
 | Gate | Status |
 |---|---|
 | Patches aplicam sem fuzz sobre 69f1f21 + patchset | pass |
 | Build Standard e OneUI (NDK r29) | pass |
 | `validate_artifact.sh` nas duas variantes | pass |
 | Catálogo de GPUs Standard igual ao da 5.7.14.1 | pass |
-| `validate_project.py`, unittest, `git diff --check` | pass |
-| Reprodutibilidade em dupla build, Standard | em execução |
-| Reprodutibilidade em dupla build, OneUI | pendente |
+| `validate_project.py`, unittest | pass |
+| `git diff --check c1977d6..HEAD -- config docs` | pass (arquivos de controle e docs limpos) |
+| `git diff --check` nos três patches upstream | não se aplica: o `format-patch` preserva espaços de contexto do upstream, sem edição |
+| Reprodutibilidade em dupla build, Standard | pass: 2 builds independentes, ZIP e ELF idênticos aos da tabela (árvore `f681436` com os mesmos insumos de build) |
+| Reprodutibilidade em dupla build, OneUI | pass: 2 builds independentes, ZIP e ELF idênticos aos da tabela (`source_commit` `afa1aa0`) |
 | CTS `copy_image` MS f16, VVL | not-run |
 | Hardware A6xx, A7xx (A740), A8xx (A840) | not-run |
 

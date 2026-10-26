@@ -1,4 +1,4 @@
-From afa1aa00b50864aeec5ed5ee3587b3fef442da6d Mon Sep 17 00:00:00 2001
+From 112a1e9a14c4d48b5335dd43ae90fba7a943e4b3 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Mon, 26 Oct 2026 14:25:13 +0000
 Subject: [PATCH] candidate: 5.7.15.1 test build with three merged upstream
@@ -16,11 +16,11 @@ Claude-Session: https://claude.ai/code/session_01BZiB1ofHang6Zaxurp6i5r
  config/mesa-lock.json                        |   4 +-
  config/patches.json                          |   5 +-
  config/version-state.json                    |   8 +-
- docs/releases/mesa-27.0.0-devel-v5.7.15.1.md |  55 +++++++
+ docs/releases/mesa-27.0.0-devel-v5.7.15.1.md |  54 +++++++
  patches/upstream-29db4909d4e.patch           |  75 ++++++++++
  patches/upstream-64245a20b78.patch           | 145 +++++++++++++++++++
  patches/upstream-a1e9f888421.patch           |  59 ++++++++
- 7 files changed, 344 insertions(+), 7 deletions(-)
+ 7 files changed, 343 insertions(+), 7 deletions(-)
  create mode 100644 docs/releases/mesa-27.0.0-devel-v5.7.15.1.md
  create mode 100644 patches/upstream-29db4909d4e.patch
  create mode 100644 patches/upstream-64245a20b78.patch
@@ -93,10 +93,10 @@ index 20d8cc5..8ef1612 100644
  }
 diff --git a/docs/releases/mesa-27.0.0-devel-v5.7.15.1.md b/docs/releases/mesa-27.0.0-devel-v5.7.15.1.md
 new file mode 100644
-index 0000000..5941bbd
+index 0000000..b12344f
 --- /dev/null
 +++ b/docs/releases/mesa-27.0.0-devel-v5.7.15.1.md
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,54 @@
 +# Turnip Amaral 27.0.0-devel v5.7.15.1
 +
 +## Classificação
@@ -151,7 +151,6 @@ index 0000000..5941bbd
 +compatibilidade, conformidade ou ganho de desempenho. Defaults de compiler,
 +suballocadores e perfis por título permanecem upstream; patches de pesquisa
 +não são aplicados aos pacotes distribuídos.
-+
 diff --git a/patches/upstream-29db4909d4e.patch b/patches/upstream-29db4909d4e.patch
 new file mode 100644
 index 0000000..7f1abee
