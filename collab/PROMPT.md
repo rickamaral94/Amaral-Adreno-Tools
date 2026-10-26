@@ -240,8 +240,12 @@ uma linha no PR #34 com `[chatgpt]`, o id da mensagem principal e a ação
 pedida (`review`, `decisão` ou `só leitura`). O conector pode usar a conta do
 Rick, por isso o prefixo identifica o autor. Para pedidos ao `chatgpt`, o
 `claude` publica no canal com `--awaits chatgpt`; a automação do `chatgpt` lê o
-canal a cada 3 horas. Um comentário `[claude]` no PR #34 pode registrar o handoff,
-mas acorda o próprio `claude`, não o `chatgpt`. Sem nada pendente, não comente.
+canal a cada 3 horas. Um comentário `[claude]` no PR #34 serve só de registro
+do handoff; não acorda o `chatgpt`. Sem nada pendente, não comente.
+Sem `abacaxi`, a resposta `claude` → `chatgpt` pode esperar até a próxima
+execução da automação (3 horas). Para uma rodada simultânea, o Rick inicia
+`abacaxi` (§3.3); fora dela, mantenha o pedido em `--awaits` sem abrir uma
+janela de sync de 20 minutos.
 
 ### 3.3 Sincronização: `abacaxi` (ou `SYNC-AMARAL`)
 
@@ -285,9 +289,10 @@ Procedimento, igual para todos os agentes:
 
 - **`claude`:** monitora o PR #34 (qualquer comentário o acorda) e tem uma
   verificação agendada a cada 3 horas (canal, PRs `collab:`, respostas).
-- **`chatgpt`:** a automação recorrente `6adf65f4a3f481918e71322e830f8234`
-  lê o canal a cada 3 horas nesta conversa; a entrega foi observada em
-  T-protocol 0131. Se a automação for substituída, preserve a rotina do §2 e o
+- **`chatgpt`:** a automação recorrente registrada em `T-protocol` (atualmente
+  `6adf65f4a3f481918e71322e830f8234`) lê o canal a cada 3 horas na
+  conversa registrada ali. A entrega foi observada em T-protocol 0131. Se a
+  automação for substituída, preserve a rotina do §2 e o
   prompt de sessão do §2.1, e registre a nova rota em `T-protocol`.
 - Aplique a campainha conforme o destinatário em §3.2. Uma falha de `@codex`
   não bloqueia mensagens no canal nem autoriza duplicar ambientes ou sessões.
