@@ -94,6 +94,45 @@ mesmo driver testa o alcance. A 5.7.14.1 Standard da etapa 0 anterior entra
 depois, para avaliar regressão entre candidatas. Esses controles ainda não
 foram executados.
 
+### Controle Qualcomm recebido depois (ainda não pareado)
+
+Novo ZIP Eden `20261026-211757-8120` (SHA-256
+`dc3169ef3b10a3a5ebe559b91a8c269f127ffe7c55826b9f3f704edee12b007c`):
+arquivo íntegro, manifesto completo, mesmo Eden/MUA3/update/aparelho. O driver
+**realmente carregado** é o Qualcomm do sistema
+(`VK_DRIVER_ID_QUALCOMM_PROPRIETARY`), ELF SHA-256
+`f7ea5e9121db1e6dc5ca6d09c6f763bff09dfff30e758e8c865f1cc238fec1f9`.
+O swapchain continua RGBA8 2448×1848/FIFO com cinco imagens. O teste Qualcomm
+usou **Bilinear e AA desligado** (`None`), mantendo Docked/Res1X/EDS3; hash das
+configurações efetivas
+`01faf4958aca79948c1c856672ef68aa1e95f14bbbcf17535d3a09177aa47f40`.
+As duas fotos mostram a cena jogável legível:
+[foto 1](images/a840-20261026/qualcomm-gameplay-1.jpg)
+(SHA-256 `606cf73d8035871b16ab0221f0d5efc9f965d5f6b57ac0048caa8b54922643e3`)
+e [foto 2](images/a840-20261026/qualcomm-gameplay-2.jpg)
+(SHA-256 `3ebff4ea11de2350c15a3b0d140439f5141c14845e1dd83f20e5a6297078d422`).
+
+O Rick identificou a [terceira foto](images/a840-20261026/turnip-compiling-noise.jpg)
+(SHA-256 `9d9db4910c045a543d3635da88489d121ed50ab4738abd9d9a6112eccafb5c24`)
+como teste com nosso driver: há colunas de ruído, mas o overlay indica
+“Compilando 78 Shader(s)” e 0 FPS. As fotos não estão dentro dos ZIPs; a
+atribuição desta foto a uma captura específica é relato do Rick.
+
+**Ainda não há A/B de driver:** o Turnip anterior usou SgsrEdge/FXAA, o Qualcomm
+usou Bilinear/AA None, e a foto ruim foi tirada durante compilação/loading,
+enquanto as fotos limpas mostram jogo controlável. O ZIP Qualcomm registra uma
+falha de criação de pipeline compute (`VK_ERROR_UNKNOWN`) ~102 s após o início
+e um `VK_ERROR_SURFACE_LOST_KHR` ~303 s após o início, próximo à recriação do
+swapchain, mas termina por ação do usuário;
+esses eventos isolados não demonstram causa da corrupção Turnip. FPS das duas
+sessões não é comparável devido a cache/compilação diferentes.
+
+Próximo controle prioritário: no Turnip 5.7.15.1 OneUI, reproduzir **Bilinear
++ AA None** na mesma cena jogável do Qualcomm, após terminar o carregamento;
+duas capturas separadas por ≥10 s e ZIP Eden com driver/configuração confirmados.
+Se persistir o ruído, a suspeita de caminho específico do Turnip aumenta. Se
+limpar, reativar FXAA e depois SgsrEdge um por vez; não instalar labs ainda.
+
 ## Próximos testes
 
 1. Screenshot da mesma cena estável com a 5.7.15.1 OneUI atual: SgsrEdge/FXAA,
