@@ -407,7 +407,8 @@ relato podem ser pedidas ao Rick sem esperar um ciclo completo.
    Depois comparem previsão e resultado, anotando confundidores e mudança de
    confiança. É calibração das hipóteses, não placar de pessoas. Pedidos ao
    Rick trazem primeiro o controle barato, depois os labs necessários.
-5. **Decisão:** o dono da thread escreve uma `proposal` titulada `[decisão]`
+5. **Decisão:** quem tem o lease atual da thread (ou, sem lease, quem abriu o
+   `task`) escreve uma `proposal` titulada `[decisão]`
    com opção escolhida, alternativas descartadas, evidência, risco residual e
    o fato que faria mudar de ideia; o outro registra `review approve` ou
    `changes` nela. Acordo entre dois modelos não é prova independente:
