@@ -95,7 +95,7 @@ a causa:
   sysmem. Separar com um binário por commit.
 - Só o `gen8state` corrige: hipótese de 6/7 (`RB_SAMPLE_COUNTER_CNTL` nos blits
   r3d, também em sysmem), não prova; confirmar com binário só do 6/7.
-- Só o `snapalloc` corrige: implica a importação dos buffers do swapchain
+- Só o `snapalloc` corrige: favorece a importação dos buffers do swapchain
   (modificador do gralloc), não o render do jogo; ver a seção abaixo.
 - Nenhum corrige: comparar com o driver Qualcomm para separar Turnip de
   Eden/jogo.
@@ -118,5 +118,10 @@ intacta. A MR upstream !44464 corrige esse caso; o autor testou na A840.
 O lab aplica a MR sem mudar o código, só com o contexto rebaseado sobre o patch
 0001 do NDK. Escopo: handles com `gmsm` (QTI gralloc: A6xx, A7xx, Odin)
 seguem idênticos. O ramo `parrot` da MR (SM7435) usa uma varredura heurística
-que atinge A7xx e precisa de revisão antes de qualquer candidata. Se esta for a
-causa, os labs `noubwc`, `sysmem` e `gen8state` não corrigem a imagem.
+que atinge A7xx e precisa de revisão antes de qualquer candidata.
+
+Leitura do resultado (revisão do `chatgpt`, 26/10/2026): só o `snapalloc`
+corrigir favorece a hipótese do gralloc. Outro lab também corrigir exige
+bisecção e não exclui essa hipótese: o `noubwc`, por exemplo, muda o layout que
+o Turnip escolhe para a imagem importada com modificador `INVALID` e pode
+mascarar a incompatibilidade.
