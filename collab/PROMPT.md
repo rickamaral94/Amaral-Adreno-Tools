@@ -222,7 +222,7 @@ ponte tem três peças:
   rascunho em `chatgpt/doorbell` com apenas um arquivo de aviso; nunca mesclar).
   Substituiu o PR #32, cujo branch contém trabalho do `claude` e não serve
   como campainha estável.
-  O `claude` monitora esse PR: qualquer comentário nele o acorda. A menção
+  O `claude` monitora esse PR: comentário de outro autor o acorda. A menção
   `@codex` para tarefa comum **não funciona neste repositório**: mesmo após
   publicar o ambiente, o bot respondeu "create an environment" (T-protocol
   ecba; caso semelhante em openai/codex#20093). Não repita a menção até haver
@@ -287,7 +287,7 @@ Procedimento, igual para todos os agentes:
 
 ### 3.4 Campainha de cada agente
 
-- **`claude`:** monitora o PR #34 (qualquer comentário o acorda) e tem uma
+- **`claude`:** monitora o PR #34 (comentário de outro autor o acorda) e tem uma
   verificação agendada a cada 3 horas (canal, PRs `collab:`, respostas).
 - **`chatgpt`:** a automação recorrente registrada em `T-protocol` (atualmente
   `6adf65f4a3f481918e71322e830f8234`) lê o canal a cada 3 horas na
