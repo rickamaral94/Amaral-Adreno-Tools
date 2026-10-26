@@ -1,0 +1,30 @@
+# Triagem de issues Turnip externos — 26/10/2026
+
+Esta triagem identifica testes e hipóteses para o patchset da candidata 5.7.14.1
+(Mesa `69f1f21`). Os relatos abaixo são de terceiros. Nenhum foi reproduzido
+com o ZIP/ELF Amaral; CTS, VVL e hardware para esses casos estão **not-run**.
+Uma issue externa não demonstra que a falha existe em nossa build nem que um
+patch comunitário a corrige. A prioridade segue a política de
+`docs/EVIDENCE-POLICY.md` e a separação por chip/caminho.
+
+| Prioridade de investigação | Relato e evidência disponível | Hipóteses concorrentes | Próximo teste decisivo / decisão atual |
+| --- | --- | --- | --- |
+| P0, A830 hang | [DroidDeck #1472](https://github.com/Droid-Deck/DroidDeck/issues/1472): Cyberpunk 2077 trava ao descer do telhado para a rua, com espera de fence de ~10 s por quadro, em quatro combinações Proton/Turnip; logs anexos. O autor relata que `TU_DEBUG=flushall` **ou** `syncdraw` evita o hang; `sysmem` ficou ligado em todas as tentativas. | Dependência de execução/cache omitida antes de indirect draw/dispatch; bug em vkd3d ou diferença de timing/carga que os flags mascaram. | Repetir com binário e ELF identificados e mesma cena; registrar submit/fence, dump de comandos e último producer/consumer. Variar **um controle por vez** (`sysmem` on/off; indirect; flags), com retorno à base. Só testar WFI/WAIT_FOR_ME em lab no ponto demonstrado, jamais globalmente. Não há patch proposto. |
+| P0/P1, A830 device lost | [DroidDeck #1009](https://github.com/Droid-Deck/DroidDeck/issues/1009): UE5/vkd3d cai 10/10 após New Game, `VK_ERROR_DEVICE_LOST`, contador KGSL `gpufault_procs` aumenta; logs anexos. Outros drivers/runtimes não eliminaram, `TU_DEBUG=sysmem` ficou constante. | Falha de acesso/sincronização em Turnip; tradução vkd3d, workload UE5 ou ambiente Linux/Proton. | Antes de atribuir ao driver, obter endereço/tipo de fault KGSL, breadcrumbs do comando e A/B com `sysmem` desligado na mesma pilha. Comparar build Amaral apenas se o caminho Android Vulkan for equivalente. |
+| P1, A750/A830 corrupção | [MrPurple #31](https://github.com/MrPurple666/purple-turnip/issues/31): corredor de BotW 1.6.0 corrompe apenas com câmera em movimento em renderizadores Yuzu; Kenji-NX, BotW 1.0 e driver Qualcomm são controles limpos. Relator resume diferenças no submit 2 em blits/CCU/f16 e oferece RD dump; outro usuário relata versão antiga limpa no A740, porém com crashes. | Interação query/LRZ/Z-mode; cópia/blit f16 ou sequência de frames do emulador. | Obter RD dumps bruto e cena reproduzível com hash de driver. Comparar contagem de query, barrier, blit e transições LRZ em submit correto/corrompido. O Mesa da candidata já contém guardas `occlusion_query_may_be_running` em `tu_query_pool.cc`, `tu_cmd_buffer.cc` e `tu_pipeline.cc`; sua existência não valida a hipótese. Não aplicar workaround sem identificar a instrução/estado divergente. |
+| P1, A840 imagem errada | [Registro Amaral A840](tests/2026-10-sm8850-a840-marvel-ultimate-alliance-3.md) e [issue Amaral #12](https://github.com/rickamaral94/Amaral-Adreno-Tools/issues/12), A825: artefatos descritos em aparelhos diferentes, sem controle comum/ELF exato na issue #12. | Importação de imagem/Gralloc, UBWC, estado Gen8, escala ou app/emulador. | Prosseguir com etapa 0 A840 aprovada em `T-a840-pixelation`: mesma cena MUA3 em Standard Nearest/Bilinear e Qualcomm Nearest, mais outro jogo como controle global, hash completo do ELF. Não inferir causa comum com A825 antes de reprodução e matriz por chip. |
+| P2, A710 cobertura | [MrPurple #8](https://github.com/MrPurple666/purple-turnip/issues/8): Citron/Winlator com pixels azuis/amarelos ou tela preta em A710; há uma segunda pessoa com sintomas similares, mas sem hashes, trace ou controles. | Suporte/perfil A710, app/emulador, importação de imagem. | Solicitar versão e ELF exatos, cena, log, controle Qualcomm e comparação de formato/layout; manter A710 separado do A840 e do A825. |
+| Fora do driver Android atual | [lfdevs #99](https://github.com/lfdevs/mesa-for-android-container/issues/99): A740 em KGSL/Termux:X11, corrupção com `FD_MESA_DEBUG=sysmem` em glmark2; [PR #96](https://github.com/lfdevs/mesa-for-android-container/pull/96) mesclado, junto de correção Termux:X11, elimina o sintoma relatado. Há custo de 48–61% em microbenchmark reportado; forçar `enable_tp_ubwc_flag_hint=1` falhou e causou flashing em outro workload. | Caminho de present fence OpenGL/Termux versus nosso Vulkan Android; correção conjunta impede atribuir efeito ao PR #96 isoladamente. | Não portar #96 nem ativar flag UBWC por este relato. Só reabrir se captura no caminho Vulkan Android mostrar a mesma ausência de espera e medição A/B do custo. |
+| Configuração do frontend, sem patch Turnip | [DroidDeck #1293](https://github.com/Droid-Deck/DroidDeck/issues/1293): HITMAN A830 falha quando ambiente força feature level 12_2/DXR apesar de `maxRayRecursionDepth=0`; `nodxr` + 12_1 permite iniciar. | Exposição incorreta criada pelo frontend, não defeito demonstrado da capability Turnip. | Usar como controle de triagem: verificar flags efetivas da camada de tradução antes de alterar capabilities do driver. |
+
+Também foram vistos [ilhan #34](https://github.com/ilhan-athn7/freedreno_turnip-CI/issues/34),
+que alega correções A740 de câmera/GMEM e pede testadores, e repositórios de
+binários como StevenMXZ e Banners. Não apareceu nessa rodada um issue com
+reprodução e código suficientes para importar uma dessas alterações. A fonte
+primária de qualquer fix continua sendo Mesa; um issue de empacotamento,
+Termux/X11 ou frontend não equivale ao caminho do nosso driver Android.
+
+Próxima decisão: cruzar esta matriz com a revisão independente do Claude em
+`T-a8xx-strategy`, escolher um único caso P0 reproduzível e registrar previsão,
+contraexemplo, hash do artefato e teste mínimo antes de construir lab. A
+candidata #27 e Latest permanecem sem mudança por esta triagem.
