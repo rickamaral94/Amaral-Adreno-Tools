@@ -48,6 +48,43 @@ compilação de shader. Memória livre mínima do sistema: 1.368 MiB.
   2448×1848) produz pixelização sem envolver o driver; o perfil do jogo usa
   SgsrEdge. Causa não isolada.
 
+## Observação visual adicional — 26/10/2026 (em revisão)
+
+O Rick enviou duas capturas do MUA3 no mesmo aparelho: às 17:56:29, o conteúdo
+do jogo aparece preto, com poucos pontos/linhas de ruído na faixa inferior
+([imagem](images/a840-20261026/175629-black.jpg), SHA-256
+`68f5cf22bcab7387d886a8c7b8f22a5583243885cd0d6dcc204c0c34f4f1df29`);
+às 17:56:42, a maior parte da área do jogo mostra ruído denso em faixas
+([imagem](images/a840-20261026/175642-noise.jpg), SHA-256
+`9e7696a30aa2fb5e224f16578e8f914ed1b766daf83249cb2c1cb24f180bd870`).
+Os controles virtuais do Eden permanecem legíveis nas duas. Essas imagens
+demonstram corrupção visual observada, não apenas pixels grandes de um filtro
+NearestNeighbor. Não há prova de que as duas imagens sejam o mesmo quadro ou de
+que o jogo já tivesse terminado de carregar na primeira.
+
+O ZIP de diagnóstico enviado junto (`20261026-205617-7853`, SHA-256
+`097ddcc251def60a410814c0afee67d7d68fa06adf28fb2183849b319a697e52`)
+passou `unzip -t`; manifesto `complete=true`. Não foi incluído no repositório,
+pois contém logs brutos. Campos selecionados do `report.json`/`summary.txt`:
+
+| Item | Valor observado |
+|---|---|
+| Driver selecionado | Candidate **5.7.15.1 OneUI**, Mesa `69f1f21f02`; não é o controle 5.7.14.1 Standard da etapa 0 |
+| ELF realmente carregado | `0f83d311ecebffcf4946f2fa9d797199b8b8d97620f53b5624b62d3083749e4f`, igual ao ELF OneUI 5.7.15.1 entregue; build-id `04bc281f85128874434fd2de7f3e99b21a6ecba9` |
+| Eden/jogo | `604cde0b1b964c7bb0092550ec62511545096bc2`, MUA3 `010060700AC50000`, update 4.0.1 (NAND) ativo |
+| Configuração | Docked, Res1X, filtro **SgsrEdge**, FXAA, swapchain 2448×1848 RGBA8/FIFO; hash das configurações efetivas `7566b20a7d7707f372b9baa596d67d087730e7d183d471384a35ab39a2825915` |
+| Captura | 645,39 s, 1 cena registrada sem marcador manual, ~29,9 FPS, GPU p50/p90/p99 12,8/15,5/21,3 ms, nenhuma falha de dispositivo/pipeline registrada, fim por ação do usuário |
+
+O ZIP não contém imagens dos quadros, nem capturas pareadas com Bilinear,
+5.7.14.1 Standard ou Qualcomm. A tela preta e as faixas de ruído podem vir do
+jogo/decodificação, de um alvo intermediário do Eden, do filtro/presentação ou
+do Turnip; os dados ainda não localizam a etapa defeituosa. Não atribuir raiz a
+SnapAlloc, UBWC, GMEM ou aos três backports da 5.7.15.1 sem controle. A etapa 0
+aprovada em T-a840-pixelation continua necessária: mesma cena com Nearest e
+Bilinear na 5.7.14.1 Standard, Qualcomm com Nearest, e um segundo jogo com os
+mesmos parâmetros. A OneUI 5.7.15.1 acima é uma observação adicional, não
+substitui esses controles.
+
 ## Próximos testes
 
 1. Screenshot da mesma cena com: perfil atual; scaling Bilinear; driver Qualcomm
