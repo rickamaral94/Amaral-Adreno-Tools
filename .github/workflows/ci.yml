@@ -17,6 +17,10 @@ jobs:
           python3 tools/validate_project.py
           python3 -m unittest discover -s tests -v
           for script in scripts/*.sh; do bash -n "$script"; done
+      - name: Install device profile generator dependencies
+        run: |
+          python3 -m venv work/profile-venv
+          work/profile-venv/bin/pip install Mako==1.3.10 MarkupSafe==3.0.3 PyYAML==6.0.3
       - name: Apply exact patch manifest against official pinned Mesa
         run: |
           sha="$(python3 -c 'import json; print(json.load(open("config/mesa-lock.json"))["mesa"]["commit"])')"
@@ -24,6 +28,9 @@ jobs:
           git -C work/mesa fetch --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git "$sha"
           git -C work/mesa checkout --detach FETCH_HEAD
           python3 tools/apply_patches.py work/mesa --variant standard
+          work/profile-venv/bin/python tools/check_a8xx_profiles.py work/mesa --variant standard
           python3 tools/check_a840_topology.py work/mesa
           python3 tools/check_vulkan_roadmap.py work/mesa --fail-on-new-support
           git -C work/mesa apply --check "$GITHUB_WORKSPACE/patches/0003-oneui-ubwc.patch"
+          git -C work/mesa apply "$GITHUB_WORKSPACE/patches/0003-oneui-ubwc.patch"
+          work/profile-venv/bin/python tools/check_a8xx_profiles.py work/mesa --variant oneui
