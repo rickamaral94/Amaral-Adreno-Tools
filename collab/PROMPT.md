@@ -121,7 +121,7 @@ Ao receber `abacaxi`:
 2. Leia este `PROMPT.md` inteiro e siga-o.
 3. Faça a rotina do §2 e, em seguida, a sincronização do §3.3.
 4. Ao terminar, publique status ou handoff, faça push e toque a campainha no
-   PR #32 (§3.4).
+   PR #34 (§3.4).
 
 `SYNC-AMARAL` continua valendo como sinônimo.
 
@@ -213,8 +213,10 @@ direto no `collab/channel`, sem PR, cumprindo todas as condições abaixo
 Nenhum agente fica ligado o tempo todo, e o Rick não deve servir de correio. A
 ponte tem três peças:
 
-- **Campainha: PR #32** (`collab: campainha entre as IAs (não mesclar)`, rascunho;
-  substituiu o PR #29, mesclado na `main` em 25/10/2026).
+- **Campainha: PR #34** (`collab: campainha isolada entre as IAs (NÃO MESCLAR)`,
+  rascunho em `chatgpt/doorbell` com apenas um arquivo de aviso; nunca mesclar).
+  Substituiu o PR #32, cujo branch contém trabalho do `claude` e não serve
+  como campainha estável.
   O `claude` monitora esse PR: qualquer comentário nele o acorda. Um comentário
   com `@codex` nele pede uma sessão do Codex, se a integração do Codex com o
   GitHub estiver ativa no repositório. A campainha só avisa ("leia o canal,
@@ -227,8 +229,11 @@ ponte tem três peças:
   Se não, PR `collab:` como no §3.1, que o `claude` importa sozinho.
 
 Ao terminar uma sessão com algo pendente para o outro agente, toque a
-campainha: um comentário curto no PR #32 (com `@codex` se o destinatário for o
-`chatgpt`). Sem nada pendente, não comente.
+campainha: uma linha no PR #34 com o id da mensagem principal e a ação pedida
+(`review`, `decisão` ou `só leitura`). O `chatgpt` prefixa `[chatgpt]`, pois
+o conector pode usar a conta do Rick; o `claude` prefixa `[claude]`.
+Use `@codex` se o destinatário for o
+`chatgpt`. Sem nada pendente, não comente.
 
 ### 3.3 Sincronização: `abacaxi` (ou `SYNC-AMARAL`)
 
@@ -270,17 +275,17 @@ Procedimento, igual para todos os agentes:
 
 ### 3.4 Campainha de cada agente
 
-- **`claude`:** monitora o PR #32 (qualquer comentário o acorda) e tem uma
+- **`claude`:** monitora o PR #34 (qualquer comentário o acorda) e tem uma
   verificação agendada a cada 3 horas (canal, PRs `collab:`, respostas).
 - **`chatgpt`:** na primeira sessão depois desta regra, configure uma
   verificação recorrente própria a cada 3 horas, se a sua plataforma oferecer
   (tarefa agendada ou automação do ChatGPT/Codex), com a rotina do §2 e o
   prompt de sessão do §2.1. Se não houver esse recurso, escreva isso em
-  `T-protocol` com o nome exato do que procurou. A campainha `@codex` no PR #32
+  `T-protocol` com o nome exato do que procurou. A campainha `@codex` no PR #34
   só funciona quando existir um ambiente Codex ligado ao repositório; se o bot
   responder "create an environment", registre em `T-protocol`.
 - Em qualquer caso, ao terminar uma sessão com algo pendente para o outro
-  agente, comente uma linha no PR #32 (§3.2).
+  agente, comente uma linha no PR #34 (§3.2).
 
 ## 4. Regras do canal
 
