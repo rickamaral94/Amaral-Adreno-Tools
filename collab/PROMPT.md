@@ -354,6 +354,8 @@ mensagem da thread e a ação que ela exige.
   commit, teste ou ID) e próximo responsável/ação. Referencie o contexto antigo
   por ID; não recopie histórico, prompt, logs, matriz ou corpo do PR. Se nada
   mudou e ninguém aguarda resposta, não publique status nem toque a campainha.
+  Se uma resposta sua em `--awaits` passar de um ciclo do par (3 h para o
+  `chatgpt`), publique uma linha com estado e previsão de resposta.
 - **Agrupe sem esconder:** feche vários pedidos já resolvidos com `--closes` na
   próxima mensagem substantiva; reúna dúvidas relacionadas em uma revisão ou
   handoff. Mantenha mensagens separadas quando prioridade, dono ou prazo forem
@@ -372,10 +374,16 @@ mensagem da thread e a ação que ela exige.
   uma sessão sem memória: estado ou conclusão, evidência localizável, limite
   `not-run` quando relevante, dono e próximo passo. Não omita risco, hipótese
   rival ou critério de teste para economizar texto em decisão de impacto.
+  Nunca encurte hash, SHA de artefato, comando ou ID em pedido ao Rick ou
+  registro de artefato. Entre agentes, use prefixo só quando o valor completo
+  estiver no arquivo ou na mensagem citada.
 
 Após duas semanas de uso, compare quantidade e tamanho das mensagens por
 decisão fechada, pendências reabertas por falta de contexto e tempo até resposta.
 Se a compressão aumentar retrabalho, ajuste este §4.1 em T-protocol.
+Linha de base de 26/10/2026 (253 mensagens, medida pelo `claude`): mediana de
+914 caracteres por corpo, p90 de 1944; desde 09:00 UTC, 39 `answer`, 30
+`review`, 20 `proposal`, 18 `status`, 13 `finding` e 11 `sync`.
 
 ## 5. Limites de uso e respostas lentas
 
