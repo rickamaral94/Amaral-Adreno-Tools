@@ -14,9 +14,9 @@ keeps DRM_FORMAT_MOD_INVALID. Turnip then picks its own layout for the
 imported image, which does not describe the allocation, and window system
 output is corrupted.
 
-This teaches the fallback about the second handle layout, including the
-132B (33 ints) parrot/SM7435 variant alongside the 136B (34 ints) 8 Elite
-one. Nothing in a SnapAlloc handle identifies its owner, so the flags word
+This teaches the fallback about the second handle layout, the 136B
+(34 ints) 8 Elite one. [MR history, not this variant: the MR also handles
+a 132B (33 ints) parrot/SM7435 layout; this variant drops it.] Nothing in a SnapAlloc handle identifies its owner, so the flags word
 is only trusted when the handle has exactly the shape SnapAlloc emits and
 when those properties describe the buffer we were handed: SnapAlloc reports
 aligned_width_in_pixels as the stride of the allocation, which is the value
@@ -26,8 +26,10 @@ keep DRM_FORMAT_MOD_INVALID, exactly as they do today.
 The Qualcomm native-handle parsing lives in u_gralloc_qcom_native_handle.c
 so the fallback stays generic.
 
-Tested on Adreno 840 (LINEAR via view 1 stride 640 flags 0x200) and 710
-(via 33 path instead of INVALID).
+Tested by the MR author on Adreno 840 (LINEAR via view 1 stride 640 flags
+0x200). [MR history, not this variant: the author also tested the 33-int
+path on an Adreno 710; that path is not in this variant, so A710 is not
+covered here.]
 
 Diagnosed-by: whitebelyash <whbexiumwork@gmail.com>
 Reported-by: Mike Lothian <michael.lothian@gmail.com>
@@ -83,7 +85,7 @@ diff --git a/src/util/u_gralloc/u_gralloc_qcom_native_handle.c b/src/util/u_gral
 new file mode 100644
 --- /dev/null
 +++ b/src/util/u_gralloc/u_gralloc_qcom_native_handle.c
-@@ -0,0 +1,133 @@
+@@ -0,0 +1,131 @@
 +/*
 + * Mesa 3-D graphics library
 + *
@@ -161,12 +163,11 @@ new file mode 100644
 +
 +static bool
 +get_snapalloc_priv_flags(const native_handle_t *handle, const int *ints,
-+                         int per_view,
 +                         struct u_gralloc_buffer_handle *hnd, int *out_flags)
 +{
 +   struct snapalloc_properties props;
 +
-+   if (handle->numInts < per_view)
++   if (handle->numInts < SNAPALLOC_INTS_PER_VIEW)
 +      return false;
 +
 +   memcpy(&props, ints + 1, sizeof(props));
@@ -192,8 +193,7 @@ new file mode 100644
 +
 +   if (handle->numFds >= 2 && handle->numFds % 2 == 0 &&
 +       handle->numInts == (handle->numFds / 2) * SNAPALLOC_INTS_PER_VIEW)
-+      return get_snapalloc_priv_flags(handle, ints, SNAPALLOC_INTS_PER_VIEW,
-+                                      hnd, out_flags);
++      return get_snapalloc_priv_flags(handle, ints, hnd, out_flags);
 +
 +   return false;
 +}
