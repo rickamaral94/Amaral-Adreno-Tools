@@ -121,8 +121,8 @@ Ao receber `abacaxi`:
    detectam sozinhos (`COLLAB_AGENT=<id>` força um valor).
 2. Leia este `PROMPT.md` inteiro e siga-o.
 3. Faça a rotina do §2 e, em seguida, a sincronização do §3.3.
-4. Ao terminar, publique status ou handoff, faça push e toque a campainha no
-   PR #34 (§3.4).
+4. Ao terminar, publique status ou handoff, faça push e aplique a regra de
+   campainha do PR #34 (§3.4).
 
 `SYNC-AMARAL` continua valendo como sinônimo.
 
@@ -222,23 +222,26 @@ ponte tem três peças:
   rascunho em `chatgpt/doorbell` com apenas um arquivo de aviso; nunca mesclar).
   Substituiu o PR #32, cujo branch contém trabalho do `claude` e não serve
   como campainha estável.
-  O `claude` monitora esse PR: qualquer comentário nele o acorda. Um comentário
-  com `@codex` nele pede uma sessão do Codex, se a integração do Codex com o
-  GitHub estiver ativa no repositório. A campainha só avisa ("leia o canal,
-  thread T-x, mensagem <id>"): mérito técnico se discute no canal.
+  O `claude` monitora esse PR: qualquer comentário nele o acorda. A menção
+  `@codex` para tarefa comum **não funciona neste repositório**: mesmo após
+  publicar o ambiente, o bot respondeu "create an environment" (T-protocol
+  ecba; caso semelhante em openai/codex#20093). Não repita a menção até haver
+  correção e teste controlado. A campainha só avisa ("leia o canal, thread T-x,
+  mensagem <id>"): mérito técnico se discute no canal.
 - **Verificação agendada do `claude`:** a cada 3 horas ele lê o canal, importa e
-  fecha os PRs `collab:` sem merge (autorizado pelo Rick), responde e toca a
-  campainha com `@codex` quando há algo para o `chatgpt`.
+  fecha os PRs `collab:` sem merge (autorizado pelo Rick) e responde. Pedidos
+  ao `chatgpt` ficam no canal para a verificação agendada do `chatgpt` (§3.4).
 - **Escrita do `chatgpt`:** se o conector do GitHub permitir criar um arquivo
   novo direto em `collab/channel`, esse é o caminho preferido (só inclusão).
   Se não, PR `collab:` como no §3.1, que o `claude` importa sozinho.
 
-Ao terminar uma sessão com algo pendente para o outro agente, toque a
-campainha: uma linha no PR #34 com o id da mensagem principal e a ação pedida
-(`review`, `decisão` ou `só leitura`). O `chatgpt` prefixa `[chatgpt]`, pois
-o conector pode usar a conta do Rick; o `claude` prefixa `[claude]`.
-Use `@codex` se o destinatário for o
-`chatgpt`. Sem nada pendente, não comente.
+Ao terminar com algo pendente para `claude`, o `chatgpt` toca a campainha:
+uma linha no PR #34 com `[chatgpt]`, o id da mensagem principal e a ação
+pedida (`review`, `decisão` ou `só leitura`). O conector pode usar a conta do
+Rick, por isso o prefixo identifica o autor. Para pedidos ao `chatgpt`, o
+`claude` publica no canal com `--awaits chatgpt`; a automação do `chatgpt` lê o
+canal a cada 3 horas. Um comentário `[claude]` no PR #34 pode registrar o handoff,
+mas acorda o próprio `claude`, não o `chatgpt`. Sem nada pendente, não comente.
 
 ### 3.3 Sincronização: `abacaxi` (ou `SYNC-AMARAL`)
 
@@ -282,15 +285,12 @@ Procedimento, igual para todos os agentes:
 
 - **`claude`:** monitora o PR #34 (qualquer comentário o acorda) e tem uma
   verificação agendada a cada 3 horas (canal, PRs `collab:`, respostas).
-- **`chatgpt`:** na primeira sessão depois desta regra, configure uma
-  verificação recorrente própria a cada 3 horas, se a sua plataforma oferecer
-  (tarefa agendada ou automação do ChatGPT/Codex), com a rotina do §2 e o
-  prompt de sessão do §2.1. Se não houver esse recurso, escreva isso em
-  `T-protocol` com o nome exato do que procurou. A campainha `@codex` no PR #34
-  só funciona quando existir um ambiente Codex ligado ao repositório; se o bot
-  responder "create an environment", registre em `T-protocol`.
-- Em qualquer caso, ao terminar uma sessão com algo pendente para o outro
-  agente, comente uma linha no PR #34 (§3.2).
+- **`chatgpt`:** a automação recorrente `6adf65f4a3f481918e71322e830f8234`
+  lê o canal a cada 3 horas nesta conversa; a entrega foi observada em
+  T-protocol 0131. Se a automação for substituída, preserve a rotina do §2 e o
+  prompt de sessão do §2.1, e registre a nova rota em `T-protocol`.
+- Aplique a campainha conforme o destinatário em §3.2. Uma falha de `@codex`
+  não bloqueia mensagens no canal nem autoriza duplicar ambientes ou sessões.
 
 ## 4. Regras do canal
 
