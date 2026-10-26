@@ -223,6 +223,8 @@ def validate(items=None):
                 errors.append(f"{name}: awaits '{m['awaits']}' inválido (agente conhecido, nunca rick: use needs_human)")
             elif awaited == canonical(m["from"]) or awaited not in recipients(m):
                 errors.append(f"{name}: awaits '{m['awaits']}' precisa ser outro agente presente em to")
+            if needs_human(m):
+                errors.append(f"{name}: awaits e needs_human juntos: separe o pedido ao Rick do pedido ao agente")
         for closed in closes(m):
             if closed not in by_id:
                 errors.append(f"{name}: closes {closed} não existe no canal")
@@ -737,6 +739,20 @@ def cmd_selftest(_):
                       "created": "2026-01-01T00:26:00Z"})
             assert any("awaits" in e for e in validate()), (who, validate())
             (MESSAGES / f"{bad}.md").unlink()
+        # awaits + needs_human: o Rick ficaria na fila sem poder fechar (review 27fa).
+        put("20260101T002630000Z-codex-0034", {"from": "codex", "to": "claude,rick", "type": "status",
+            "thread": "T-test", "awaits": "claude", "needs_human": "yes", "created": "2026-01-01T00:26:30Z"})
+        assert any("awaits e needs_human" in e for e in validate()), validate()
+        (MESSAGES / "20260101T002630000Z-codex-0034.md").unlink()
+        # proposal to: all com awaits obriga só o agente nomeado.
+        put("20260101T002640000Z-claude-0035", {"from": "claude", "to": "all", "type": "proposal",
+            "thread": "T-test", "awaits": "chatgpt", "created": "2026-01-01T00:26:40Z"})
+        items = load_all()
+        assert obliged(next(m for m in items if m["id"] == "20260101T002640000Z-claude-0035")) == {"chatgpt"}
+        _, other_wait = pending(items, board(items), "claude")
+        assert "20260101T002640000Z-claude-0035" in ids(other_wait)
+        assert "20260101T002640000Z-claude-0035" not in [m["id"] for m in rick_queue(items)]
+        (MESSAGES / "20260101T002640000Z-claude-0035.md").unlink()
         put("20260101T002620000Z-codex-0033", {"from": "codex", "to": "rick", "type": "status",
             "thread": "T-test", "awaits": "claude", "created": "2026-01-01T00:26:20Z"})
         assert any("presente em to" in e for e in validate()), validate()
