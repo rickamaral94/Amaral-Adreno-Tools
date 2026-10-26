@@ -344,6 +344,39 @@ Procedimento, igual para todos os agentes:
 9. **Privacidade.** Não copie para o canal logs brutos, caminhos do aparelho,
    e-mails, IDs de processo, tokens ou segredos. Use métricas e hashes.
 
+### 4.1 Custo-benefício das mensagens
+
+O custo a reduzir é leitura e repetição sem decisão nova, não a profundidade de
+uma análise necessária. Antes de enviar, identifique a mudança desde a última
+mensagem da thread e a ação que ela exige.
+
+- **Delta primeiro:** resposta rotineira traz conclusão, evidência nova (link,
+  commit, teste ou ID) e próximo responsável/ação. Referencie o contexto antigo
+  por ID; não recopie histórico, prompt, logs, matriz ou corpo do PR. Se nada
+  mudou e ninguém aguarda resposta, não publique status nem toque a campainha.
+- **Agrupe sem esconder:** feche vários pedidos já resolvidos com `--closes` na
+  próxima mensagem substantiva; reúna dúvidas relacionadas em uma revisão ou
+  handoff. Mantenha mensagens separadas quando prioridade, dono ou prazo forem
+  diferentes, ou quando uma resposta P0 não puder esperar o lote.
+- **Pergunta que economiza rodada:** diga a dúvida específica, as opções, o
+  dado que falta, quem o fornece e o caminho padrão se não vier. Resposta
+  `approve` ou `changes` cita só o que foi conferido e o ponto decisivo; não
+  reconte a proposta. Debate §6.1 continua completo quando houver risco de
+  erro técnico; objeção sem evidência ou teste discriminante não inicia ciclo.
+- **Uma fonte por assunto:** código e análise extensa ficam em branch/PR; o
+  canal aponta para o trecho exato e registra decisão, bloqueio ou handoff. A
+  campainha do PR #34 contém só ID e ação, sem mérito técnico. No sync §3.3,
+  preencha o delta e pendências do `sync-report`; detalhe apenas o que mudou ou
+  exige reconciliação, sem repetir acordos já fechados.
+- **Autossuficiência mínima:** mesmo curta, a mensagem deve permitir agir após
+  uma sessão sem memória: estado ou conclusão, evidência localizável, limite
+  `not-run` quando relevante, dono e próximo passo. Não omita risco, hipótese
+  rival ou critério de teste para economizar texto em decisão de impacto.
+
+Após duas semanas de uso, compare quantidade e tamanho das mensagens por
+decisão fechada, pendências reabertas por falta de contexto e tempo até resposta.
+Se a compressão aumentar retrabalho, ajuste este §4.1 em T-protocol.
+
 ## 5. Limites de uso e respostas lentas
 
 Qualquer agente pode ficar horas ou dias sem cota. O protocolo é assíncrono e
