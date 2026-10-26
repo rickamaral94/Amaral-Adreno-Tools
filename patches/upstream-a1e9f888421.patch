@@ -1,0 +1,59 @@
+From a1e9f888421fcd0b82196d3c29231afb2b56566c Mon Sep 17 00:00:00 2001
+From: Danylo Piliaiev <dpiliaiev@igalia.com>
+Date: Wed, 21 Oct 2026 19:40:49 +0200
+Subject: [PATCH] tu/kgsl: Fix BDA capture/replay failures due to deferred VA
+ frees
+
+On KGSL BO may be destroyed asynchronously. When replay then maps a
+new BO at the captured address, the old range is still occupied and
+KGSL silently places the BO right below it instead, then we fail
+with VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS.
+
+With MAP_FIXED_NOREPLACE, KGSL on overlap flushes the pending frees
+and retries. Kernels before 4.17 ignore the flag and keep treating
+the address as a hint.
+
+Fixes:
+ dEQP-VK.binding_model.buffer_device_address.capture_replay_stress.seed_{3,4,9}
+
+Assisted-by: LLM
+Signed-off-by: Danylo Piliaiev <dpiliaiev@igalia.com>
+Part-of: <https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/45496>
+---
+ src/freedreno/vulkan/tu_knl_kgsl.cc | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/src/freedreno/vulkan/tu_knl_kgsl.cc b/src/freedreno/vulkan/tu_knl_kgsl.cc
+index 5580ed82e10..3856e92ac8b 100644
+--- a/src/freedreno/vulkan/tu_knl_kgsl.cc
++++ b/src/freedreno/vulkan/tu_knl_kgsl.cc
+@@ -191,13 +191,24 @@ static VkResult
+ kgsl_bo_user_map(struct tu_device *dev, struct tu_bo *bo, uint64_t client_iova)
+ {
+    uint64_t offset = bo->gem_handle << 12;
++   /* KGSL may free the GPU VA of a destroyed BO asynchronously, and without MAP_FIXED_NOREPLACE,
++    * it then silently places the BO elsewhere. With MAP_FIXED_NOREPLACE, KGSL flushes pending frees
++    * and retries instead. Kernels older than 4.17 ignore the flag and treat client_iova as a hint.
++    */
++   int flags = MAP_SHARED | (client_iova ? MAP_FIXED_NOREPLACE : 0);
+    void *map = mmap(reinterpret_cast<void *>(client_iova), bo->size, PROT_READ | PROT_WRITE,
+-                    MAP_SHARED, dev->physical_device->local_fd, offset);
++                    flags, dev->physical_device->local_fd, offset);
+    if (map == MAP_FAILED) {
++      int err = errno;
+       kgsl_bo_finish(dev, bo);
+ 
++      if (client_iova && err == EEXIST) {
++         return vk_errorf(dev, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS,
++                          "mmap could not map the given address");
++      }
++
+       return vk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
+-                       "mmap failed (%s)", strerror(errno));
++                       "mmap failed (%s)", strerror(err));
+    }
+ 
+    if (client_iova && reinterpret_cast<uint64_t>(map) != client_iova) {
+-- 
+2.43.0
+
