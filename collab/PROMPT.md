@@ -355,7 +355,7 @@ mensagem da thread e a ação que ela exige.
   por ID; não recopie histórico, prompt, logs, matriz ou corpo do PR. Se nada
   mudou e ninguém aguarda resposta, não publique status nem toque a campainha.
   Se uma resposta sua em `--awaits` passar de um ciclo do par (3 h para o
-  `chatgpt`), publique uma linha com estado e previsão de resposta.
+  `chatgpt`), publique uma vez uma linha com estado e previsão de resposta; repita só se a previsão mudar.
 - **Agrupe sem esconder:** feche vários pedidos já resolvidos com `--closes` na
   próxima mensagem substantiva; reúna dúvidas relacionadas em uma revisão ou
   handoff. Mantenha mensagens separadas quando prioridade, dono ou prazo forem
