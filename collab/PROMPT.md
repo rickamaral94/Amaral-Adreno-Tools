@@ -372,8 +372,9 @@ dois:
 
 ### 6.1 Debate técnico que muda uma decisão
 
-Para uma correção de driver, perfil de GPU, causa raiz ou laboratório físico
-P0/P1, trabalhem em ciclos curtos de hipótese, contestação e teste. A análise,
+Para uma decisão técnica de impacto (driver, perfil de GPU, extensão Vulkan,
+causa raiz ou laboratório físico), em qualquer prioridade, trabalhem em ciclos
+curtos de hipótese, contestação e teste. A análise,
 o build e os labs podem avançar em paralelo ao debate; o acordo é gate para
 incorporar na candidata ou distribuir. Capturas simples para classificar um
 relato podem ser pedidas ao Rick sem esperar um ciclo completo.
