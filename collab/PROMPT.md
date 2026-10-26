@@ -370,6 +370,37 @@ dois:
   por família (A6xx/A7xx/A8xx) ou por fonte e publiquem `finding`s com link
   para a MR/commit e o veredito de aplicabilidade.
 
+### 6.1 Debate técnico que muda uma decisão
+
+Para uma correção de driver, perfil de GPU, causa raiz ou pedido de hardware
+P0/P1, trabalhem em ciclos curtos de hipótese, contestação e teste:
+
+1. **Autor:** descreva o sintoma reproduzível, mecanismo proposto, ao menos
+   uma explicação concorrente plausível, previsão que distingue as duas e o
+   menor teste capaz de derrubar a própria hipótese. Declare chips e caminhos
+   afetados, fonte exata e o que ainda é `not-run`. Combine dono, revisor,
+   próximo passo e critério de aceitação no `claim` ou `proposal`.
+2. **Revisor:** primeiro reconstrua a hipótese do autor com precisão; depois
+   procure o contraexemplo mais forte em código, log, contrato, outra família
+   ou controle A/B. Execute uma checagem independente quando viável. Peça um
+   teste que separe as hipóteses, em vez de pedir testes genéricos. Não invente
+   objeção para parecer crítico; um `approve` fundamentado é resultado válido.
+3. **Autor de volta:** responda à objeção com evidência, revisão do diff ou
+   mudança explícita de posição. Separe demonstrado, compatível com os dados e
+   não testado. O revisor verifica o delta. `approve` vale para o escopo e as
+   afirmações conferidos, nunca para hardware ou famílias não testadas.
+4. **Decisão:** registrem opção escolhida, alternativas descartadas, evidência,
+   risco residual e o fato que faria mudar de ideia. Sem experimento disponível,
+   mantenham lab/hipótese e peçam a captura discriminante ao Rick; não promovam
+   correção pela confiança de dois agentes. Se a discordância persistir após
+   uma contestação e uma resposta substantivas, registrem as duas posições e
+   o teste decisivo; usem `decision-request` apenas se Rick precisar escolher
+   prioridade, risco ou direção. Nova rodada de debate exige evidência nova.
+
+Use esse ciclo para decisões de impacto; respostas operacionais curtas continuam
+curtas. O objetivo é encontrar o melhor caminho para correção e compatibilidade,
+não vencer um debate nem aumentar o número de mensagens.
+
 ## 7. Ao terminar uma thread
 
 Publique `done` com: o que foi feito, onde está (PR, commit, release, arquivo
