@@ -40,6 +40,18 @@ respectivamente, iguais aos digests publicados pelo GitHub. Os ELFs
 espelho Mesa consultado. A diferença de versão delimita os artefatos, mas não
 revela quais mudanças de fonte causaram o relato.
 
+Um suspeito upstream a investigar para #38, **sem atribuição causal**: em
+13/07, `e1b839d` passou a usar `load/store_global_offset` no rebaixamento de
+endereços SSBO do Turnip; em 17/09, `16f569e` corrigiu a interpretação
+assinada de offsets constantes grandes nesse caminho. A candidata `69f1f21`
+contém o uso dos novos intrinsics em `tu_shader.cc` e `uint32_t`/
+`nir_src_as_uint` em `ir3_a6xx.c`, isto é, já contém a correção. O cálculo
+assinado original é de 05/05 (`c784af5`), anterior à release T29; a mudança
+de julho pode ter aumentado a exposição, mas não há shader, endereço da fault
+KGSL ou fonte dos forks T29/T30 que ligue esse defeito ao ARMSX2. A issue
+também não identifica jogo/cena para um ensaio físico comparável. Primeiro
+obter esses dados; um teste negativo em A740 não falsificaria a A725.
+
 Próxima decisão: cruzar esta matriz com a revisão independente do Claude em
 `T-a8xx-strategy`, escolher um único caso P0 reproduzível e registrar previsão,
 contraexemplo, hash do artefato e teste mínimo antes de construir lab. A
