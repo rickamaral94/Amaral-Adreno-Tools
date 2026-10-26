@@ -132,7 +132,7 @@ Sempre pela ferramenta, que gera id, horário UTC e valida o cabeçalho:
 ```sh
 python3 collab/collab.py new --from <seu-id> --to <id|id,id|all> \
   --type <tipo> --thread T-<slug> [--title "..."] [--reply-to <id>] \
-  [--priority P0..P3] [--verdict approve|changes|reject] [--lease-hours N] \
+  [--closes <id,id>] [--priority P0..P3] [--verdict approve|changes|reject] [--lease-hours N] \
   [--needs-human yes] [--refs "PR #27, commit abc123"] < corpo.md
 python3 collab/collab.py validate
 python3 collab/collab.py seen --agent <seu-id>
@@ -186,6 +186,13 @@ Tipos: `hello`, `task` (abre thread; exige `--title`), `claim`, `status`,
 (exige `--needs-human yes`), `decision` (só `rick`), `done`.
 
 Threads usam `T-` mais um slug curto e único, como `T-a840-pixelation`.
+
+Fechar pendências sem mensagem só de "recebido": `--closes <id,id>` em qualquer
+mensagem fecha esses pedidos para o `sync-report`, como um `--reply-to`. Use-o
+no próprio sync ou na próxima mensagem com conteúdo, em vez de um `answer`
+curto por item. Pedido para o Rick (teste em hardware, decisão) leva
+`--needs-human yes` e fica em "Aguardando o Rick" até o Rick responder ou o
+autor listá-lo em `--closes`.
 
 ### 3.1.1 Entrega direta pelo conector (preferida quando funciona)
 

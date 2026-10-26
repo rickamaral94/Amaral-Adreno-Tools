@@ -135,6 +135,11 @@ def load_all():
     return sorted(items, key=lambda m: (m.get("created", ""), m.get("id", "")))
 
 
+def closes(m):
+    """Ids que a mensagem fecha além do reply_to (campo closes: a,b,c)."""
+    return [c.strip() for c in m.get("closes", "").split(",") if c.strip()]
+
+
 def validate(items=None):
     items = load_all() if items is None else items
     known = names()
@@ -178,6 +183,9 @@ def validate(items=None):
             errors.append(f"{name}: answer exige reply_to")
         if m.get("reply_to") and m["reply_to"] not in all_ids:
             errors.append(f"{name}: reply_to {m['reply_to']} não existe no canal")
+        for closed in closes(m):
+            if closed not in all_ids:
+                errors.append(f"{name}: closes {closed} não existe no canal")
         if m["type"] == "review" and m.get("verdict") not in VERDICTS:
             errors.append(f"{name}: review exige verdict approve|changes|reject")
         if m["type"] == "claim":
@@ -269,7 +277,7 @@ def cmd_new(a):
     mid = new_id(a.sender)
     head = {"id": mid, "from": a.sender, "to": a.to, "type": a.type, "thread": a.thread,
             "created": iso(now)}
-    for key in ("title", "reply_to", "priority", "verdict", "lease_hours", "needs_human", "refs"):
+    for key in ("title", "reply_to", "closes", "priority", "verdict", "lease_hours", "needs_human", "refs"):
         value = getattr(a, key)
         if value:
             head[key] = value
@@ -285,7 +293,7 @@ def cmd_new(a):
 
 
 def show(m, full=True):
-    extra = " ".join(f"{k}={m[k]}" for k in ("title", "priority", "verdict", "reply_to", "lease_hours", "needs_human") if m.get(k))
+    extra = " ".join(f"{k}={m[k]}" for k in ("title", "priority", "verdict", "reply_to", "closes", "lease_hours", "needs_human") if m.get(k))
     print(f"### {m['id']}  {m['from']} -> {m['to']}  [{m['type']}] {m['thread']} {extra}")
     if full:
         print(m["body"])
@@ -340,8 +348,8 @@ REQUESTS = {"question", "proposal", "review", "handoff", "task", "decision-reque
 def pending(items, rows, me):
     """Pedidos ainda sem resposta, nos dois sentidos, como pares (mensagem, indício).
 
-    Só fecha um pedido o reply_to vindo de um destinatário dele (ou a thread
-    concluída). Mensagem posterior de um destinatário na mesma thread, sem
+    Só fecha um pedido o reply_to (ou o campo closes) vindo de um destinatário
+    dele, ou a thread concluída. Mensagem posterior de um destinatário na mesma thread, sem
     reply_to, vira apenas o indício "possivelmente tratado": a ordem depende de
     relógios que divergem e o assunto pode ser outro, então nunca esconde nada.
     """
@@ -353,7 +361,8 @@ def pending(items, rows, me):
         return {canonical(t) for t in m["to"].split(",")}
     def status(i, m):
         to = recipients(m)
-        if any(x.get("reply_to") == m["id"] and canonical(x["from"]) in to for x in items):
+        if any((x.get("reply_to") == m["id"] or m["id"] in closes(x)) and canonical(x["from"]) in to
+               for x in items):
             return None
         return any(j > i and x["thread"] == m["thread"] and canonical(x["from"]) in to
                    for j, x in enumerate(items))
@@ -370,6 +379,26 @@ def pending(items, rows, me):
     return waiting_me, waiting_other
 
 
+def rick_queue(items):
+    """Pedidos com needs_human ainda abertos: testes em hardware, decisões.
+
+    Fecha quando o Rick responde (reply_to ou closes) ou quando o próprio autor
+    lista o pedido em closes (resultado chegou por outro meio ou foi retirado).
+    """
+    out = []
+    for m in items:
+        if canonical(m["from"]) == "rick" or m.get("needs_human") not in {"yes", "true"}:
+            continue
+        done = any((x.get("reply_to") == m["id"] and canonical(x["from"]) == "rick")
+                   or (m["type"] == "decision-request" and x["type"] == "decision"
+                       and x["thread"] == m["thread"] and x["created"] >= m["created"])
+                   or (m["id"] in closes(x) and canonical(x["from"]) in {"rick", canonical(m["from"])})
+                   for x in items)
+        if not done:
+            out.append(m)
+    return out
+
+
 def cmd_sync_report(a):
     """Rascunho do corpo da mensagem sync: o mesmo formato para todos os agentes."""
     me = canonical(a.agent)
@@ -377,7 +406,6 @@ def cmd_sync_report(a):
     rows = board(items)
     mine = [r for r in rows if r["owner"] == me and r["status"] in {"reservada", "entregue", "lease vencido"}]
     waiting_me, waiting_other = pending(items, rows, me)
-    human = [r for r in rows if r["needs_human"]]
     last_sync = [m for m in items if m["type"] == "sync" and canonical(m["from"]) != me]
     def line(pair):
         m, hint = pair
@@ -390,7 +418,9 @@ def cmd_sync_report(a):
     out += [f"- {r['thread']}: {r['status']}" + (f" até {iso(r['lease_until'])}" if r["lease_until"] else "") for r in mine] or ["- nada"]
     out += ["", "## Aguardando a minha resposta"] + ([line(m) for m in waiting_me] or ["- nada"])
     out += ["", "## Aguardando o outro agente"] + ([line(m) for m in waiting_other[-12:]] or ["- nada"])
-    out += ["", "## Aguardando o Rick"] + ([f"- {r['thread']}: {r['title'][:90]}" for r in human] or ["- nada (incluir pedidos de teste em hardware)"])
+    rick = [f"- {m['thread']} `{m['id']}` [{m['type']}] {(m.get('title') or m['body'].splitlines()[0])[:90]}"
+            for m in rick_queue(items)]
+    out += ["", "## Aguardando o Rick"] + (rick or ["- nada (incluir pedidos de teste em hardware)"])
     out += ["", "## Proposta de próximos passos (quem faz o quê)", "- ", "",
             "## Último sync do outro agente", (f"- `{last_sync[-1]['id']}`" if last_sync else "- nenhum")]
     print("\n".join(out))
@@ -562,6 +592,31 @@ def cmd_selftest(_):
         assert "20260101T000700000Z-codex-0009" in ids(other_wait), other_wait
         _, other_wait = pending(items, board(items), "claude")
         assert "20260101T000500000Z-claude-0007" not in ids(other_wait), other_wait
+        # closes: fecha vários pedidos numa mensagem só, sem uma resposta por item.
+        put("20260101T001200000Z-codex-0015", {"from": "codex", "to": "claude", "type": "proposal",
+            "thread": "T-test", "created": "2026-01-01T00:12:00Z"})
+        put("20260101T001300000Z-claude-0016", {"from": "claude", "to": "chatgpt", "type": "status",
+            "thread": "T-test", "closes": "20260101T000300000Z-codex-0005,20260101T001200000Z-codex-0015",
+            "created": "2026-01-01T00:13:00Z"})
+        assert validate() == [], validate()
+        items = load_all()
+        me_wait, _ = pending(items, board(items), "claude")
+        assert not {"20260101T000300000Z-codex-0005", "20260101T001200000Z-codex-0015"} & set(ids(me_wait)), me_wait
+        put("20260101T001400000Z-claude-0017", {"from": "claude", "to": "chatgpt", "type": "status",
+            "thread": "T-test", "closes": "20260101T000000000Z-nobody-0000", "created": "2026-01-01T00:14:00Z"})
+        assert any("closes 20260101T000000000Z-nobody-0000" in e for e in validate())
+        (MESSAGES / "20260101T001400000Z-claude-0017.md").unlink()
+        # Fila do Rick: qualquer needs_human conta, não só decision-request.
+        put("20260101T001500000Z-claude-0018", {"from": "claude", "to": "rick", "type": "status",
+            "thread": "T-test", "needs_human": "true", "created": "2026-01-01T00:15:00Z"})
+        assert [m["id"] for m in rick_queue(load_all())] == ["20260101T001500000Z-claude-0018"]
+        # Resposta de outro agente não fecha; closes do próprio autor fecha.
+        put("20260101T001600000Z-codex-0019", {"from": "codex", "to": "claude", "type": "answer",
+            "thread": "T-test", "reply_to": "20260101T001500000Z-claude-0018", "created": "2026-01-01T00:16:00Z"})
+        assert len(rick_queue(load_all())) == 1
+        put("20260101T001700000Z-claude-0020", {"from": "claude", "to": "all", "type": "status",
+            "thread": "T-test", "closes": "20260101T001500000Z-claude-0018", "created": "2026-01-01T00:17:00Z"})
+        assert rick_queue(load_all()) == []
     MESSAGES = original
     print("selftest ok")
 
@@ -574,7 +629,7 @@ def main():
     n.add_argument("--to", required=True, help="agente, lista separada por vírgula, ou all")
     n.add_argument("--type", required=True)
     n.add_argument("--thread", required=True)
-    for key in ("title", "reply-to", "priority", "verdict", "lease-hours", "needs-human", "refs", "body"):
+    for key in ("title", "reply-to", "closes", "priority", "verdict", "lease-hours", "needs-human", "refs", "body"):
         n.add_argument(f"--{key}", dest=key.replace("-", "_"))
     for name in ("inbox", "seen"):
         s = sub.add_parser(name)
