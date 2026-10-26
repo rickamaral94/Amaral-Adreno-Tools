@@ -146,14 +146,25 @@ def needs_human(m):
     return m.get("needs_human") in {"yes", "true"}
 
 
+def obliged(m):
+    """Quem deve responder a m: só o agente de awaits, se houver; senão os
+    destinatários de um pedido; ninguém para mensagens que não são pedido."""
+    if m.get("awaits"):
+        return {canonical(m["awaits"])}
+    return recipients(m) if m["type"] in REQUESTS else set()
+
+
 def may_close(closer, target):
     """Só fecha um pedido quem o recebeu; um pedido ao Rick, também o autor.
 
     Um sync conta como pedido: o segundo sync da rodada fecha o primeiro.
+    Com awaits, só o agente aguardado fecha.
     """
+    who = canonical(closer["from"])
+    if target.get("awaits"):
+        return who == canonical(target["awaits"])
     if target["type"] not in REQUESTS | {"sync"} and not needs_human(target):
         return False
-    who = canonical(closer["from"])
     return who in recipients(target) or (needs_human(target) and who == canonical(target["from"]))
 
 
@@ -206,6 +217,12 @@ def validate(items=None):
             errors.append(f"{name}: answer exige reply_to")
         if m.get("reply_to") and m["reply_to"] not in all_ids:
             errors.append(f"{name}: reply_to {m['reply_to']} não existe no canal")
+        if m.get("awaits"):
+            awaited = canonical(m["awaits"])
+            if m["awaits"] not in known or awaited == "rick":
+                errors.append(f"{name}: awaits '{m['awaits']}' inválido (agente conhecido, nunca rick: use needs_human)")
+            elif awaited == canonical(m["from"]) or awaited not in recipients(m):
+                errors.append(f"{name}: awaits '{m['awaits']}' precisa ser outro agente presente em to")
         for closed in closes(m):
             if closed not in by_id:
                 errors.append(f"{name}: closes {closed} não existe no canal")
@@ -302,7 +319,7 @@ def cmd_new(a):
     mid = new_id(a.sender)
     head = {"id": mid, "from": a.sender, "to": a.to, "type": a.type, "thread": a.thread,
             "created": iso(now)}
-    for key in ("title", "reply_to", "closes", "priority", "verdict", "lease_hours", "needs_human", "refs"):
+    for key in ("title", "reply_to", "closes", "awaits", "priority", "verdict", "lease_hours", "needs_human", "refs"):
         value = getattr(a, key)
         if value:
             head[key] = value
@@ -318,7 +335,7 @@ def cmd_new(a):
 
 
 def show(m, full=True):
-    extra = " ".join(f"{k}={m[k]}" for k in ("title", "priority", "verdict", "reply_to", "closes", "lease_hours", "needs_human") if m.get(k))
+    extra = " ".join(f"{k}={m[k]}" for k in ("title", "priority", "verdict", "reply_to", "closes", "awaits", "lease_hours", "needs_human") if m.get(k))
     print(f"### {m['id']}  {m['from']} -> {m['to']}  [{m['type']}] {m['thread']} {extra}")
     if full:
         print(m["body"])
@@ -380,7 +397,7 @@ def pending(items, rows, me):
     """
     closed = {r["thread"] for r in rows if r["status"] == "concluída"}
     def status(i, m):
-        to = recipients(m)
+        to = obliged(m)
         if any((x.get("reply_to") == m["id"] or m["id"] in closes(x)) and canonical(x["from"]) in to
                for x in items):
             return None
@@ -388,10 +405,10 @@ def pending(items, rows, me):
                    for j, x in enumerate(items))
     waiting_me, waiting_other = [], []
     for i, m in enumerate(items):
-        if m["type"] not in REQUESTS or m["thread"] in closed:
+        if not obliged(m) or m["thread"] in closed:
             continue
         mine = canonical(m["from"]) == me
-        if not mine and me not in recipients(m):
+        if not mine and me not in obliged(m):
             continue
         hint = status(i, m)
         if hint is not None:
@@ -681,6 +698,49 @@ def cmd_selftest(_):
         assert "new" in short[0] and "old" in short[1] and "antigo" not in short[1], short
         full = sync_pending_lines([older, recent], {"new"}, show_all=True)
         assert "antigo" in full[0] and "novo" in full[1], full
+        # awaits: answer/finding que pede resposta vira pendente só para o aguardado.
+        put("20260101T002100000Z-codex-0026", {"from": "codex", "to": "claude", "type": "answer",
+            "thread": "T-test", "reply_to": "20260101T000500000Z-claude-0007", "awaits": "claude",
+            "created": "2026-01-01T00:21:00Z"})
+        put("20260101T002200000Z-codex-0027", {"from": "codex", "to": "all", "type": "finding",
+            "thread": "T-test", "awaits": "claude", "created": "2026-01-01T00:22:00Z"})
+        assert validate() == [], validate()
+        items = load_all()
+        me_wait, _ = pending(items, board(items), "claude")
+        assert {"20260101T002100000Z-codex-0026", "20260101T002200000Z-codex-0027"} <= set(ids(me_wait)), me_wait
+        _, other_wait = pending(items, board(items), "chatgpt")
+        assert {"20260101T002100000Z-codex-0026", "20260101T002200000Z-codex-0027"} <= set(ids(other_wait))
+        # to: all com awaits não torna o Rick nem outros obrigados.
+        assert "20260101T002200000Z-codex-0027" not in [m["id"] for m in rick_queue(items)]
+        # Resposta de quem não é o aguardado não fecha; validate recusa closes dele.
+        put("20260101T002300000Z-rick-0028", {"from": "rick", "to": "all", "type": "status",
+            "thread": "T-test", "reply_to": "20260101T002200000Z-codex-0027", "created": "2026-01-01T00:23:00Z"})
+        items = load_all()
+        me_wait, _ = pending(items, board(items), "claude")
+        assert "20260101T002200000Z-codex-0027" in ids(me_wait), me_wait
+        put("20260101T002400000Z-codex-0029", {"from": "codex", "to": "claude", "type": "status",
+            "thread": "T-test", "closes": "20260101T002200000Z-codex-0027", "created": "2026-01-01T00:24:00Z"})
+        assert any("não é um pedido que codex possa fechar" in e for e in validate()), validate()
+        (MESSAGES / "20260101T002400000Z-codex-0029.md").unlink()
+        # O aguardado fecha por reply_to e por closes.
+        put("20260101T002500000Z-claude-0030", {"from": "claude", "to": "chatgpt", "type": "answer",
+            "thread": "T-test", "reply_to": "20260101T002100000Z-codex-0026",
+            "closes": "20260101T002200000Z-codex-0027", "created": "2026-01-01T00:25:00Z"})
+        assert validate() == [], validate()
+        items = load_all()
+        me_wait, _ = pending(items, board(items), "claude")
+        assert not {"20260101T002100000Z-codex-0026", "20260101T002200000Z-codex-0027"} & set(ids(me_wait)), me_wait
+        # awaits inválido: o próprio autor, rick, ou agente fora de to.
+        for bad, who in (("20260101T002600000Z-codex-0031", "codex"), ("20260101T002610000Z-codex-0032", "rick")):
+            put(bad, {"from": "codex", "to": "claude,rick", "type": "answer", "thread": "T-test",
+                      "reply_to": "20260101T000500000Z-claude-0007", "awaits": who,
+                      "created": "2026-01-01T00:26:00Z"})
+            assert any("awaits" in e for e in validate()), (who, validate())
+            (MESSAGES / f"{bad}.md").unlink()
+        put("20260101T002620000Z-codex-0033", {"from": "codex", "to": "rick", "type": "status",
+            "thread": "T-test", "awaits": "claude", "created": "2026-01-01T00:26:20Z"})
+        assert any("presente em to" in e for e in validate()), validate()
+        (MESSAGES / "20260101T002620000Z-codex-0033.md").unlink()
     MESSAGES = original
     print("selftest ok")
 
@@ -693,7 +753,7 @@ def main():
     n.add_argument("--to", required=True, help="agente, lista separada por vírgula, ou all")
     n.add_argument("--type", required=True)
     n.add_argument("--thread", required=True)
-    for key in ("title", "reply-to", "closes", "priority", "verdict", "lease-hours", "needs-human", "refs", "body"):
+    for key in ("title", "reply-to", "closes", "awaits", "priority", "verdict", "lease-hours", "needs-human", "refs", "body"):
         n.add_argument(f"--{key}", dest=key.replace("-", "_"))
     for name in ("inbox", "seen"):
         s = sub.add_parser(name)
