@@ -48,6 +48,7 @@ ou do patch completo do lab. Proposta: `collab/channel` d14b, com review do
 | `validate_project.py`, unittest | pass |
 | `git diff --check` de config e docs da integração | pass |
 | Reprodutibilidade em dupla build, Standard e OneUI | pass: 2 builds independentes por variante, ZIP idêntico |
-| Hardware A840 desta candidata (título, gameplay, perfil SGSR+FXAA) | not-run |
+| Hardware A840, perfil SGSR+FXAA (OneUI) | observado: captura `20261027-145905-6375`, gameplay nítido; travadas em parte na criação de shaders |
+| Hardware A840, Bilinear/None (par com o lab) | not-run |
 | Regressão A740: mesmo jogo, cena e rota, 5.7.15.1 Standard × 5.7.16.1 Standard com ajustes iguais, ELF confirmado; pixels, crash/device lost, recriação de superfície ao minimizar e retomar | not-run |
 | A6xx, CTS, VVL | not-run |

@@ -156,3 +156,22 @@ que só acrescenta a MR !44464, não. Limites:
 
 A candidata [5.7.16.1](../candidates/5.7.16.1/README.md) leva só o caminho de
 34 ints e ainda não foi testada em hardware.
+
+## Candidata 5.7.16.1 OneUI no perfil SGSR/FXAA (27/10/2026)
+
+A captura `20261027-145905-6375` (ZIP SHA-256
+`ff17d8f45ee7745e689dacc1f5fa652667d1bcc59dc8f7d969c8641cf6e46b49`) carregou a
+5.7.16.1 OneUI (ELF `28cea848c357623b646e614a29104ee8d692c2e96dbdcd4ad1e8a2f492af3da0`)
+com o perfil original SGSR Edge + FXAA. Esse é o mesmo hash de ajustes da
+captura `20261026-205617-7853` da 5.7.15.1 OneUI, que tinha ruído em colunas. As
+três fotos de gameplay estão nítidas. O Rick relata "funcionando perfeito,
+algumas travadas na criação de shaders". O ZIP e as fotos foram verificados
+pelo `chatgpt` (T-a840-pixelation 7673); o `claude` não teve os arquivos.
+
+As travadas são em parte criação de pipeline em runtime: 21 criadas, máximo de
+97 ms. A maior pausa, de 334 ms, não coincide com criação nem com espera
+registrada. Não é atribuída ao patch, porque não há captura do mesmo trecho
+com a 5.7.15.1 legível para comparar.
+
+Esta captura não substitui os testes que faltam: Bilinear/None com a 5.7.16.1,
+para parear com o lab, e a regressão pareada no A740.
