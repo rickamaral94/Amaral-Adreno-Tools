@@ -166,7 +166,9 @@ com o perfil original SGSR Edge + FXAA. Esse é o mesmo hash de ajustes da
 captura `20261026-205617-7853` da 5.7.15.1 OneUI, que tinha ruído em colunas. As
 três fotos de gameplay estão nítidas. O Rick relata "funcionando perfeito,
 algumas travadas na criação de shaders". O ZIP e as fotos foram verificados
-pelo `chatgpt` (T-a840-pixelation 7673); o `claude` não teve os arquivos.
+de forma independente pelo `chatgpt` (T-a840-pixelation 7673) e pelo `claude`.
+Nas fotos, a grade de ruído de 32/64 px some: a métrica fica entre 0,00 e 0,01,
+contra 0,20 a 0,65 com o ruído. GPU p50/p90/p99 da cena: 28,0/33,2/42,6 ms.
 
 As travadas são em parte criação de pipeline em runtime: 21 criadas, máximo de
 97 ms. A maior pausa, de 334 ms, não coincide com criação nem com espera

@@ -199,21 +199,23 @@
       "settings_sha256": "7566b20a7d7707f372b9baa596d67d087730e7d183d471384a35ab39a2825915",
       "duration_s": 439.03,
       "fps_avg": 29.25,
-      "gpu_ms_p50": null,
-      "gpu_ms_p90": null,
-      "gpu_ms_p99": null,
+      "gpu_ms_p50": 28.0,
+      "gpu_ms_p90": 33.2,
+      "gpu_ms_p99": 42.6,
       "gpu_clock_mhz_avg": null,
       "pipelines_created": 21,
       "source": "docs/tests/2026-10-sm8850-a840-marvel-ultimate-alliance-3.md",
       "comparison_grade": "observation",
       "notes": [
-        "ZIP e fotos enviados pelo Rick ao chatgpt; manifesto (9/9 arquivos) e ELF verificados pelo chatgpt (T-a840-pixelation 7673). O claude não teve os arquivos.",
+        "ZIP verificado de forma independente pelo chatgpt (T-a840-pixelation 7673) e pelo claude: SHA-256 do arquivo, manifesto 9/9, ELF 5.7.16.1 OneUI, hash de ajustes.",
         "Perfil original SGSR Edge + FXAA, Res1X, mesmo hash de ajustes da captura 20261026-205617-7853 (5.7.15.1 OneUI, ruído). Três fotos de gameplay nítidas (SHA-256 4ca731f1…, e3b27cd0…, 0d59577b…).",
-        "GPU p50/p99 28,0/42,8 ms (p90 não relatado). Intervalo p99 50,25 ms, máximo 333,955 ms; 120 de 12.789 quadros ≥ 50 ms.",
+        "Fotos recebidas também pelo claude (EXIF 11:59:52 a 12:06:19 UTC−3, dentro da sessão iniciada às 14:59:05Z): gameplay nítido, métrica de grade de 32/64 px de 0,00 a 0,01 (era 0,20 a 0,65 com ruído). Os hashes das fotos diferem dos do chatgpt por recompressão no envio.",
+        "GPU p50/p90/p99 da cena 28,0/33,2/42,6 ms. Intervalo p99 50,25 ms, máximo 333,955 ms; 120 de 12.789 quadros ≥ 50 ms.",
         "21 pipelines gráficas criadas em runtime, sem falha; criação máx. 97,4 ms e espera máx. 96,1 ms explicam parte das travadas; a maior pausa (334 ms, em 40,8 s) não coincide com criação nem espera registrada.",
         "Sem device lost ou erro fatal no log do Eden. Um evento low_memory e estado térmico máximo 2, sem causalidade atribuída."
       ],
-      "loaded_elf_sha256": "28cea848c357623b646e614a29104ee8d692c2e96dbdcd4ad1e8a2f492af3da0"
+      "loaded_elf_sha256": "28cea848c357623b646e614a29104ee8d692c2e96dbdcd4ad1e8a2f492af3da0",
+      "draws_per_frame": 990.3
     }
   ]
 }
