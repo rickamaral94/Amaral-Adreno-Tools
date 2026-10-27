@@ -242,11 +242,13 @@ Ao terminar com algo pendente para `claude`, o `chatgpt` toca a campainha:
 uma linha no PR #34 com `[chatgpt]`, o id da mensagem principal e a ação
 pedida (`review`, `decisão` ou `só leitura`). O conector pode usar a conta do
 Rick, por isso o prefixo identifica o autor. Para pedidos ao `chatgpt`, o
-`claude` publica no canal com `--awaits chatgpt`; a automação do `chatgpt` lê o
-canal a cada 3 horas. Um comentário `[claude]` no PR #34 serve só de registro
-do handoff; não acorda o `chatgpt`. Sem nada pendente, não comente.
-Sem `abacaxi`, a resposta `claude` → `chatgpt` pode esperar até a próxima
-execução da automação (3 horas). Para uma rodada simultânea, o Rick inicia
+`claude` publica no canal com `--awaits chatgpt`. Um comentário `[claude]` no
+PR #34 serve só de registro do handoff; não acorda o `chatgpt`. Sem nada
+pendente, não comente. **Desde 27/10/2026 não há automação ativa do
+`chatgpt`** (a sessão antiga foi arquivada pelo Rick; o teste FS-BELL-1BFDC8
+confirmou que a sessão nova não acorda sozinha). Até uma automação nova ser
+registrada e testada (§3.4), o pedido ao `chatgpt` espera o Rick mandar uma
+fruta na conversa dele. Para uma rodada simultânea, o Rick inicia
 `abacaxi` (§3.3); fora dela, mantenha o pedido em `--awaits` sem abrir uma
 janela de sync de 20 minutos.
 
@@ -292,11 +294,13 @@ Procedimento, igual para todos os agentes:
 
 - **`claude`:** monitora o PR #34 (comentário de outro autor o acorda) e tem uma
   verificação agendada a cada 3 horas (canal, PRs `collab:`, respostas).
-- **`chatgpt`:** a automação recorrente registrada em `T-protocol` (atualmente
-  `6adf65f4a3f481918e71322e830f8234`) lê o canal a cada 3 horas na
-  conversa registrada ali. A entrega foi observada em T-protocol 0131. Se a
-  automação for substituída, preserve a rotina do §2 e o
-  prompt de sessão do §2.1, e registre a nova rota em `T-protocol`.
+- **`chatgpt`:** **sem automação ativa** desde 27/10/2026. A automação de 3 h
+  da sessão antiga (T-protocol 0131) foi desativada junto com o arquivamento
+  da sessão pelo Rick. A rota atual é o Rick mandar uma fruta na conversa do
+  `chatgpt`. Uma automação nova vale só depois de: criada na sessão atual,
+  registrada em `T-protocol` com cadência e próximo horário (sem ids
+  privados) e aprovada num teste de ping com token respondido sem o Rick
+  (proposta T-protocol 7d3c). Preserve a rotina do §2 e o prompt do §2.1.
 - Aplique a campainha conforme o destinatário em §3.2. Uma falha de `@codex`
   não bloqueia mensagens no canal nem autoriza duplicar ambientes ou sessões.
 
@@ -357,8 +361,8 @@ mensagem da thread e a ação que ela exige.
   commit, teste ou ID) e próximo responsável/ação. Referencie o contexto antigo
   por ID; não recopie histórico, prompt, logs, matriz ou corpo do PR. Se nada
   mudou e ninguém aguarda resposta, não publique status nem toque a campainha.
-  Se uma resposta sua em `--awaits` passar de um ciclo do par (3 h para o
-  `chatgpt`), publique uma vez uma linha com estado e previsão de resposta; repita só se a previsão mudar.
+  Se uma resposta sua em `--awaits` passar de um ciclo do par (enquanto o
+  `chatgpt` não tiver automação, o ciclo é a próxima fruta do Rick), publique uma vez uma linha com estado e previsão de resposta; repita só se a previsão mudar.
 - **Agrupe sem esconder:** feche vários pedidos já resolvidos com `--closes` na
   próxima mensagem substantiva; reúna dúvidas relacionadas em uma revisão ou
   handoff. Mantenha mensagens separadas quando prioridade, dono ou prazo forem
