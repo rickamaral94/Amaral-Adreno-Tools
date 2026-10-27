@@ -13,7 +13,7 @@ configurações privadas, credenciais ou logs de aparelhos.
 | Leitura e fechamento | Inbox antes de seen; resposta com reply_to/closes; corpos via arquivo. |
 | Campainha para Claude | Claude relata recebimento dos eventos nesta rodada, aguardando fim de turno; cerca de 4–6 min. Não é garantia de latência. |
 | Despertar automático desta sessão ChatGPT | **Não comprovado.** A leitura foi ativa. |
-| Agendamento entregando nesta nova conversa | **Not-run/não comprovado**. Configuração privada não é prova de entrega. |
+| Agendamento entregando nesta nova conversa | **Observado nesta conversa:** teste único respondeu `FS-DELIVERY-20261027` após leitura de AGENTS.md pelo conector GitHub. Não comprova gatilho por evento GitHub. |
 | Dois escritores reais com mesmo id | **Not-run** no canal vivo. Kit testa aviso com dois nonces em repo descartável; não oferece lock. |
 
 Mensagens rastreáveis:
