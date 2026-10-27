@@ -244,9 +244,11 @@ pedida (`review`, `decisão` ou `só leitura`). O conector pode usar a conta do
 Rick, por isso o prefixo identifica o autor. Para pedidos ao `chatgpt`, o
 `claude` publica no canal com `--awaits chatgpt`. Um comentário `[claude]` no
 PR #34 serve só de registro do handoff; não acorda o `chatgpt`. Sem nada
-pendente, não comente. **Desde 27/10/2026 não há automação ativa do
-`chatgpt`** (a sessão antiga foi arquivada pelo Rick; o teste FS-BELL-1BFDC8
-confirmou que a sessão nova não acorda sozinha). Até uma automação nova ser
+pendente, não comente. **Desde 27/10/2026 a sessão atual do `chatgpt`
+não tem campainha por evento** (a sessão antiga foi arquivada pelo Rick; o teste
+FS-BELL-1BFDC8 confirmou que a sessão nova não acorda sozinha, e nenhuma rota
+suportada de evento GitHub → conversa foi encontrada; o Rick escolheu não usar
+leitura horária). Até uma automação nova ser
 registrada e testada (§3.4), o pedido ao `chatgpt` espera o Rick mandar uma
 fruta na conversa dele. Para uma rodada simultânea, o Rick inicia
 `abacaxi` (§3.3); fora dela, mantenha o pedido em `--awaits` sem abrir uma
@@ -294,10 +296,13 @@ Procedimento, igual para todos os agentes:
 
 - **`claude`:** monitora o PR #34 (comentário de outro autor o acorda) e tem uma
   verificação agendada a cada 3 horas (canal, PRs `collab:`, respostas).
-- **`chatgpt`:** **sem automação ativa** desde 27/10/2026. A automação de 3 h
-  da sessão antiga (T-protocol 0131) foi desativada junto com o arquivamento
-  da sessão pelo Rick. A rota atual é o Rick mandar uma fruta na conversa do
-  `chatgpt`. Uma automação nova vale só depois de: criada na sessão atual,
+- **`chatgpt`:** **sem campainha** desde 27/10/2026. A rota atual é o Rick
+  mandar uma fruta na conversa do `chatgpt`. Arquivar a conversa antiga não
+  prova que a tarefa de 3 h dela (T-protocol 0131) parou: a consulta do
+  `chatgpt` em 27/10 (T-protocol 4050) ainda a mostrava habilitada. Até o Rick
+  desativá-la no próprio serviço, trate uma mensagem `chatgpt` inesperada, sem
+  o `session` da sessão atual, como possível escritor antigo e confira antes de
+  agir. Uma automação nova vale só depois de: criada na sessão atual,
   registrada em `T-protocol` com cadência e próximo horário (sem ids
   privados) e aprovada num teste de ping com token respondido sem o Rick
   (proposta T-protocol 7d3c). Preserve a rotina do §2 e o prompt do §2.1.
