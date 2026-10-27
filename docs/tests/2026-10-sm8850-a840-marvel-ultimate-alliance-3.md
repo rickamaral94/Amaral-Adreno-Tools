@@ -30,6 +30,8 @@ idênticos. Ser Samsung não muda a variante para esta GPU.
 |---|---:|---:|---:|---|---|---|---|
 | `20261025-024143-0731` | 1,21 s | 28,62 | indisponível | indisponível | 9,0 / 11,8 / 12,3 | Global: Handheld, NearestNeighbor, dynamic state desligado | Manifesto verificado |
 | `20261025-025226-4468` | 77,35 s | 29,87 | 20,77 | 33,76 / 35,32 ms | 12,0 / 16,5 / 20,0 | Perfil do jogo: Docked, SgsrEdge, FXAA, EDS3 | Manifesto verificado |
+| `20261027-103106-1338` | 322,14 s de jogo (sessão 991 s) | 29,84 | indisponível | indisponível | 17,4 / 24,0 / 31,8 | Lab SnapAlloc; Bilinear, AA None, Docked, Res1X, EDS3 | Hashes do manifesto verificados |
+| `20261027-104847-1572` | 511,28 s | 29,79 | indisponível | indisponível | 20,6 / 28,7 / 35,7 | 5.7.14.1 Standard; mesmos ajustes | Hashes do manifesto verificados |
 
 Clock e ocupação da GPU pelo KGSL: indisponíveis (leitura do sysfs bloqueada).
 Bateria até 30,8 °C, estado térmico 0. Sem mensagens do driver, device lost ou
@@ -125,3 +127,32 @@ corrigir favorece a hipótese do gralloc. Outro lab também corrigir exige
 bisecção e não exclui essa hipótese: o `noubwc`, por exemplo, muda o layout que
 o Turnip escolhe para a imagem importada com modificador `INVALID` e pode
 mascarar a incompatibilidade.
+
+## Par lab SnapAlloc × 5.7.14.1 (27/10/2026)
+
+As duas capturas usam o mesmo Eden (`604cde0b1b`), o mesmo jogo e o mesmo hash
+de ajustes efetivos (`01faf4958aca79948c1c856672ef68aa1e95f14bbbcf17535d3a09177aa47f40`,
+idêntico ao do controle Qualcomm `20261026-211757-8120`). O swapchain também é o
+mesmo: RGBA8 2448×1848, FIFO, cinco imagens. Os nove arquivos de cada ZIP batem
+com o manifesto.
+
+| Captura | Driver carregado (ELF) | Imagem |
+|---|---|---|
+| `20261027-103106-1338` | lab 5.7.14.1-a840lab-snapalloc, `be0532f5aa62235e89a01538f405a4a50c66344387636e887da81d944aadfc16` | foto da tela de título nítida (EXIF 07:31:24, UTC−3); o Rick relata a sessão inteira sem erros, incluindo gameplay |
+| `20261027-104847-1572` | 5.7.14.1 Standard, `7fcdb9fb922357a04c05e8fa7dad128b8b85de7763b6c90901007c8fc76916ab` | duas fotos com ruído em colunas (EXIF 07:49:25 e 07:51:44) |
+
+As fotos não estão dentro dos ZIPs. A associação foto↔sessão usa o horário EXIF
+dentro da janela de cada sessão. O fuso UTC−3 foi conferido com as fotos de
+26/10 da captura `20261026-215741-1874`.
+
+**Leitura:** o resultado favorece o tratamento de layout/modifier dos handles
+SnapAlloc no fallback do u_gralloc. A base 5.7.14.1 reproduz o ruído, e o lab,
+que só acrescenta a MR !44464, não. Limites:
+- não há dump do modifier antes e depois, nem observação direta do ramo do
+  patch executado neste aparelho;
+- só há uma foto do lab, a do título; o gameplay limpo é relato do Rick;
+- o lab tinha a MR completa (34 e 33 ints). Pela descrição da MR, o caminho
+  esperado no A840 é o de 34 ints, mas estes ZIPs não registram qual ramo rodou.
+
+A candidata [5.7.16.1](../candidates/5.7.16.1/README.md) leva só o caminho de
+34 ints e ainda não foi testada em hardware.

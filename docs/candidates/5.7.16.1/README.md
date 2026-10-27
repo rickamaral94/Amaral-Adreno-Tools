@@ -1,10 +1,14 @@
 # Candidata de teste 5.7.16.1 — registro de integração
 
-A causa da corrupção de imagem do A840 (SM8850) no Eden/MUA3 está isolada
-(T-a840-pixelation, finding e9bd). No par físico com o mesmo hash de ajustes
-(`01faf495…`), a 5.7.14.1 tem ruído em colunas e o lab 5.7.14.1 + MR !44464 dá
-imagem nítida. O Rick confirmou o lab sem erros na sessão inteira, e o controle
-Qualcomm também é nítido. Proposta: `collab/channel` d14b, com review do
+O par físico do A840 (SM8850) no Eden/MUA3 favorece o tratamento de
+layout/modifier dos handles SnapAlloc no fallback do u_gralloc
+(T-a840-pixelation, finding e9bd; registro em
+[docs/tests](../../tests/2026-10-sm8850-a840-marvel-ultimate-alliance-3.md)).
+Com o mesmo hash de ajustes (`01faf495…`), a 5.7.14.1 tem ruído em colunas e o
+lab 5.7.14.1 + MR !44464 dá imagem nítida. O Rick relata o lab sem erros na
+sessão inteira, e o controle Qualcomm também é nítido. Não há observação direta
+do modifier nem do ramo executado. Rival residual: interação de cena ou estado,
+ou do patch completo do lab. Proposta: `collab/channel` d14b, com review do
 `chatgpt` pendente. Não é merge no PR #27 nem release.
 
 ## Integração
@@ -20,7 +24,11 @@ Qualcomm também é nítido. Proposta: `collab/channel` d14b, com review do
 - Mesa: `69f1f21f0258a77046dbaeb8ed7a8ad37a683006` (inalterado).
 - Patchset fingerprint: `e43c4b354f18e9390d1f221dce53b1462b8c53caf6cf830ada6837ad9a311f1c`.
 - Diferença para o lab testado: o lab tinha o MR completo (layouts de 34 e 33
-  ints); esta candidata tem só o de 34 ints, o único que o A840 exercita.
+  ints); esta candidata tem só o de 34 ints. Pela descrição da MR, é o caminho
+  esperado no A840, mas os ZIPs do lab não registram qual ramo rodou.
+- O patch não tem gate de chip: o fallback roda em qualquer GPU com gralloc
+  sem `gmsm`. Ele só aceita handles com a forma exata SnapAlloc e stride
+  coerente, mas isso não prova, sozinho, que outras famílias ficam intactas.
 
 ## Artefatos
 
@@ -41,5 +49,5 @@ Qualcomm também é nítido. Proposta: `collab/channel` d14b, com review do
 | `git diff --check` de config e docs da integração | pass |
 | Reprodutibilidade em dupla build, Standard e OneUI | pass: 2 builds independentes por variante, ZIP idêntico |
 | Hardware A840 desta candidata (título, gameplay, perfil SGSR+FXAA) | not-run |
-| Regressão A740 (fallback de gralloc em outro SoC) | not-run |
+| Regressão A740: mesmo jogo, cena e rota, 5.7.15.1 Standard × 5.7.16.1 Standard com ajustes iguais, ELF confirmado; pixels, crash/device lost, recriação de superfície ao minimizar e retomar | not-run |
 | A6xx, CTS, VVL | not-run |
