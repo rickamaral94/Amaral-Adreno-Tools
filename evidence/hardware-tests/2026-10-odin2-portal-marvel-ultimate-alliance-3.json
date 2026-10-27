@@ -14,7 +14,7 @@
     "frontend": "Eden",
     "resolution_note": "Eden 1×, Docked; swapchain 1920×1080; SgsrEdge, FXAA, anisotropia 16×; async shaders desligado, caches de disco e do driver ligados."
   },
-  "overall_assessment": "Execução sustentada da candidata 5.7.16.1 Standard no A740 por 923 s, sem erro registrado (device lost, falha de pipeline ou mensagem do driver). Não há fotos nem relato visual desta sessão, nem controle 5.7.15.1 no mesmo trecho: não é a regressão pareada da candidata. Pausas de até 577 ms ocorreram sem compilação de pipeline; causa aberta.",
+  "overall_assessment": "Par de configuração no A740 (mesmo Eden, mesmo hash de ajustes): 5.7.16.1 Standard (923 s, 29,75 FPS, GPU p50 19,8 ms) e 5.7.15.1 Standard (795 s, 29,73 FPS, GPU p50 20,3 ms), ambas sem erro registrado e com pacing p99 de 34,25 ms. Não há sinal de regressão da 5.7.16.1 nesta carga. Limites: rota não marcada, só a 5.7.15.1 tem foto, minimizar/retomar não registrado. Pausa de 577 ms na 0705 (contra máximo de 200 ms no controle) ocorreu uma vez, no início, sem compilação e logo após trim_memory; causa aberta.",
   "drivers": {
     "candidate-5.7.16.1": {
       "name": "Amaral Adreno Tools Candidate 5.7.16.1 Standard",
@@ -25,6 +25,16 @@
       "status": "observed",
       "patchset_sha256": "e43c4b354f18e9390d1f221dce53b1462b8c53caf6cf830ada6837ad9a311f1c",
       "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/blob/ccr-05e1d523-htngw2/docs/candidates/5.7.16.1/README.md"
+    },
+    "candidate-5.7.15.1": {
+      "name": "Amaral Adreno Tools Candidate 5.7.15.1 Standard",
+      "mesa_commit": "69f1f21f0258a77046dbaeb8ed7a8ad37a683006",
+      "elf_sha256": "5dc729c6a0ba605c3fd5d31b9cd80d5ca48107e5dfd1d5354c3f6cff0da874ec",
+      "proposal": "Controle da 5.7.16.1: mesmo lock e patchset, sem o patch SnapAlloc.",
+      "hardware_result": "MUA3 por 795 s a 29,73 FPS no mesmo Eden e com o mesmo hash de ajustes da captura da 5.7.16.1; imagem nítida na foto da sessão; nenhum erro registrado.",
+      "status": "observed",
+      "patchset_sha256": "6405a338a7f6255745534d8c446c6c249f2e936d5d0de677b4ef5a687309f924",
+      "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/blob/ccr-05e1d523-htngw2/docs/candidates/5.7.15.1/README.md"
     }
   },
   "captures": [
@@ -53,6 +63,33 @@
         "Sem fotos e sem relato visual: pixels não confirmados. Eden, aparelho e ajustes diferem das capturas A840; não é A/B."
       ],
       "loaded_elf_sha256": "af80c8847a613da7bc4daf413a0cf5d20e5a5b34535fc99331fe568faea64486"
+    },
+    {
+      "capture_id": "20261027-195410-6755",
+      "driver_id": "candidate-5.7.15.1",
+      "driver_identity": "elf-sha256",
+      "archive_sha256": "229e01f52b2566676c5ea5197412f9431807cef81dda06dbafdfd6c38f51637f",
+      "payload_integrity": "payload-hashes-verified",
+      "emulator_commit": "6b592ecbeaac9631ffef1cb5735931ed1083189b",
+      "settings_sha256": "991ea2e0a40f10860ba8eac85085a0d9dea8bd6d27a924b75a740e88d7c82876",
+      "duration_s": 795.53,
+      "fps_avg": 29.73,
+      "gpu_ms_p50": 20.3,
+      "gpu_ms_p90": 23.0,
+      "gpu_ms_p99": 30.5,
+      "gpu_clock_mhz_avg": 680,
+      "draws_per_frame": 1128.3,
+      "pipelines_created": 0,
+      "source": "docs/tests/2026-10-odin2-portal-marvel-ultimate-alliance-3.md",
+      "comparison_grade": "observation",
+      "notes": [
+        "Controle pareado da captura 20261027-184302-0705: mesmo Eden, mesmo hash de ajustes, 5.7.15.1 Standard no lugar da 5.7.16.1. Manifesto 8/8 verificado pelo claude.",
+        "Intervalo de quadro p50/p90/p99 33,5/33,5/34,25 ms; máximo 200,5 ms (aos 20,4 s, sem criação de pipeline). 0 pipelines criadas em runtime.",
+        "Foto da sessão (EXIF 17:00:28 −03:00 = 20:00:28Z, dentro da janela): gameplay nítido, overlay 6b592ecbea / Vulkan 1.4.363 / Odin2 Portal. As duas imagens enviadas são o mesmo arquivo.",
+        "Ocupação de GPU relatada de 21,0%, contra 64,5% na 0705 com tempo de GPU parecido: leitura do sysfs inconsistente entre sessões, não interpretada.",
+        "Minimizar/retomar não registrado; rota de jogo não marcada, então o par é de configuração, não de cena idêntica."
+      ],
+      "loaded_elf_sha256": "5dc729c6a0ba605c3fd5d31b9cd80d5ca48107e5dfd1d5354c3f6cff0da874ec"
     }
   ]
 }

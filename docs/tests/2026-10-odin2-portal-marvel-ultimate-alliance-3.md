@@ -14,6 +14,7 @@ anisotropia 16×, swapchain 1920×1080.
 | ID da captura Eden | Driver (ELF) | Duração | FPS | GPU p50/p90/p99 ms | Integridade |
 |---|---|---:|---:|---|---|
 | `20261027-184302-0705` | candidata [5.7.16.1](../candidates/5.7.16.1/README.md) Standard, `af80c8847a613da7bc4daf413a0cf5d20e5a5b34535fc99331fe568faea64486` | 923,06 s | 29,75 | 19,8 / 20,5 / 30,0 | Hashes do manifesto verificados |
+| `20261027-195410-6755` | 5.7.15.1 Standard (controle), `5dc729c6a0ba605c3fd5d31b9cd80d5ca48107e5dfd1d5354c3f6cff0da874ec` | 795,53 s | 29,73 | 20,3 / 23,0 / 30,5 | Hashes do manifesto verificados |
 
 Clock da GPU no máximo (680 MHz), ocupação média de 64,5%. O intervalo de
 quadro tem p99 de 34,25 ms e 99,3% dos quadros ficam entre 28 e 38 ms. As 260
@@ -34,8 +35,27 @@ sessão. Não houve device lost, falha de pipeline nem mensagem do driver.
 - O gralloc do Odin tem o magic `gmsm`, caminho que o patch SnapAlloc preserva.
   Esta captura não registra o ramo executado.
 
+## Controle 5.7.15.1 (mesma configuração)
+
+A captura `20261027-195410-6755` usa o mesmo Eden e o mesmo hash de ajustes
+(`991ea2e0…`) da 0705, com a 5.7.15.1 Standard no lugar da 5.7.16.1.
+
+| Métrica | 5.7.15.1 (6755) | 5.7.16.1 (0705) |
+|---|---:|---:|
+| FPS médio | 29,73 | 29,75 |
+| Intervalo p50/p99 | 33,5 / 34,25 ms | 33,5 / 34,25 ms |
+| Intervalo máximo | 200,5 ms | 577,5 ms |
+| GPU p50/p90/p99 | 20,3 / 23,0 / 30,5 ms | 19,8 / 20,5 / 30,0 ms |
+| Pipelines criadas em runtime | 0 | 0 |
+| Erros registrados | nenhum | nenhum |
+
+Nesta carga não há sinal de regressão da 5.7.16.1. A pausa maior da 0705 foi
+única, no início, sem compilação e logo depois de um `trim_memory`; com uma
+única ocorrência, não se atribui ao patch. A foto do controle (EXIF 20:00:28Z)
+mostra gameplay nítido. Limites: a rota não foi marcada, a 5.7.16.1 não tem
+foto e minimizar/retomar não foi registrado em nenhuma das duas.
+
 ## Próximos testes
 
-1. Controle 5.7.15.1 Standard no mesmo Eden, ajustes, rota e cache, com fotos e
-   minimizar/retomar; depois a 5.7.16.1 no mesmo trecho.
+1. 5.7.16.1 com foto e com minimizar/retomar, no mesmo trecho do controle.
 2. Para as pausas: marcar a cena e repetir o trecho inicial sem limpar o cache.
