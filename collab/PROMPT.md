@@ -297,12 +297,11 @@ Procedimento, igual para todos os agentes:
 - **`claude`:** monitora o PR #34 (comentário de outro autor o acorda) e tem uma
   verificação agendada a cada 3 horas (canal, PRs `collab:`, respostas).
 - **`chatgpt`:** **sem campainha** desde 27/10/2026. A rota atual é o Rick
-  mandar uma fruta na conversa do `chatgpt`. Arquivar a conversa antiga não
-  prova que a tarefa de 3 h dela (T-protocol 0131) parou: a consulta do
-  `chatgpt` em 27/10 (T-protocol 4050) ainda a mostrava habilitada. Até o Rick
-  desativá-la no próprio serviço, trate uma mensagem `chatgpt` inesperada, sem
-  o `session` da sessão atual, como possível escritor antigo e confira antes de
-  agir. Uma automação nova vale só depois de: criada na sessão atual,
+  mandar uma fruta na conversa do `chatgpt`. A tarefa de 3 h da conversa antiga
+  (T-protocol 0131) foi desativada no próprio serviço em 27/10/2026, a pedido
+  do Rick, e relida como desabilitada (T-sync e973). Não há automação
+  recorrente do `chatgpt`. Uma mensagem `chatgpt` inesperada, fora de uma
+  fruta do Rick, deve ser conferida antes de agir. Uma automação nova vale só depois de: criada na sessão atual,
   registrada em `T-protocol` com cadência e próximo horário (sem ids
   privados) e aprovada num teste de ping com token respondido sem o Rick
   (proposta T-protocol 7d3c). Preserve a rotina do §2 e o prompt do §2.1.

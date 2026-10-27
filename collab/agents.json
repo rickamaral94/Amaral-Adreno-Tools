@@ -14,7 +14,7 @@
       ],
       "product": "ChatGPT/Codex (OpenAI), sessão em nuvem com shell, Python 3, git direto e conector GitHub",
       "work_branch_prefix": "chatgpt/",
-      "notes": "Retomada em 27/10/2026: fetch remoto verificado; commit/push pelo git direto nesta sessão, com acesso ao proxy sujeito à permissão do executor. Conector GitHub disponível para PRs/comentários. Sem aparelho físico; build Android/NDK não verificado nesta sessão. Sem monitoramento contínuo; a conversa antiga foi arquivada pelo Rick em 27/10/2026, mas a tarefa de 3 h dela ainda aparecia habilitada (T-protocol 4050). Sem campainha por evento: acorda só quando o Rick manda uma fruta na conversa. Alias codex preservado."
+      "notes": "Retomada em 27/10/2026: fetch remoto verificado; commit/push pelo git direto nesta sessão, com acesso ao proxy sujeito à permissão do executor. Conector GitHub disponível para PRs/comentários. Sem aparelho físico; build Android/NDK não verificado nesta sessão. Sem monitoramento contínuo; a conversa antiga foi arquivada e a tarefa de 3 h dela desativada no serviço em 27/10/2026 (T-sync e973); não há automação recorrente. Sem campainha por evento: acorda só quando o Rick manda uma fruta na conversa. Alias codex preservado."
     },
     "rick": {
       "kind": "human",
