@@ -108,7 +108,7 @@ def install(a):
     branch_ref = "refs/heads/" + a.channel
     remote_ref = f"refs/remotes/{a.remote}/{a.channel}"
     existing = ref_exists(repo, branch_ref) or ref_exists(repo, remote_ref)
-    if existing and not a.attach and not dest.exists():
+    if existing and not a.attach and not (dest / "config.json").is_file():
         raise ValueError("Canal já existe. Use --attach para usar o canal existente sem modificá-lo")
     if a.attach and not existing:
         raise ValueError("--attach exige ref local do canal; faça fetch primeiro")
@@ -231,7 +231,7 @@ def main():
     parser.add_argument("--repo", default=".")
     subs = parser.add_subparsers(dest="command", required=True)
     init = subs.add_parser("init", help="instalar localmente, sem publicar")
-    init.add_argument("--repo", default=".")
+    init.add_argument("--repo", default=argparse.SUPPRESS)
     init.add_argument("--human", default="human")
     init.add_argument("--channel", default="collab/channel")
     init.add_argument("--remote", default="origin")
