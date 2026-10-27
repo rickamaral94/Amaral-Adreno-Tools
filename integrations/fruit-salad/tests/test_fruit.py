@@ -155,6 +155,43 @@ class FruitIntegration(unittest.TestCase):
         self.engine(work, "new", "--from", "chatgpt", "--to", "all", "--type", "hello",
                     "--thread", "T-hello", "--body", "Sessão inválida", "--session", "validnonce\nfrom: ana", good=False)
 
+    def test_top_level_repo_is_respected_by_init(self):
+        other = self.base / "other"
+        other.mkdir()
+        self.git("init", "-b", "main", cwd=other)
+        self.git("config", "user.name", "Test", cwd=other)
+        self.git("config", "user.email", "test@example.invalid", cwd=other)
+        self.git("commit", "--allow-empty", "-m", "base", cwd=other)
+        # Run inside self.repo while explicitly targeting other via parent parser.
+        self.cli("--repo", str(other), "init", "--human", "ana")
+        self.assertTrue((other / ".fruit-salad/config.json").exists())
+        self.assertFalse((self.repo / ".fruit-salad").exists())
+        self.assertNotEqual(self.git("show-ref", "--verify", "refs/heads/collab/channel", check=False).returncode, 0)
+
+    def test_divergence_preserves_commits_and_shows_recovery(self):
+        self.install()
+        work = self.worktree()
+        bare = self.base / "divergence.git"
+        subprocess.run(["git", "init", "--bare", str(bare)], check=True, capture_output=True)
+        self.git("remote", "add", "origin", str(bare))
+        self.git("push", "origin", "collab/channel")
+        clone = self.base / "other writer"
+        subprocess.run(["git", "clone", "--branch", "collab/channel", str(bare), str(clone)], check=True, capture_output=True)
+        self.git("config", "user.name", "Test", cwd=clone)
+        self.git("config", "user.email", "test@example.invalid", cwd=clone)
+        self.git("commit", "--allow-empty", "-m", "remote change", cwd=clone)
+        self.git("push", "origin", "collab/channel", cwd=clone)
+        remote_head = self.git("rev-parse", "HEAD", cwd=clone).stdout
+        self.git("commit", "--allow-empty", "-m", "local change", cwd=work)
+        local_head = self.git("rev-parse", "HEAD", cwd=work).stdout
+        result = self.cli("abacaxi", "--agent", "chatgpt", "--fetch", good=False)
+        self.assertIn("Canal divergente", result.stderr)
+        self.assertIn(str(work), result.stderr)
+        self.assertIn("pull --rebase origin collab/channel", result.stderr)
+        self.assertIn("push origin collab/channel", result.stderr)
+        self.assertEqual(local_head, self.git("rev-parse", "HEAD", cwd=work).stdout)
+        self.assertEqual(remote_head, self.git("rev-parse", "origin/collab/channel", cwd=work).stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -191,7 +192,17 @@ def channel_worktree(repo, config, fetch=False):
         git(repo, "worktree", "add", str(worktree), branch)
     if fetch:
         if git(worktree, "status", "--porcelain").stdout:
-            raise ValueError("Canal tem alterações locais; preserve-as antes de sincronizar")
+            raise ValueError(f"Canal tem alterações locais em {worktree}; preserve-as antes de sincronizar")
+        ahead, behind = map(int, git(worktree, "rev-list", "--left-right", "--count",
+                                     f"HEAD...{remote_ref}").stdout.split())
+        if ahead and behind:
+            command = "git -C " + shlex.quote(str(worktree))
+            raise ValueError(
+                f"Canal divergente em {worktree}: {ahead} commit(s) local(is), {behind} remoto(s). "
+                "Nenhuma mensagem descartada. Revise e execute em shell POSIX:\n"
+                f"{command} pull --rebase {shlex.quote(remote)} {shlex.quote(branch)}\n"
+                f"{command} push {shlex.quote(remote)} {shlex.quote(branch)}\n"
+                "Se houver conflito, reconcilie antes de continuar; não force push.")
         git(worktree, "merge", "--ff-only", remote_ref)
     print(f"Canal {'atualizado por fetch' if fetch else 'LOCAL (sem consultar remoto)'}: "
           f"{git(worktree, 'rev-parse', 'HEAD').stdout.strip()}", flush=True)
@@ -219,6 +230,9 @@ def doctor(repo, config):
             failures.append(name)
     worktree = channel_worktree(repo, config)
     engine(worktree, "validate")
+    roster = json.loads((worktree / "collab/agents.json").read_text(encoding="utf-8"))["agents"]
+    if roster.get(config["human"], {}).get("kind") != "human":
+        print("WARN config.human difere do roster do canal anexado; o roster é a autoridade.")
     print("NOT-RUN push, campainha, despertar dos agentes e execução periódica.")
     print("Campainha: " + (f"PR #{config['doorbell']} configurado, não verificado" if config.get("doorbell") else "manual; nenhum PR configurado"))
     print("Duas sessões com o mesmo id: validate avisa sobre nonces distintos; não há lock distribuído.")
