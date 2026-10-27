@@ -52,6 +52,9 @@ VERDICTS = {"approve", "changes", "reject"}
 PRIORITIES = {"P0", "P1", "P2", "P3"}
 ID_RE = re.compile(r"\d{8}T\d{9}Z-[a-z0-9]+-[0-9a-f]{4}\Z")
 THREAD_RE = re.compile(r"T-[a-z0-9][a-z0-9.-]{2,60}\Z")
+# Corpo que é só um caminho absoluto: o autor passou o arquivo em --body em vez do conteúdo.
+PATH_BODY_RE = re.compile(r"/[^\s]+\Z")
+PATH_BODY_SINCE = "2026-10-27T00:30:00Z"  # mensagens anteriores ficam como estão
 
 
 def utcnow():
@@ -246,6 +249,8 @@ def validate(items=None):
             errors.append(f"{name}: priority deve ser P0..P3")
         if not m["body"]:
             errors.append(f"{name}: corpo vazio")
+        elif PATH_BODY_RE.match(m["body"]) and m.get("created", "") >= PATH_BODY_SINCE:
+            errors.append(f"{name}: corpo é só um caminho ({m['body']}); use --body-file")
     return errors
 
 
@@ -311,12 +316,25 @@ def seen_ids(agent):
     return {line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip()}
 
 
+def read_body(body, body_file, stdin=None):
+    if body and body_file:
+        sys.exit("use --body ou --body-file, não os dois")
+    if body_file:
+        body = pathlib.Path(body_file).read_text(encoding="utf-8")
+    elif not body:
+        body = (stdin or sys.stdin).read()
+    body = body.strip()
+    if not body:
+        sys.exit("corpo vazio: passe --body, --body-file ou envie pelo stdin")
+    if PATH_BODY_RE.match(body):
+        sys.exit(f"corpo é só um caminho ({body}); para enviar o arquivo use --body-file {body}")
+    return body
+
+
 def cmd_new(a):
     if a.type not in TYPES:
         sys.exit(f"type inválido; opções: {', '.join(TYPES)}")
-    body = sys.stdin.read().strip() if not a.body else a.body.strip()
-    if not body:
-        sys.exit("corpo vazio: passe --body ou envie pelo stdin")
+    body = read_body(a.body, a.body_file)
     now = utcnow()
     mid = new_id(a.sender)
     head = {"id": mid, "from": a.sender, "to": a.to, "type": a.type, "thread": a.thread,
@@ -757,6 +775,26 @@ def cmd_selftest(_):
             "thread": "T-test", "awaits": "claude", "created": "2026-01-01T00:26:20Z"})
         assert any("presente em to" in e for e in validate()), validate()
         (MESSAGES / "20260101T002620000Z-codex-0033.md").unlink()
+        put("20261027T010000000Z-claude-0034", {"from": "claude", "to": "chatgpt", "type": "status",
+            "thread": "T-test", "created": "2026-10-27T01:00:00Z"}, body="/tmp/a840-answer.txt")
+        assert any("só um caminho" in e for e in validate()), validate()
+        (MESSAGES / "20261027T010000000Z-claude-0034.md").unlink()
+        put("20261026T235900000Z-claude-0036", {"from": "claude", "to": "chatgpt", "type": "status",
+            "thread": "T-test", "created": "2026-10-26T23:59:00Z"}, body="/tmp/antiga.txt")
+        assert validate() == [], validate()
+        (MESSAGES / "20261026T235900000Z-claude-0036.md").unlink()
+        src = pathlib.Path(tmp) / "corpo.txt.in"
+        src.write_text("linha 1\nlinha 2 com acentuação\n", encoding="utf-8")
+        assert read_body(None, str(src)) == "linha 1\nlinha 2 com acentuação"
+        assert read_body(" texto ", None) == "texto"
+        import io
+        assert read_body(None, None, stdin=io.StringIO("via stdin\n")) == "via stdin"
+        for args in (("/tmp/x.txt", None), ("a", str(src)), ("  ", None)):
+            try:
+                read_body(*args, stdin=io.StringIO(""))
+                raise AssertionError(f"read_body aceitou {args}")
+            except SystemExit:
+                pass
     MESSAGES = original
     print("selftest ok")
 
@@ -771,6 +809,7 @@ def main():
     n.add_argument("--thread", required=True)
     for key in ("title", "reply-to", "closes", "awaits", "priority", "verdict", "lease-hours", "needs-human", "refs", "body"):
         n.add_argument(f"--{key}", dest=key.replace("-", "_"))
+    n.add_argument("--body-file", dest="body_file", help="lê o corpo deste arquivo (UTF-8)")
     for name in ("inbox", "seen"):
         s = sub.add_parser(name)
         s.add_argument("--agent", default="auto", help="id do agente; padrão: detectado")

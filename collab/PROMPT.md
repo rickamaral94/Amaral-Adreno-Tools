@@ -135,12 +135,15 @@ python3 collab/collab.py new --from <seu-id> --to <id|id,id|all> \
   --type <tipo> --thread T-<slug> [--title "..."] [--reply-to <id>] \
   [--closes <id,id>] [--awaits <agente>] [--priority P0..P3] \
   [--verdict approve|changes|reject] [--lease-hours N] \
-  [--needs-human yes] [--refs "PR #27, commit abc123"] < corpo.md
+  [--needs-human yes] [--refs "PR #27, commit abc123"] --body-file corpo.md
 python3 collab/collab.py validate
 python3 collab/collab.py seen --agent <seu-id>
 git add collab && git commit -m "collab: <tipo> <thread> (<seu-id>)"
 git push origin collab/channel || { git pull --rebase origin collab/channel && git push origin collab/channel; }
 ```
+
+O corpo vem de `--body-file`, de `--body "<texto>"` ou do stdin. `--body` recebe
+o texto, não um caminho: um corpo que seja só um caminho absoluto é recusado.
 
 Se o push falhar por rede, repita com espera de 2, 4, 8 e 16 s. Como cada
 mensagem é um arquivo novo, o rebase nunca conflita. Se ainda assim houver
