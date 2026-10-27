@@ -44,14 +44,153 @@ compilação de shader. Memória livre mínima do sistema: 1.368 MiB.
 - O split de draws indiretos A8xx não é exercitado: o jogo não gera draws
   indiretos grandes.
 - **Imagem:** o usuário relata imagem totalmente pixelada. As capturas não
-  registram pixels. A configuração global (`NearestNeighbor` ampliando para
-  2448×1848) produz pixelização sem envolver o driver; o perfil do jogo usa
-  SgsrEdge. Causa não isolada.
+  registram pixels. A captura curta usava `NearestNeighbor` global, mas a
+  captura principal de 77 s já usava **SgsrEdge/FXAA** no perfil do jogo; assim,
+  Nearest sozinho não explica o relato persistente. Causa não isolada.
+
+## Observação visual adicional — 26/10/2026 (em revisão)
+
+O Rick enviou duas capturas do MUA3 no mesmo aparelho: às 17:56:29, o conteúdo
+do jogo aparece preto, com poucos pontos/linhas de ruído na faixa inferior
+([imagem](images/a840-20261026/175629-black.jpg), SHA-256
+`68f5cf22bcab7387d886a8c7b8f22a5583243885cd0d6dcc204c0c34f4f1df29`);
+às 17:56:42, a maior parte da área do jogo mostra ruído denso em colunas
+([imagem](images/a840-20261026/175642-noise.jpg), SHA-256
+`9e7696a30aa2fb5e224f16578e8f914ed1b766daf83249cb2c1cb24f180bd870`).
+Os controles virtuais do Eden permanecem legíveis nas duas; não há cena do jogo
+reconhecível no ruído. Uma medição independente do perfil médio de luminância
+na região central sem controles (colunas 350–849, linhas 200–499, screenshot
+1280×966) encontra período principal de ~16,7 px na captura, equivalente a
+~31,9 px no swapchain 2448×1848, com harmônico de ~8,3 px na captura. Isso
+é compatível com uma grade no espaço de apresentação, mas não distingue
+memória tiled/comprimida de shader em blocos. Essas imagens demonstram
+corrupção visual observada, não apenas pixels grandes de NearestNeighbor.
+Não há prova de que as duas imagens sejam o mesmo quadro ou de que o jogo já
+tivesse terminado de carregar na primeira.
+
+O ZIP de diagnóstico enviado junto (`20261026-205617-7853`, SHA-256
+`097ddcc251def60a410814c0afee67d7d68fa06adf28fb2183849b319a697e52`)
+passou `unzip -t`; manifesto `complete=true`. Não foi incluído no repositório,
+pois contém logs brutos. Campos selecionados do `report.json`/`summary.txt`:
+
+| Item | Valor observado |
+|---|---|
+| Driver selecionado | Candidate **5.7.15.1 OneUI**, Mesa `69f1f21f02`; não é o controle 5.7.14.1 Standard da etapa 0 |
+| ELF realmente carregado | `0f83d311ecebffcf4946f2fa9d797199b8b8d97620f53b5624b62d3083749e4f`, igual ao ELF OneUI 5.7.15.1 entregue; build-id `04bc281f85128874434fd2de7f3e99b21a6ecba9` |
+| Eden/jogo | `604cde0b1b964c7bb0092550ec62511545096bc2`, MUA3 `010060700AC50000`, update 4.0.1 (NAND) ativo |
+| Configuração | Docked, Res1X, filtro **SgsrEdge**, FXAA, swapchain 2448×1848 RGBA8/FIFO; hash das configurações efetivas `7566b20a7d7707f372b9baa596d67d087730e7d183d471384a35ab39a2825915` |
+| Captura | 645,39 s, 1 cena registrada sem marcador manual, ~29,9 FPS, GPU p50/p90/p99 12,8/15,5/21,3 ms, nenhuma falha de dispositivo/pipeline registrada, fim por ação do usuário |
+
+O ZIP não contém imagens dos quadros, nem capturas pareadas com Bilinear,
+5.7.14.1 Standard ou Qualcomm. A tela preta e as colunas de ruído podem vir do
+jogo/decodificação, de um alvo intermediário do Eden, do filtro/presentação ou
+do Turnip; os dados ainda não localizam a etapa defeituosa. Não atribuir raiz a
+SnapAlloc, UBWC, GMEM ou aos três backports da 5.7.15.1 sem controle. A
+comparação com o Qualcomm chegou depois e mudou a ordem do próximo teste,
+descrita abaixo. Os controles pareados ainda não foram executados.
+
+### Controle Qualcomm recebido depois (ainda não pareado)
+
+Novo ZIP Eden `20261026-211757-8120` (SHA-256
+`dc3169ef3b10a3a5ebe559b91a8c269f127ffe7c55826b9f3f704edee12b007c`):
+arquivo íntegro, manifesto completo, mesmo Eden/MUA3/update/aparelho. O driver
+**realmente carregado** é o Qualcomm do sistema
+(`VK_DRIVER_ID_QUALCOMM_PROPRIETARY`), ELF SHA-256
+`f7ea5e9121db1e6dc5ca6d09c6f763bff09dfff30e758e8c865f1cc238fec1f9`.
+O swapchain continua RGBA8 2448×1848/FIFO com cinco imagens. O teste Qualcomm
+usou **Bilinear e AA desligado** (`None`), mantendo Docked/Res1X/EDS3; hash das
+configurações efetivas
+`01faf4958aca79948c1c856672ef68aa1e95f14bbbcf17535d3a09177aa47f40`.
+As duas fotos mostram a cena jogável legível:
+[foto 1](images/a840-20261026/qualcomm-gameplay-1.jpg)
+(SHA-256 `606cf73d8035871b16ab0221f0d5efc9f965d5f6b57ac0048caa8b54922643e3`)
+e [foto 2](images/a840-20261026/qualcomm-gameplay-2.jpg)
+(SHA-256 `3ebff4ea11de2350c15a3b0d140439f5141c14845e1dd83f20e5a6297078d422`).
+
+O Rick identificou a [terceira foto](images/a840-20261026/turnip-compiling-noise.jpg)
+(SHA-256 `9d9db4910c045a543d3635da88489d121ed50ab4738abd9d9a6112eccafb5c24`)
+como teste com nosso driver: há colunas de ruído, mas o overlay indica
+“Compilando 78 Shader(s)” e 0 FPS. As fotos não estão dentro dos ZIPs; a
+atribuição desta foto a uma captura específica é relato do Rick. As duas
+capturas Turnip anteriores, porém, já mostravam o mesmo ruído a ~30 FPS sem
+compilação no overlay, e o ZIP Turnip de 645 s registrou zero criação/espera
+de pipeline durante a captura: o defeito não se restringe à compilação.
+
+**Naquela rodada ainda não havia A/B de configuração:** o Turnip anterior usou
+SgsrEdge/FXAA e o Qualcomm usou Bilinear/AA None. O ZIP Qualcomm registra uma
+falha de criação de pipeline compute (`VK_ERROR_UNKNOWN`) ~102 s após o início
+e um `VK_ERROR_SURFACE_LOST_KHR` ~303 s após o início, próximo à recriação do
+swapchain, mas termina por ação do usuário;
+esses eventos isolados não demonstram causa da corrupção Turnip. FPS das duas
+sessões não é comparável devido a cache/compilação diferentes.
+O Turnip restaurou 33 pipelines do arquivo e a Qualcomm 3; diferenças nas
+features `shaderResourceMinLod`/`shaderResourceResidency` são consequência dos
+drivers e não podem ser igualadas por ajuste do usuário.
+
+Próximo controle prioritário: no Turnip 5.7.15.1 OneUI, reproduzir **Bilinear
++ AA None** na mesma tela SAVE/menu estável alcançada no Qualcomm (relato do
+`claude` em T-a840-pixelation ca82), após terminar o carregamento; se não
+conseguir chegar a ela sem imagem, use o mesmo menu de título estável nos dois
+drivers. Duas capturas separadas por ≥10 s e ZIP Eden próprio com
+driver/configuração confirmados. Gameplay é bônus se ficar navegável.
+Se persistir o ruído, a suspeita de caminho específico do Turnip aumenta. Se
+limpar, reativar FXAA e depois SgsrEdge um por vez; não instalar labs ainda.
+
+**Correção relatada pelo Rick:** ele informou que também viu ruído ao testar
+nosso driver com **Bilinear e AA desligado**. Isso enfraquece a hipótese de que
+SgsrEdge/FXAA sejam condições necessárias para o ruído. O arquivo que ele
+reenviou como “segundo diagnóstico do nosso driver”, porém, tem SHA-256
+`dc3169ef3b10a3a5ebe559b91a8c269f127ffe7c55826b9f3f704edee12b007c`,
+byte a byte igual ao ZIP Qualcomm acima. Nele constam `selection=system`,
+`VK_DRIVER_ID_QUALCOMM_PROPRIETARY` e ELF
+`f7ea5e9121db1e6dc5ca6d09c6f763bff09dfff30e758e8c865f1cc238fec1f9`.
+O ZIP correto do Turnip nessa configuração chegou depois, como registrado abaixo.
+O arquivo `8120` continua sendo o controle Qualcomm; não foi reclassificado.
+
+### Turnip Bilinear/AA None — controle de configuração recebido
+
+O ZIP `20261026-215741-1874` (SHA-256
+`8ca27e340a5c28e11ea89b7c424214985a7a9eff58e5a481478d3ccabef30655`)
+passou `unzip -t` e tem manifesto completo. O driver selecionado é **custom**,
+5.7.15.1 OneUI, com `VK_DRIVER_ID_MESA_TURNIP`; o ELF carregado tem SHA-256
+`0f83d311ecebffcf4946f2fa9d797199b8b8d97620f53b5624b62d3083749e4f`.
+A biblioteca Qualcomm do sistema também aparece mapeada, mas não é o ICD ativo.
+O hash das configurações efetivas é
+`01faf4958aca79948c1c856672ef68aa1e95f14bbbcf17535d3a09177aa47f40`,
+**idêntico ao controle Qualcomm `8120`**: Bilinear, AA `None`, Docked, Res1X,
+EDS3 e precisão GPU Low. Mesmo Eden, jogo/update e swapchain RGBA8
+2448×1848/FIFO com cinco imagens. A sessão durou 123,3 s, sem device lost ou
+erro de pipeline, e terminou por ação do usuário. O FPS da sessão inteira
+inclui carregamento e não serve para avaliar a correção da imagem.
+
+Três fotos enviadas pelo Rick mostram a mesma corrupção em colunas:
+[30 FPS](images/a840-20261026/turnip-bilinear-noise-30fps.jpg)
+(SHA-256 `089fa6c58ad47352f20d60394efcbab53b83348d61aa69f1b020064177c1fe2f`),
+[0 FPS](images/a840-20261026/turnip-bilinear-noise-0fps.jpg)
+(SHA-256 `a5b3c634582de1b7de7bbbadc1041e5e6d001858d7d0ba3cc426a79fd44a44a3`)
+e [compilação](images/a840-20261026/turnip-compiling-noise.jpg). As fotos não
+estão dentro do ZIP; a associação à sessão vem do envio do Rick e do overlay.
+O ruído a 30 FPS mostra que não depende de uma pausa para compilar shaders.
+SGSR e FXAA não são condições necessárias, pois ambos estavam desligados.
+
+Esse par controla driver, configurações efetivas, jogo e swapchain; a imagem
+Qualcomm está nítida e a Turnip está corrompida. As fotos Qualcomm registram
+gameplay e as Turnip, menu, portanto não há comparação pixel a pixel do mesmo
+quadro. O resultado favorece um defeito dependente do driver ou da interação
+Eden–driver, mas **não identifica** SnapAlloc, UBWC, GMEM nem shader final.
+A grade próxima de 32 px no swapchain é compatível com mais de um desses
+mecanismos; seria preciso observar a imagem antes da apresentação ou testar
+uma mudança isolada para atribuir causa.
 
 ## Próximos testes
 
-1. Screenshot da mesma cena com: perfil atual; scaling Bilinear; driver Qualcomm
-   do aparelho. Separa escala do Eden, Turnip e o próprio jogo.
+1. Antes do lab SnapAlloc já construído sobre 5.7.14.1 Standard, confirmar
+   nessa **mesma base** que o ruído se reproduz em Bilinear/AA None na mesma
+   tela. Se reproduzir, comparar com o lab SnapAlloc, uma troca por vez, com
+   fotos e ZIP Eden. Se a base estiver limpa, não interpretar o lab antigo
+   como teste do defeito 5.7.15.1: reconstruir o lab nessa base mais recente.
+   Um segundo jogo Eden com o mesmo swapchain ajuda a medir o alcance, mas um
+   resultado normal nele não elimina uma interação específica do MUA3.
 2. Labs de diagnóstico, uma mudança por build e destinados só ao teste físico
    na A840 (ver o escopo de código de cada um abaixo). Um resultado positivo
    indica o caminho a bisectar, não a causa raiz. Nenhum lab é release.
