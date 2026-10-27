@@ -7,7 +7,8 @@
     "patches/0008-remove-mgs4-vendor-spoof.patch",
     "patches/upstream-29db4909d4e.patch",
     "patches/upstream-64245a20b78.patch",
-    "patches/upstream-a1e9f888421.patch"
+    "patches/upstream-a1e9f888421.patch",
+    "patches/upstream-mr44464-snapalloc-34ints.patch"
   ],
   "oneui_extra": [
     "patches/0003-oneui-ubwc.patch"
