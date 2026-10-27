@@ -116,9 +116,8 @@ capturas Turnip anteriores, porém, já mostravam o mesmo ruído a ~30 FPS sem
 compilação no overlay, e o ZIP Turnip de 645 s registrou zero criação/espera
 de pipeline durante a captura: o defeito não se restringe à compilação.
 
-**Ainda não há A/B de driver:** o Turnip anterior usou SgsrEdge/FXAA, o Qualcomm
-usou Bilinear/AA None; o estágio de menu é comparável entre ZIPs, mas as fotos
-Qualcomm mostram gameplay e a nova foto Turnip mostra compilação. O ZIP Qualcomm registra uma
+**Naquela rodada ainda não havia A/B de configuração:** o Turnip anterior usou
+SgsrEdge/FXAA e o Qualcomm usou Bilinear/AA None. O ZIP Qualcomm registra uma
 falha de criação de pipeline compute (`VK_ERROR_UNKNOWN`) ~102 s após o início
 e um `VK_ERROR_SURFACE_LOST_KHR` ~303 s após o início, próximo à recriação do
 swapchain, mas termina por ação do usuário;
@@ -145,18 +144,53 @@ reenviou como “segundo diagnóstico do nosso driver”, porém, tem SHA-256
 byte a byte igual ao ZIP Qualcomm acima. Nele constam `selection=system`,
 `VK_DRIVER_ID_QUALCOMM_PROPRIETARY` e ELF
 `f7ea5e9121db1e6dc5ca6d09c6f763bff09dfff30e758e8c865f1cc238fec1f9`.
-Portanto, o resultado Turnip em Bilinear/AA None permanece **relatado, sem ZIP
-atribuível**; não se pode promovê-lo a A/B verificado nem reclassificar o ZIP
-Qualcomm como Turnip. Primeiro procurar o ZIP correto desse teste já feito;
-se não existir, uma captura curta nessa configuração basta para documentá-lo.
+O ZIP correto do Turnip nessa configuração chegou depois, como registrado abaixo.
+O arquivo `8120` continua sendo o controle Qualcomm; não foi reclassificado.
+
+### Turnip Bilinear/AA None — controle de configuração recebido
+
+O ZIP `20261026-215741-1874` (SHA-256
+`8ca27e340a5c28e11ea89b7c424214985a7a9eff58e5a481478d3ccabef30655`)
+passou `unzip -t` e tem manifesto completo. O driver selecionado é **custom**,
+5.7.15.1 OneUI, com `VK_DRIVER_ID_MESA_TURNIP`; o ELF carregado tem SHA-256
+`0f83d311ecebffcf4946f2fa9d797199b8b8d97620f53b5624b62d3083749e4f`.
+A biblioteca Qualcomm do sistema também aparece mapeada, mas não é o ICD ativo.
+O hash das configurações efetivas é
+`01faf4958aca79948c1c856672ef68aa1e95f14bbbcf17535d3a09177aa47f40`,
+**idêntico ao controle Qualcomm `8120`**: Bilinear, AA `None`, Docked, Res1X,
+EDS3 e precisão GPU Low. Mesmo Eden, jogo/update e swapchain RGBA8
+2448×1848/FIFO com cinco imagens. A sessão durou 123,3 s, sem device lost ou
+erro de pipeline, e terminou por ação do usuário. O FPS da sessão inteira
+inclui carregamento e não serve para avaliar a correção da imagem.
+
+Três fotos enviadas pelo Rick mostram a mesma corrupção em colunas:
+[30 FPS](images/a840-20261026/turnip-bilinear-noise-30fps.jpg)
+(SHA-256 `089fa6c58ad47352f20d60394efcbab53b83348d61aa69f1b020064177c1fe2f`),
+[0 FPS](images/a840-20261026/turnip-bilinear-noise-0fps.jpg)
+(SHA-256 `a5b3c634582de1b7de7bbbadc1041e5e6d001858d7d0ba3cc426a79fd44a44a3`)
+e [compilação](images/a840-20261026/turnip-compiling-noise.jpg). As fotos não
+estão dentro do ZIP; a associação à sessão vem do envio do Rick e do overlay.
+O ruído a 30 FPS mostra que não depende de uma pausa para compilar shaders.
+SGSR e FXAA não são condições necessárias, pois ambos estavam desligados.
+
+Esse par controla driver, configurações efetivas, jogo e swapchain; a imagem
+Qualcomm está nítida e a Turnip está corrompida. As fotos Qualcomm registram
+gameplay e as Turnip, menu, portanto não há comparação pixel a pixel do mesmo
+quadro. O resultado favorece um defeito dependente do driver ou da interação
+Eden–driver, mas **não identifica** SnapAlloc, UBWC, GMEM nem shader final.
+A grade próxima de 32 px no swapchain é compatível com mais de um desses
+mecanismos; seria preciso observar a imagem antes da apresentação ou testar
+uma mudança isolada para atribuir causa.
 
 ## Próximos testes
 
-1. Confirmar o controle pareado relatado: obter o ZIP do 5.7.15.1 OneUI em
-   Bilinear/AA None na tela SAVE/menu do Qualcomm. Se já foi capturado, não
-   repetir o ensaio; se não, bastam duas fotos e um ZIP próprio. Se limpar, reativar
-   FXAA e depois SGSR separadamente; se persistir, avaliar outro jogo antes
-   dos labs. Não declarar mecanismo apenas pela forma do ruído.
+1. Antes do lab SnapAlloc já construído sobre 5.7.14.1 Standard, confirmar
+   nessa **mesma base** que o ruído se reproduz em Bilinear/AA None na mesma
+   tela. Se reproduzir, comparar com o lab SnapAlloc, uma troca por vez, com
+   fotos e ZIP Eden. Se a base estiver limpa, não interpretar o lab antigo
+   como teste do defeito 5.7.15.1: reconstruir o lab nessa base mais recente.
+   Um segundo jogo Eden com o mesmo swapchain ajuda a medir o alcance, mas um
+   resultado normal nele não elimina uma interação específica do MUA3.
 2. Labs de diagnóstico, uma mudança por build e destinados só ao teste físico
    na A840 (ver o escopo de código de cada um abaixo). Um resultado positivo
    indica o caminho a bisectar, não a causa raiz. Nenhum lab é release.
