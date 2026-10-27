@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "title": "Marvel Ultimate Alliance 3 / AYN Odin 2 Portal / A740 — outubro de 2026",
+  "context": {
+    "hardware": "AYN Odin 2 Portal",
+    "soc": "QCS8550",
+    "gpu": "Adreno 740",
+    "gpu_family": "A7xx",
+    "android": "13 (API 33)",
+    "kmd": "KGSL",
+    "abi": "arm64-v8a",
+    "game": "Marvel Ultimate Alliance 3: The Black Order",
+    "game_title_id": "010060700AC50000",
+    "frontend": "Eden",
+    "resolution_note": "Eden 1×, Docked; swapchain 1920×1080; SgsrEdge, FXAA, anisotropia 16×; async shaders desligado, caches de disco e do driver ligados."
+  },
+  "overall_assessment": "Execução sustentada da candidata 5.7.16.1 Standard no A740 por 923 s, sem erro registrado (device lost, falha de pipeline ou mensagem do driver). Não há fotos nem relato visual desta sessão, nem controle 5.7.15.1 no mesmo trecho: não é a regressão pareada da candidata. Pausas de até 577 ms ocorreram sem compilação de pipeline; causa aberta.",
+  "drivers": {
+    "candidate-5.7.16.1": {
+      "name": "Amaral Adreno Tools Candidate 5.7.16.1 Standard",
+      "mesa_commit": "69f1f21f0258a77046dbaeb8ed7a8ad37a683006",
+      "elf_sha256": "af80c8847a613da7bc4daf413a0cf5d20e5a5b34535fc99331fe568faea64486",
+      "proposal": "5.7.15.1 mais a variante de 34 ints do MR !44464 (u_gralloc fallback para handles SnapAlloc). No A740 o gralloc QTI tem o magic gmsm, o caminho que o patch preserva; esta captura não registra o ramo executado.",
+      "hardware_result": "MUA3 por 923 s a 29,75 FPS, 0 pipelines criadas em runtime e nenhum erro registrado. Sem fotos; regressão pareada pendente.",
+      "status": "observed",
+      "patchset_sha256": "e43c4b354f18e9390d1f221dce53b1462b8c53caf6cf830ada6837ad9a311f1c",
+      "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/blob/ccr-05e1d523-htngw2/docs/candidates/5.7.16.1/README.md"
+    }
+  },
+  "captures": [
+    {
+      "capture_id": "20261027-184302-0705",
+      "driver_id": "candidate-5.7.16.1",
+      "driver_identity": "elf-sha256",
+      "archive_sha256": "cc7500ab4a8365674ae60b430a66d38ce42b6110b26f41c3591415743c18f0b1",
+      "payload_integrity": "payload-hashes-verified",
+      "emulator_commit": "6b592ecbeaac9631ffef1cb5735931ed1083189b",
+      "settings_sha256": "991ea2e0a40f10860ba8eac85085a0d9dea8bd6d27a924b75a740e88d7c82876",
+      "duration_s": 923.06,
+      "fps_avg": 29.75,
+      "gpu_ms_p50": 19.8,
+      "gpu_ms_p90": 20.5,
+      "gpu_ms_p99": 30.0,
+      "gpu_clock_mhz_avg": 680,
+      "draws_per_frame": 1017.6,
+      "pipelines_created": 0,
+      "source": "docs/tests/2026-10-odin2-portal-marvel-ultimate-alliance-3.md",
+      "comparison_grade": "observation",
+      "notes": [
+        "Manifesto 8/8 e ELF verificados de forma independente pelo claude e pelo chatgpt (T-a840-pixelation 3924).",
+        "Intervalo de quadro p50/p90/p99 33,5/33,75/34,25 ms; 99,3% entre 28 e 38 ms; máximo 577,5 ms. 260 pipelines restauradas do disco, 0 criadas ou esperadas em runtime.",
+        "Evento trim_memory running_critical aos 21,7 s, antes das pausas de 318,8 ms (22,5 s) e 577,5 ms (23,6 s); associação temporal, sem causalidade. Memória disponível mínima 5.132 MiB, estado térmico 0.",
+        "Sem fotos e sem relato visual: pixels não confirmados. Eden, aparelho e ajustes diferem das capturas A840; não é A/B."
+      ],
+      "loaded_elf_sha256": "af80c8847a613da7bc4daf413a0cf5d20e5a5b34535fc99331fe568faea64486"
+    }
+  ]
+}
