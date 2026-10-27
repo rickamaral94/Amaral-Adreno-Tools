@@ -1,0 +1,419 @@
+From a7c9a20720059cc6b90c79f5310096185761e6dd Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 27 Oct 2026 11:31:10 +0000
+Subject: [PATCH] candidate: 5.7.16.1 test build with SnapAlloc 34-int fallback
+ (MR !44464)
+
+Same Mesa lock (69f1f21) and patch set as 5.7.15.1, plus
+upstream-mr44464-snapalloc-34ints.patch: the u_gralloc fallback reads the
+UBWC flag of SnapAlloc display-core handles (34 ints per view, Snapdragon
+8 Elite generation) when the handle has exactly that shape and its stride
+matches the gralloc stride; every other handle keeps
+DRM_FORMAT_MOD_INVALID. The MR's 33-int SM7435 branch is not included.
+
+A840 evidence: with identical settings, 5.7.14.1 shows column noise and
+the 5.7.14.1 + MR !44464 lab renders clean (Rick confirmed the whole
+session). Hardware for this candidate (A840, A740 regression), CTS and
+VVL are not-run.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01BZiB1ofHang6Zaxurp6i5r
+---
+ config/mesa-lock.json                         |   4 +-
+ config/patches.json                           |   3 +-
+ config/version-state.json                     |   8 +-
+ docs/releases/mesa-27.0.0-devel-v5.7.16.1.md  |  55 ++++
+ .../upstream-mr44464-snapalloc-34ints.patch   | 256 ++++++++++++++++++
+ 5 files changed, 319 insertions(+), 7 deletions(-)
+ create mode 100644 docs/releases/mesa-27.0.0-devel-v5.7.16.1.md
+ create mode 100644 patches/upstream-mr44464-snapalloc-34ints.patch
+
+diff --git a/config/mesa-lock.json b/config/mesa-lock.json
+index 7ee3ab9..0fcd4a6 100644
+--- a/config/mesa-lock.json
++++ b/config/mesa-lock.json
+@@ -1,13 +1,13 @@
+ {
+   "schema": 1,
+-  "amaral_revision": "5.7.15.1",
++  "amaral_revision": "5.7.16.1",
+   "mesa": {
+     "repository": "https://gitlab.freedesktop.org/mesa/mesa.git",
+     "branch": "main",
+     "commit": "69f1f21f0258a77046dbaeb8ed7a8ad37a683006",
+     "version": "27.0.0-devel",
+     "commit_date_utc": "2026-10-22T05:47:33Z",
+-    "checked_at_utc": "2026-10-26T14:18:19Z"
++    "checked_at_utc": "2026-10-27T11:25:51Z"
+   },
+   "build": {
+     "ndk": "r29",
+diff --git a/config/patches.json b/config/patches.json
+index 40f5ca5..7dfc3b9 100644
+--- a/config/patches.json
++++ b/config/patches.json
+@@ -7,7 +7,8 @@
+     "patches/0008-remove-mgs4-vendor-spoof.patch",
+     "patches/upstream-29db4909d4e.patch",
+     "patches/upstream-64245a20b78.patch",
+-    "patches/upstream-a1e9f888421.patch"
++    "patches/upstream-a1e9f888421.patch",
++    "patches/upstream-mr44464-snapalloc-34ints.patch"
+   ],
+   "oneui_extra": [
+     "patches/0003-oneui-ubwc.patch"
+diff --git a/config/version-state.json b/config/version-state.json
+index 8ef1612..77dfd4a 100644
+--- a/config/version-state.json
++++ b/config/version-state.json
+@@ -1,6 +1,6 @@
+ {
+   "schema": 1,
+-  "current_version": "5.7.15.1",
++  "current_version": "5.7.16.1",
+   "stable_version": "4.7.7.2",
+   "mesa": {
+     "generation": 5,
+@@ -10,13 +10,13 @@
+     "generation": 7,
+     "version": "1.4.363"
+   },
+-  "amaral_revision": 15,
++  "amaral_revision": 16,
+   "upstream_revision": 1,
+   "last_released_mesa_commit": "378a5dc61b982b7d36e744cf44407e6b55dc98b7",
+   "stable_patchset_sha256": "01078851b363a40806c1d67d64daa838ffeaf9a65324e71a93db8f7e7280860e",
+   "candidate": {
+-    "version": "5.7.15.1",
+-    "patchset_sha256": "6405a338a7f6255745534d8c446c6c249f2e936d5d0de677b4ef5a687309f924",
++    "version": "5.7.16.1",
++    "patchset_sha256": "e43c4b354f18e9390d1f221dce53b1462b8c53caf6cf830ada6837ad9a311f1c",
+     "mesa_commit": "69f1f21f0258a77046dbaeb8ed7a8ad37a683006"
+   }
+ }
+diff --git a/docs/releases/mesa-27.0.0-devel-v5.7.16.1.md b/docs/releases/mesa-27.0.0-devel-v5.7.16.1.md
+new file mode 100644
+index 0000000..e3bbc72
+--- /dev/null
++++ b/docs/releases/mesa-27.0.0-devel-v5.7.16.1.md
+@@ -0,0 +1,55 @@
++# Turnip Amaral 27.0.0-devel v5.7.16.1
++
++## Classificação
++
++**Pré-release para A/B.**
++
++## Base rastreável
++
++- Mesa: `27.0.0-devel`
++- Mesa commit: `69f1f21f0258a77046dbaeb8ed7a8ad37a683006`
++- Mesa HEAD: tu: upload draw_id_offset through driver_params UBO
++- Commit anterior: `378a5dc61b982b7d36e744cf44407e6b55dc98b7`
++- Vulkan headers: `1.4.363`
++- Backend: Turnip/Freedreno + KGSL
++- ABI: Android AArch64 (`armv8-a`)
++- Toolchain: Android NDK r29
++
++## Mudanças em relação à 5.7.15.1
++
++Candidata de teste para a corrupção de imagem do A840 (SM8850) no Eden/MUA3.
++Mesmo lock Mesa e mesmo patchset da 5.7.15.1, mais um patch:
++
++- `upstream-mr44464-snapalloc-34ints.patch`: MR !44464 (u_gralloc/fallback:
++  UBWC em handles SnapAlloc) rebaseado sobre o patch 0001 do NDK, mantendo só
++  o layout SnapAlloc display-core de 34 ints por view, o do 8 Elite. O ramo
++  de 33 ints (SM7435/parrot) do MR fica de fora: esses handles continuam com
++  `DRM_FORMAT_MOD_INVALID`, como hoje. O handle só é aceito se tiver
++  exatamente a forma SnapAlloc e o stride bater com o do gralloc; qualquer
++  outro mantém o comportamento atual.
++
++Evidência (T-a840-pixelation, finding e9bd): no A840, com os mesmos ajustes
++(hash `01faf495…`), a 5.7.14.1 mostra ruído em colunas e o lab
++5.7.14.1 + MR !44464 mostra imagem nítida. O Rick confirmou o lab sem erros na
++sessão inteira. O controle Qualcomm também é nítido. **O lab tinha o MR
++completo (34 e 33 ints); esta candidata tem só o caminho de 34 ints, o único
++que o A840 exercita.**
++
++## Validação
++
++- Build Standard e OneUI, `validate_artifact` e catálogo de GPUs: ver o registro da integração.
++- Hardware: A840 desta candidata, A740 (regressão do fallback) e A6xx: **not-run**.
++- CTS e VVL: **not-run**.
++
++## Variantes
++
++- Standard: Android/KGSL universal.
++- OneUI: mesmo código e recursos, com o ajuste UBWC isolado para FD740/KGSL.
++
++## Política desta publicação
++
++Toda mudança passa por candidata. Promoção exige evidência vinculada ao SHA
++Mesa, fingerprint e hashes Standard/OneUI. Build reproduzível não prova
++compatibilidade, conformidade ou ganho de desempenho. Defaults de compiler,
++suballocadores e perfis por título permanecem upstream; patches de pesquisa
++não são aplicados aos pacotes distribuídos.
+diff --git a/patches/upstream-mr44464-snapalloc-34ints.patch b/patches/upstream-mr44464-snapalloc-34ints.patch
+new file mode 100644
+index 0000000..a0df839
+--- /dev/null
++++ b/patches/upstream-mr44464-snapalloc-34ints.patch
+@@ -0,0 +1,256 @@
++From d510c5ab732f67ec3e40baf6e046e42d3f6cd17f Mon Sep 17 00:00:00 2001
++From: Hugo223 <slimstalker@gmail.com>
++Date: Wed, 23 Sep 2026 18:37:44 +0500
++Subject: [PATCH] u_gralloc/fallback: detect UBWC on SnapAlloc buffer handles
++
++The fallback gralloc recovers the modifier of a Qualcomm buffer from the
++vendor private handle: it looks for a 'gmsm' magic at the start of the int
++payload and takes the UBWC bit out of the PRIV_FLAGS_* word right after it.
++
++Snapdragon 8 Elite generation devices replaced the QTI display gralloc
++(hardware/qcom/display) with SnapAlloc (vendor/qcom/opensource/display-core),
++whose handle has no magic, so the check never matches and the buffer
++keeps DRM_FORMAT_MOD_INVALID. Turnip then picks its own layout for the
++imported image, which does not describe the allocation, and window system
++output is corrupted.
++
++This teaches the fallback about the second handle layout, the 136B
++(34 ints) 8 Elite one. [MR history, not this variant: the MR also handles
++a 132B (33 ints) parrot/SM7435 layout; this variant drops it.] Nothing in a SnapAlloc handle identifies its owner, so the flags word
++is only trusted when the handle has exactly the shape SnapAlloc emits and
++when those properties describe the buffer we were handed: SnapAlloc reports
++aligned_width_in_pixels as the stride of the allocation, which is the value
++that comes back as the gralloc pixel stride. Handles failing either check
++keep DRM_FORMAT_MOD_INVALID, exactly as they do today.
++
++The Qualcomm native-handle parsing lives in u_gralloc_qcom_native_handle.c
++so the fallback stays generic.
++
++Tested by the MR author on Adreno 840 (LINEAR via view 1 stride 640 flags
++0x200). [MR history, not this variant: the author also tested the 33-int
++path on an Adreno 710; that path is not in this variant, so A710 is not
++covered here.]
++
++Diagnosed-by: whitebelyash <whbexiumwork@gmail.com>
++Reported-by: Mike Lothian <michael.lothian@gmail.com>
++Assisted-by: Claude (Fable 5.1)
++
++Amaral candidate variant: MR !44464 @ d510c5ab73 rebased onto
++patches/0001-android-ndk-r29-compat.patch, keeping only the exact
++SnapAlloc display-core path (34 ints per view). The SM7435 (parrot)
++33-int branch and its stride scan are dropped: those handles keep
++DRM_FORMAT_MOD_INVALID, as they do today.
++---
++diff --git a/src/util/u_gralloc/meson.build b/src/util/u_gralloc/meson.build
++index 991e02f..6900726 100644
++--- a/src/util/u_gralloc/meson.build
+++++ b/src/util/u_gralloc/meson.build
++@@ -15,6 +15,7 @@ files_u_gralloc = files(
++   'u_gralloc_cros_api.c',
++   'u_gralloc_libdrm.c',
++   'u_gralloc_qcom.c',
+++  'u_gralloc_qcom_native_handle.c',
++ )
++ 
++ if dep_android_ui.found()
++diff --git a/src/util/u_gralloc/u_gralloc_fallback.c b/src/util/u_gralloc/u_gralloc_fallback.c
++index 17bc699..9aad9af 100644
++--- a/src/util/u_gralloc/u_gralloc_fallback.c
+++++ b/src/util/u_gralloc/u_gralloc_fallback.c
++@@ -14,6 +14,8 @@
++ #include "util/macros.h"
++ #include "util/u_memory.h"
++ 
+++#include "u_gralloc_qcom_native_handle.h"
+++
++ #include <dlfcn.h>
++ #include <errno.h>
++ #include <string.h>
++@@ -149,12 +151,8 @@ fallback_gralloc_get_buffer_info(struct u_gralloc *gralloc,
++    out->strides[0] = stride;
++ 
++ #ifdef HAS_FREEDRENO
++-   uint32_t gmsm = ('g' << 24) | ('m' << 16) | ('s' << 8) | 'm';
++-   const native_handle_t *handle = (const native_handle_t *) hnd->handle;
++-   if (handle->numInts >= 2 && handle->data[handle->numFds] == gmsm) {
++-      /* This UBWC flag was introduced in a5xx. */
++-      bool ubwc = handle->data[handle->numFds + 1] & 0x08000000;
++-      out->modifier = ubwc ? DRM_FORMAT_MOD_QCOM_COMPRESSED : DRM_FORMAT_MOD_LINEAR;
+++   if (u_gralloc_has_supported_qcom_native_handle(hnd)) {
+++      u_gralloc_qcom_native_handle_apply_modifier(hnd, out);
++    }
++ #endif
++ 
++diff --git a/src/util/u_gralloc/u_gralloc_qcom_native_handle.c b/src/util/u_gralloc/u_gralloc_qcom_native_handle.c
++new file mode 100644
++--- /dev/null
+++++ b/src/util/u_gralloc/u_gralloc_qcom_native_handle.c
++@@ -0,0 +1,131 @@
+++/*
+++ * Mesa 3-D graphics library
+++ *
+++ * Copyright © 2025, Google Inc.
+++ * SPDX-License-Identifier: MIT
+++ */
+++
+++#include <hardware/gralloc.h>
+++#include <string.h>
+++
+++#include "drm-uapi/drm_fourcc.h"
+++#include "u_gralloc_qcom_native_handle.h"
+++#include "u_gralloc_internal.h"
+++
+++/*
+++ * Qualcomm grallocs describe the buffer layout only through their private
+++ * handle, so the modifier has to be recovered from it.
+++ *
+++ * The QTI display gralloc (hardware/qcom/display private_handle_t, used up to
+++ * and including the gralloc4 QtiMapper) begins the int payload with a magic
+++ * followed by the flags word:
+++ *
+++ *    int magic;   // 'gmsm'
+++ *    int flags;   // PRIV_FLAGS_*
+++ *
+++ * Snapdragon 8 Elite generation devices ship SnapAlloc instead
+++ * (vendor/qcom/opensource/display-core), whose handle has no magic.  It is a
+++ * C++ object holding one {fd, fd_metadata} pair and one properties block per
+++ * view, a single view unless the buffer was allocated as multiview:
+++ *
+++ *    template <int N>
+++ *    class SnapHandleData : public SnapHandle {          // a native_handle_t
+++ *       std::array<FdPair, N> fdPairArray;
+++ *       std::array<SnapHandleProperties, N> propertiesArray;
+++ *    };
+++ *
+++ * SnapHandleProperties has 64-bit members and the fd pairs always leave the
+++ * payload 4 byte aligned, so the properties start one int past the last fd.
+++ * That padding int is not counted in numInts, which is exactly the size of the
+++ * properties, and is what identifies the layout here: a SnapAlloc revision
+++ * that grows the properties is simply not recognised.
+++ *
+++ * Nothing in a SnapAlloc handle names its owner, so also require the
+++ * properties to describe the buffer we were handed.  SnapAlloc returns
+++ * aligned_width_in_pixels as the stride of the allocation, which is the value
+++ * that ends up in hnd->pixel_stride.
+++ */
+++
+++/* PRIV_FLAGS_UBWC_ALIGNED, this UBWC flag was introduced in a5xx. */
+++#define QCOM_PRIV_FLAGS_UBWC_ALIGNED 0x08000000
+++
+++/* PRIV_VIEW_MASK_PRIMARY, the view every SnapAlloc handle starts with. */
+++#define SNAPALLOC_VIEW_PRIMARY 0x1
+++
+++/* sizeof(SnapHandleProperties) / sizeof(int), see above.
+++ * 136B (34 ints) on 8 Elite (display-core/SnapAlloc).
+++ */
+++#define SNAPALLOC_INTS_PER_VIEW 34
+++
+++/* The beginning of SnapHandleProperties, the rest is not needed here. */
+++struct snapalloc_properties {
+++   uint32_t view;
+++   int flags;
+++   int aligned_width_in_bytes;
+++   int aligned_width_in_pixels;
+++};
+++
+++static bool
+++snapalloc_check_props(const struct snapalloc_properties *props,
+++                      const struct u_gralloc_buffer_handle *hnd)
+++{
+++   return props->view == SNAPALLOC_VIEW_PRIMARY &&
+++          props->aligned_width_in_pixels == hnd->pixel_stride;
+++}
+++
+++static bool
+++get_snapalloc_priv_flags(const native_handle_t *handle, const int *ints,
+++                         struct u_gralloc_buffer_handle *hnd, int *out_flags)
+++{
+++   struct snapalloc_properties props;
+++
+++   if (handle->numInts < SNAPALLOC_INTS_PER_VIEW)
+++      return false;
+++
+++   memcpy(&props, ints + 1, sizeof(props));
+++
+++   if (!snapalloc_check_props(&props, hnd))
+++      return false;
+++
+++   *out_flags = props.flags;
+++   return true;
+++}
+++
+++static bool
+++get_priv_flags(struct u_gralloc_buffer_handle *hnd, int *out_flags)
+++{
+++   const native_handle_t *handle = hnd->handle;
+++   const int *ints = &handle->data[handle->numFds];
+++   const int gmsm = ('g' << 24) | ('m' << 16) | ('s' << 8) | 'm';
+++
+++   if (handle->numInts >= 2 && ints[0] == gmsm) {
+++      *out_flags = ints[1];
+++      return true;
+++   }
+++
+++   if (handle->numFds >= 2 && handle->numFds % 2 == 0 &&
+++       handle->numInts == (handle->numFds / 2) * SNAPALLOC_INTS_PER_VIEW)
+++      return get_snapalloc_priv_flags(handle, ints, hnd, out_flags);
+++
+++   return false;
+++}
+++
+++bool
+++u_gralloc_has_supported_qcom_native_handle(struct u_gralloc_buffer_handle *hnd)
+++{
+++   int priv_flags;
+++
+++   return get_priv_flags(hnd, &priv_flags);
+++}
+++
+++void
+++u_gralloc_qcom_native_handle_apply_modifier(struct u_gralloc_buffer_handle *hnd,
+++                                            struct u_gralloc_buffer_basic_info *out)
+++{
+++   int priv_flags;
+++
+++   if (get_priv_flags(hnd, &priv_flags)) {
+++      bool ubwc = priv_flags & QCOM_PRIV_FLAGS_UBWC_ALIGNED;
+++      out->modifier = ubwc ? DRM_FORMAT_MOD_QCOM_COMPRESSED : DRM_FORMAT_MOD_LINEAR;
+++   }
+++}
++diff --git a/src/util/u_gralloc/u_gralloc_qcom_native_handle.h b/src/util/u_gralloc/u_gralloc_qcom_native_handle.h
++new file mode 100644
++index 0000000..8559d05
++--- /dev/null
+++++ b/src/util/u_gralloc/u_gralloc_qcom_native_handle.h
++@@ -0,0 +1,31 @@
+++/*
+++ * Mesa 3-D graphics library
+++ *
+++ * Copyright © 2025, Google Inc.
+++ * SPDX-License-Identifier: MIT
+++ */
+++
+++#ifndef U_GRALLOC_QCOM_NATIVE_HANDLE_H
+++#define U_GRALLOC_QCOM_NATIVE_HANDLE_H
+++
+++#include <stdbool.h>
+++
+++#include "u_gralloc_internal.h"
+++
+++#ifdef __cplusplus
+++extern "C" {
+++#endif
+++
+++bool
+++u_gralloc_has_supported_qcom_native_handle(struct u_gralloc_buffer_handle *hnd);
+++
+++void
+++u_gralloc_qcom_native_handle_apply_modifier(
+++   struct u_gralloc_buffer_handle *hnd,
+++   struct u_gralloc_buffer_basic_info *out);
+++
+++#ifdef __cplusplus
+++}
+++#endif
+++
+++#endif /* U_GRALLOC_QCOM_NATIVE_HANDLE_H */
+-- 
+2.43.0
+
