@@ -50,5 +50,6 @@ ou do patch completo do lab. Proposta: `collab/channel` d14b, com review do
 | Reprodutibilidade em dupla build, Standard e OneUI | pass: 2 builds independentes por variante, ZIP idêntico |
 | Hardware A840, perfil SGSR+FXAA (OneUI) | observado: captura `20261027-145905-6375`, gameplay nítido; travadas em parte na criação de shaders |
 | Hardware A840, Bilinear/None (par com o lab) | not-run |
+| Smoke A740 (Odin 2 Portal), MUA3 SGSR+FXAA, Standard | observado: captura `20261027-184302-0705` (ZIP SHA-256 `cc7500ab4a8365674ae60b430a66d38ce42b6110b26f41c3591415743c18f0b1`, ELF `af80c884…` confirmado), 923 s a 29,8 FPS, GPU p50/p90/p99 19,8/20,5/30,0 ms, sem device lost, erro de pipeline ou mensagem do driver. Não é a regressão pareada: sem rodada 5.7.15.1 no mesmo trecho, sem fotos |
 | Regressão A740: mesmo jogo, cena e rota, 5.7.15.1 Standard × 5.7.16.1 Standard com ajustes iguais, ELF confirmado; pixels, crash/device lost, recriação de superfície ao minimizar e retomar | not-run |
 | A6xx, CTS, VVL | not-run |
