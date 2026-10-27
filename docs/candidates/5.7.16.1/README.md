@@ -14,7 +14,7 @@ ou do patch completo do lab. Proposta: `collab/channel` d14b, com review do
 ## Integração
 
 - Base: integração da 5.7.15.1 (`112a1e9` sobre `c1977d6`).
-- Commit local de integração: `a7c9a20`, exportado em
+- Commit local de integração: `3951b69`, exportado em
   [`integration.patch`](integration.patch) (`git am` sobre `112a1e9`).
 - Mudança: `patches/upstream-mr44464-snapalloc-34ints.patch` (SHA-256
   `50b63df53873104ec3ed38e552dcc2892227603c3e0a6a0996f784da842b389b`), idêntico a

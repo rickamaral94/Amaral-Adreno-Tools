@@ -1,4 +1,4 @@
-From a7c9a20720059cc6b90c79f5310096185761e6dd Mon Sep 17 00:00:00 2001
+From 3951b693b3880273669a8b1f5780b30389c357c5 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 27 Oct 2026 11:31:10 +0000
 Subject: [PATCH] candidate: 5.7.16.1 test build with SnapAlloc 34-int fallback
@@ -22,9 +22,9 @@ Claude-Session: https://claude.ai/code/session_01BZiB1ofHang6Zaxurp6i5r
  config/mesa-lock.json                         |   4 +-
  config/patches.json                           |   3 +-
  config/version-state.json                     |   8 +-
- docs/releases/mesa-27.0.0-devel-v5.7.16.1.md  |  55 ++++
+ docs/releases/mesa-27.0.0-devel-v5.7.16.1.md  |  56 ++++
  .../upstream-mr44464-snapalloc-34ints.patch   | 256 ++++++++++++++++++
- 5 files changed, 319 insertions(+), 7 deletions(-)
+ 5 files changed, 320 insertions(+), 7 deletions(-)
  create mode 100644 docs/releases/mesa-27.0.0-devel-v5.7.16.1.md
  create mode 100644 patches/upstream-mr44464-snapalloc-34ints.patch
 
@@ -93,10 +93,10 @@ index 8ef1612..77dfd4a 100644
  }
 diff --git a/docs/releases/mesa-27.0.0-devel-v5.7.16.1.md b/docs/releases/mesa-27.0.0-devel-v5.7.16.1.md
 new file mode 100644
-index 0000000..e3bbc72
+index 0000000..76c3c53
 --- /dev/null
 +++ b/docs/releases/mesa-27.0.0-devel-v5.7.16.1.md
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,56 @@
 +# Turnip Amaral 27.0.0-devel v5.7.16.1
 +
 +## Classificação
@@ -127,12 +127,13 @@ index 0000000..e3bbc72
 +  exatamente a forma SnapAlloc e o stride bater com o do gralloc; qualquer
 +  outro mantém o comportamento atual.
 +
-+Evidência (T-a840-pixelation, finding e9bd): no A840, com os mesmos ajustes
++Evidência (T-a840-pixelation, finding e9bd), que favorece o tratamento de
++layout/modifier sem observar o modifier: no A840, com os mesmos ajustes
 +(hash `01faf495…`), a 5.7.14.1 mostra ruído em colunas e o lab
 +5.7.14.1 + MR !44464 mostra imagem nítida. O Rick confirmou o lab sem erros na
 +sessão inteira. O controle Qualcomm também é nítido. **O lab tinha o MR
-+completo (34 e 33 ints); esta candidata tem só o caminho de 34 ints, o único
-+que o A840 exercita.**
++completo (34 e 33 ints); esta candidata tem só o caminho de 34 ints, o caminho
++esperado no A840 pela descrição da MR (os ZIPs do lab não registram o ramo).**
 +
 +## Validação
 +
