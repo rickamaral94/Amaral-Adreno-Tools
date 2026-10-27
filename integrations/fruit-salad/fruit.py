@@ -124,6 +124,7 @@ def install(a):
             tree_dir = Path(temp)
             channel = tree_dir / "collab"
             channel.mkdir()
+            (tree_dir / ".gitignore").write_text(".collab-cache/\n__pycache__/\n*.pyc\n", encoding="utf-8")
             shutil.copyfile(source / "collab.py", channel / "collab.py")
             shutil.copyfile(source / "PROTOCOL.md", channel / "PROMPT.md")
             roster = {"schema": 1, "agents": {
@@ -141,7 +142,7 @@ def install(a):
             index = tree_dir / "index"
             gitdir = git(repo, "rev-parse", "--absolute-git-dir").stdout.strip()
             env = dict(os.environ, GIT_INDEX_FILE=str(index), GIT_WORK_TREE=str(tree_dir), GIT_DIR=gitdir)
-            for command in (["read-tree", "--empty"], ["add", "collab"], ["write-tree"]):
+            for command in (["read-tree", "--empty"], ["add", "collab", ".gitignore"], ["write-tree"]):
                 out = subprocess.run(["git", *command], env=env, check=True, text=True, capture_output=True)
             tree = out.stdout.strip()
             commit = git(repo, "commit-tree", tree, input="Fruit Salad: canal inicial isolado\n").stdout.strip()

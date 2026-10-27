@@ -60,7 +60,7 @@ class FruitIntegration(unittest.TestCase):
         files = self.git("ls-tree", "-r", "--name-only", "collab/channel").stdout.splitlines()
         self.assertTrue({"collab/PROMPT.md", "collab/agents.json", "collab/collab.py"}.issubset(files))
         self.assertEqual(len([f for f in files if f.startswith("collab/messages/")]), 2)
-        self.assertTrue(all(f.startswith("collab/") for f in files))
+        self.assertTrue(all(f.startswith("collab/") or f == ".gitignore" for f in files))
         tip = self.git("rev-parse", "collab/channel").stdout
         first = (self.repo / "AGENTS.md").read_bytes()
         self.install()
@@ -125,6 +125,9 @@ class FruitIntegration(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertIn("atualizado por fetch", r.stdout)
         self.assertIn("Canal válido", r.stdout)
+        # Reading inbox creates a local cache; it must not block the next fetch.
+        r = subprocess.run([sys.executable, str(clone / ".fruit-salad/fruit.py"), "abacaxi", "--agent", "claude", "--fetch"], cwd=clone, capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
     def test_attach_does_not_replace_channel(self):
         self.install()
