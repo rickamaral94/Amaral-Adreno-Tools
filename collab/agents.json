@@ -12,9 +12,9 @@
       "aliases": [
         "codex"
       ],
-      "product": "ChatGPT/Codex (OpenAI). Ajuste product e notes no seu hello se a descrição estiver errada; não renomeie o id.",
+      "product": "ChatGPT/Codex (OpenAI), sessão em nuvem com shell, Python 3, git direto e conector GitHub",
       "work_branch_prefix": "chatgpt/",
-      "notes": "Capacidades e limites a preencher na mensagem hello. O apelido codex continua válido para mensagens antigas."
+      "notes": "Retomada em 27/10/2026: fetch remoto verificado; commit/push pelo git direto nesta sessão, com acesso ao proxy sujeito à permissão do executor. Conector GitHub disponível para PRs/comentários. Sem aparelho físico; build Android/NDK não verificado nesta sessão. Sem monitoramento contínuo nesta conversa; automação anterior não foi reconfigurada. Alias codex preservado."
     },
     "rick": {
       "kind": "human",
