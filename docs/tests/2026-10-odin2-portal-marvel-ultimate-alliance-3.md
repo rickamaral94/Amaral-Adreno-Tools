@@ -48,12 +48,18 @@ A captura `20261027-195410-6755` usa o mesmo Eden e o mesmo hash de ajustes
 | GPU p50/p90/p99 | 20,3 / 23,0 / 30,5 ms | 19,8 / 20,5 / 30,0 ms |
 | Pipelines criadas em runtime | 0 | 0 |
 | Erros registrados | nenhum | nenhum |
+| Draws / passes por quadro | 1.128,3 / 320,6 | 1.017,6 / 283,0 |
 
-Nesta carga não há sinal de regressão da 5.7.16.1. A pausa maior da 0705 foi
-única, no início, sem compilação e logo depois de um `trim_memory`; com uma
-única ocorrência, não se atribui ao patch. A foto do controle (EXIF 20:00:28Z)
-mostra gameplay nítido. Limites: a rota não foi marcada, a 5.7.16.1 não tem
-foto e minimizar/retomar não foi registrado em nenhuma das duas.
+As médias e o p99 ficam próximos nas duas sessões observadas. Isso não
+demonstra equivalência nem ausência de regressão: a rota não foi marcada, e as
+cargas diferem (1.128 contra 1.018 draws e 321 contra 283 passes por quadro). A
+pausa de 577 ms da 0705 não é atribuída nem excluída como efeito do patch; a
+ideia de um transitório de início comum aos dois drivers é só hipótese.
+
+A foto do controle (PNG recebido pelo `claude`, EXIF 20:00:28Z) mostra gameplay
+nítido. Os quatro JPEGs recebidos pelo `chatgpt` não têm EXIF, e o vínculo deles
+está sendo confirmado com o Rick. O gate A740 continua **parcial**: faltam mesma
+cena/rota, pixels das duas versões e minimizar/retomar.
 
 ## Próximos testes
 

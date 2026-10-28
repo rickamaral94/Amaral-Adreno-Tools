@@ -14,7 +14,7 @@
     "frontend": "Eden",
     "resolution_note": "Eden 1×, Docked; swapchain 1920×1080; SgsrEdge, FXAA, anisotropia 16×; async shaders desligado, caches de disco e do driver ligados."
   },
-  "overall_assessment": "Par de configuração no A740 (mesmo Eden, mesmo hash de ajustes): 5.7.16.1 Standard (923 s, 29,75 FPS, GPU p50 19,8 ms) e 5.7.15.1 Standard (795 s, 29,73 FPS, GPU p50 20,3 ms), ambas sem erro registrado e com pacing p99 de 34,25 ms. Não há sinal de regressão da 5.7.16.1 nesta carga. Limites: rota não marcada, só a 5.7.15.1 tem foto, minimizar/retomar não registrado. Pausa de 577 ms na 0705 (contra máximo de 200 ms no controle) ocorreu uma vez, no início, sem compilação e logo após trim_memory; causa aberta.",
+  "overall_assessment": "Duas sessões no A740 com o mesmo Eden e o mesmo hash de ajustes: 5.7.16.1 Standard (923 s, 29,75 FPS, GPU p50 19,8 ms) e 5.7.15.1 Standard (795 s, 29,73 FPS, GPU p50 20,3 ms), ambas sem erro registrado e com intervalo p99 de 34,25 ms. Médias e p99 próximos nas sessões observadas; não demonstram equivalência nem ausência de regressão, porque a rota não foi marcada e as cargas diferem (1.128 contra 1.018 draws e 321 contra 283 passes por quadro). A comparação controlada (mesma cena, pixels das duas versões, minimizar/retomar) segue pendente. A pausa de 577 ms da 0705 não é atribuída nem excluída como efeito do patch.",
   "drivers": {
     "candidate-5.7.16.1": {
       "name": "Amaral Adreno Tools Candidate 5.7.16.1 Standard",
@@ -83,11 +83,11 @@
       "source": "docs/tests/2026-10-odin2-portal-marvel-ultimate-alliance-3.md",
       "comparison_grade": "observation",
       "notes": [
-        "Controle pareado da captura 20261027-184302-0705: mesmo Eden, mesmo hash de ajustes, 5.7.15.1 Standard no lugar da 5.7.16.1. Manifesto 8/8 verificado pelo claude.",
-        "Intervalo de quadro p50/p90/p99 33,5/33,5/34,25 ms; máximo 200,5 ms (aos 20,4 s, sem criação de pipeline). 0 pipelines criadas em runtime.",
-        "Foto da sessão (EXIF 17:00:28 −03:00 = 20:00:28Z, dentro da janela): gameplay nítido, overlay 6b592ecbea / Vulkan 1.4.363 / Odin2 Portal. As duas imagens enviadas são o mesmo arquivo.",
-        "Ocupação de GPU relatada de 21,0%, contra 64,5% na 0705 com tempo de GPU parecido: leitura do sysfs inconsistente entre sessões, não interpretada.",
-        "Minimizar/retomar não registrado; rota de jogo não marcada, então o par é de configuração, não de cena idêntica."
+        "Mesmo Eden e mesmo hash de ajustes da captura 20261027-184302-0705, com 5.7.15.1 Standard. Manifesto 8/8 verificado pelo claude e pelo chatgpt (T-a840-pixelation 84db).",
+        "Intervalo de quadro p50/p90/p99 33,5/33,5/34,25 ms; máximo 200,5 ms aos 20,4 s, sem criação de pipeline. trim_memory running_critical aos 21,1 s (depois dessa pausa) e low_memory aos 174,1 s; sem causalidade.",
+        "Carga diferente da 0705: 1.128,3 contra 1.017,6 draws e 320,6 contra 283,0 passes por quadro; rota não marcada.",
+        "Foto recebida pelo claude (PNG, EXIF 17:00:28 −03:00 = 20:00:28Z, dentro da janela): gameplay nítido. O chatgpt recebeu quatro JPEGs sem EXIF, cujo vínculo com a sessão está sendo confirmado com o Rick.",
+        "Ocupação de GPU relatada de 21,0% contra 64,5% na 0705, com tempo de GPU parecido: leitura do sysfs inconsistente, não interpretada. Minimizar/retomar não registrado."
       ],
       "loaded_elf_sha256": "5dc729c6a0ba605c3fd5d31b9cd80d5ca48107e5dfd1d5354c3f6cff0da874ec"
     }

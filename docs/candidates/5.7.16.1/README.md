@@ -51,5 +51,5 @@ ou do patch completo do lab. Proposta: `collab/channel` d14b, com review do
 | Hardware A840, perfil SGSR+FXAA (OneUI) | observado: captura `20261027-145905-6375`, gameplay nítido; travadas em parte na criação de shaders |
 | Hardware A840, Bilinear/None (par com o lab) | not-run |
 | Execução A740 (Odin 2 Portal), MUA3 SGSR+FXAA, Standard | observado: captura `20261027-184302-0705` (ZIP SHA-256 `cc7500ab4a8365674ae60b430a66d38ce42b6110b26f41c3591415743c18f0b1`, ELF `af80c884…` confirmado), 923 s a 29,8 FPS, GPU p50/p90/p99 19,8/20,5/30,0 ms: execução sustentada sem erro registrado; pixels não confirmados (sem fotos). Pausas de até 577 ms sem compilação, causa aberta. Não é a regressão pareada ([relatório](../../tests/2026-10-odin2-portal-marvel-ultimate-alliance-3.md)) |
-| Regressão A740 pareada (mesmo Eden e ajustes, 5.7.15.1 `6755` × 5.7.16.1 `0705`) | observado: métricas equivalentes (29,73 × 29,75 FPS, pacing p99 34,25 ms nas duas, sem erro); faltam a foto da 5.7.16.1 e minimizar/retomar |
+| Regressão A740 (mesmo Eden e ajustes, 5.7.15.1 `6755` × 5.7.16.1 `0705`) | parcial: médias e p99 próximos nas sessões observadas (29,73 × 29,75 FPS, p99 34,25 ms, sem erro), com cargas diferentes e rota não marcada; faltam a mesma cena, os pixels das duas versões e minimizar/retomar |
 | A6xx, CTS, VVL | not-run |
