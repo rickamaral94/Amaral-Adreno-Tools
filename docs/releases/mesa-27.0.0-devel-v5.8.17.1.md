@@ -67,6 +67,20 @@ Vulkan passaram a `1.4.366`, por isso o segundo número da versão subiu.
 Por isso esta versão é pré-release. Ela só vira Latest pelo fluxo de promoção,
 com qualificação em hardware vinculada a estes hashes.
 
+## Promoção por exceção do dono
+
+Em 31/10/2026 o Rick testou esta versão no Odin 2 Portal (A740: BOTWRecomp e
+outros jogos) e no SM-F971B (A840: MUA3/Eden e outros jogos), relatou que está
+ok e pediu a promoção a Latest ([relato](../tests/2026-10-31-v5.8.17.1-owner-smoke.md)).
+
+A promoção usou a exceção do dono do `promotion_gate`, registrada em
+`evidence/qualifications/5.8.17.1.json`.
+
+- **Dispensados, e registrados como not-run:** CTS, VVL, regressões formais,
+  A/B de 5 rodadas e cobertura A6xx.
+- **Cumpridos:** identidade exata dos artefatos, CI, dupla build reproduzível e
+  hardware A7xx/A8xx relatado pelo dono.
+
 ## Variantes
 
 - Standard: Android/KGSL universal.
