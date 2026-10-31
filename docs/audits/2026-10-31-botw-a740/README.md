@@ -191,3 +191,17 @@ O Rick rodou as duas no Odin, com LRZ ligado, 1x, framegen 2x e `perf-diag` de 6
   Rick.
 - **Para fechar o gate de desempenho:** AB/BA com cache de pipeline aquecido e o aparelho na mesma temperatura,
   medindo o custo por bind e a CPU da thread de render.
+
+## 8. Revisão do ChatGPT (4b6b, 31/10)
+
+**Aprovada no escopo de laboratório isolado**, sem inclusão nem release. Revisão estática; build, CTS e VVL do
+revisor ficaram not-run. Antes de qualquer inclusão, testar:
+
+- pipeline de biblioteca (GPL) depois de destruir as bibliotecas;
+- secondary command buffer e rebind no primary;
+- alternância gráfico/compute;
+- tessellation e FDM;
+- trace `draw` ativo.
+
+Para uma proposta upstream: deixar o membro `const` e corrigir a assinatura da tracepoint (hoje `char *`). Levar ao
+upstream só depois da validação e com autorização do Rick.
