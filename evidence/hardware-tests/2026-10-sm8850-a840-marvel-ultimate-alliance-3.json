@@ -55,6 +55,36 @@
       "status": "awaiting-hardware",
       "patchset_sha256": "fff8e883133662cacfa6103c6224f7e169f6523bd7bfeedaf04e2cba9df6eadf",
       "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/blob/ccr-05e1d523-htngw2/docs/tests/labs/lab-a840-gen8state.patch"
+    },
+    "lab-5.7.14.1-a840-snapalloc": {
+      "name": "Amaral A840 diagnostic Lab 5.7.14.1-a840lab-snapalloc Standard",
+      "mesa_commit": "69f1f21f0258a77046dbaeb8ed7a8ad37a683006",
+      "elf_sha256": "be0532f5aa62235e89a01538f405a4a50c66344387636e887da81d944aadfc16",
+      "proposal": "Aplicar a MR upstream aberta !44464 (d510c5ab73), rebaseada sobre o patch 0001 do NDK sem mudar o código: o fallback do u_gralloc passa a ler o flag UBWC/linear dos handles SnapAlloc (Snapdragon 8 Elite), que não têm o magic 'gmsm' e hoje viram DRM_FORMAT_MOD_INVALID, levando o Turnip a escolher um layout diferente da alocação do swapchain. Handles QTI com 'gmsm' ficam idênticos; o ramo 'parrot' (SM7435) é heurístico e não foi revisado para candidata. Diagnóstico, não correção; nunca release.",
+      "hardware_result": "Par com o mesmo hash de ajustes (Bilinear, AA None, Docked, Res1X, EDS3) contra a 5.7.14.1 Standard: tela de título do MUA3 nítida na foto da sessão 1338 e, segundo relato do Rick, imagem sem erros na sessão inteira, incluindo gameplay; a 5.7.14.1 da sessão 1572 mostrou ruído em colunas. Favorece o tratamento de layout/modifier dos handles SnapAlloc no fallback; não observa o modifier nem o ramo executado do patch.",
+      "status": "observed",
+      "patchset_sha256": "812f120ae565b466dfef84ca5ea051c969b324e1b3689ef39ec9af8f3453d44d",
+      "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/blob/ccr-05e1d523-htngw2/docs/tests/labs/lab-a840-snapalloc.patch"
+    },
+    "candidate-5.7.16.1": {
+      "name": "Amaral Adreno Tools Candidate 5.7.16.1 Standard",
+      "mesa_commit": "69f1f21f0258a77046dbaeb8ed7a8ad37a683006",
+      "elf_sha256": "af80c8847a613da7bc4daf413a0cf5d20e5a5b34535fc99331fe568faea64486",
+      "proposal": "5.7.15.1 mais a variante de 34 ints do MR !44464 (u_gralloc fallback para handles SnapAlloc display-core), sem o ramo de 33 ints do lab. Candidata de teste; nunca release sem pedido do Rick.",
+      "hardware_result": null,
+      "status": "awaiting-hardware",
+      "patchset_sha256": "e43c4b354f18e9390d1f221dce53b1462b8c53caf6cf830ada6837ad9a311f1c",
+      "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/blob/ccr-05e1d523-htngw2/docs/candidates/5.7.16.1/README.md"
+    },
+    "candidate-5.7.16.1-oneui": {
+      "name": "Amaral Adreno Tools Candidate 5.7.16.1 OneUI",
+      "mesa_commit": "69f1f21f0258a77046dbaeb8ed7a8ad37a683006",
+      "elf_sha256": "28cea848c357623b646e614a29104ee8d692c2e96dbdcd4ad1e8a2f492af3da0",
+      "proposal": "Mesma candidata 5.7.16.1 (5.7.15.1 + SnapAlloc 34 ints), variante OneUI; no A840 o perfil de GPU é idêntico ao Standard.",
+      "hardware_result": "MUA3 no perfil original SGSR Edge + FXAA: três fotos de gameplay nítidas, sem o ruído em colunas; o Rick relata a sessão \"funcionando perfeito\", com algumas travadas na criação de shaders. Não cobre o controle Bilinear/None nem a regressão A740.",
+      "status": "observed",
+      "patchset_sha256": "e43c4b354f18e9390d1f221dce53b1462b8c53caf6cf830ada6837ad9a311f1c",
+      "source_url": "https://github.com/rickamaral94/Amaral-Adreno-Tools/blob/ccr-05e1d523-htngw2/docs/candidates/5.7.16.1/README.md"
     }
   },
   "captures": [
@@ -108,6 +138,84 @@
         "Imagem relatada como totalmente pixelada; a captura não contém pixels."
       ],
       "loaded_elf_sha256": "7fcdb9fb922357a04c05e8fa7dad128b8b85de7763b6c90901007c8fc76916ab"
+    },
+    {
+      "capture_id": "20261027-103106-1338",
+      "driver_id": "lab-5.7.14.1-a840-snapalloc",
+      "archive_sha256": "5961005022d96502d369c4a35d6ce2f75441b70c9fe468ea553852f75161ea8e",
+      "driver_identity": "elf-sha256",
+      "payload_integrity": "payload-hashes-verified",
+      "emulator_commit": "604cde0b1b964c7bb0092550ec62511545096bc2",
+      "settings_sha256": "01faf4958aca79948c1c856672ef68aa1e95f14bbbcf17535d3a09177aa47f40",
+      "gpu_clock_mhz_avg": null,
+      "source": "docs/tests/2026-10-sm8850-a840-marvel-ultimate-alliance-3.md",
+      "comparison_grade": "observation",
+      "duration_s": 322.14,
+      "fps_avg": 29.84,
+      "gpu_ms_p50": 17.4,
+      "gpu_ms_p90": 24.0,
+      "gpu_ms_p99": 31.8,
+      "draws_per_frame": 1115.4,
+      "pipelines_created": 1,
+      "notes": [
+        "Sessão de 991 s; 9.614 quadros de jogo (322 s) a 29,8 FPS, o resto com o jogo parado. Carga de gameplay: ~1.115 draws e 244 passes por quadro.",
+        "Foto da sessão (EXIF 07:31:24 UTC−3, 18 s após o início): tela de título nítida, overlay Vulkan 1.4.363 (Turnip). O Rick relata imagem sem erros na sessão inteira; não há foto de gameplay com o lab.",
+        "Sem device lost nem falha de pipeline; fim pelo usuário."
+      ],
+      "loaded_elf_sha256": "be0532f5aa62235e89a01538f405a4a50c66344387636e887da81d944aadfc16"
+    },
+    {
+      "capture_id": "20261027-104847-1572",
+      "driver_id": "candidate-5.7.14.1",
+      "archive_sha256": "1258ca4bfe5627352bf1e3a45ab519ec588df7e9e4eb2573b0f357634f54f463",
+      "driver_identity": "elf-sha256",
+      "payload_integrity": "payload-hashes-verified",
+      "emulator_commit": "604cde0b1b964c7bb0092550ec62511545096bc2",
+      "settings_sha256": "01faf4958aca79948c1c856672ef68aa1e95f14bbbcf17535d3a09177aa47f40",
+      "gpu_clock_mhz_avg": null,
+      "source": "docs/tests/2026-10-sm8850-a840-marvel-ultimate-alliance-3.md",
+      "comparison_grade": "observation",
+      "duration_s": 511.28,
+      "fps_avg": 29.79,
+      "gpu_ms_p50": 20.6,
+      "gpu_ms_p90": 28.7,
+      "gpu_ms_p99": 35.7,
+      "draws_per_frame": 947.6,
+      "pipelines_created": 5,
+      "notes": [
+        "Controle do lab SnapAlloc, mesmos ajustes. Sessão de 515 s, 15.231 quadros a 29,8 FPS; ~948 draws e 263 passes por quadro.",
+        "Fotos da sessão (EXIF 07:49:25 e 07:51:44 UTC−3): ruído em colunas com período de 32/64 px de swapchain, a mesma assinatura da 5.7.15.1.",
+        "Sem device lost nem falha de pipeline; fim pelo usuário."
+      ],
+      "loaded_elf_sha256": "7fcdb9fb922357a04c05e8fa7dad128b8b85de7763b6c90901007c8fc76916ab"
+    },
+    {
+      "capture_id": "20261027-145905-6375",
+      "driver_id": "candidate-5.7.16.1-oneui",
+      "driver_identity": "elf-sha256",
+      "archive_sha256": "ff17d8f45ee7745e689dacc1f5fa652667d1bcc59dc8f7d969c8641cf6e46b49",
+      "payload_integrity": "payload-hashes-verified",
+      "emulator_commit": "604cde0b1b964c7bb0092550ec62511545096bc2",
+      "settings_sha256": "7566b20a7d7707f372b9baa596d67d087730e7d183d471384a35ab39a2825915",
+      "duration_s": 439.03,
+      "fps_avg": 29.25,
+      "gpu_ms_p50": 28.0,
+      "gpu_ms_p90": 33.2,
+      "gpu_ms_p99": 42.6,
+      "gpu_clock_mhz_avg": null,
+      "pipelines_created": 21,
+      "source": "docs/tests/2026-10-sm8850-a840-marvel-ultimate-alliance-3.md",
+      "comparison_grade": "observation",
+      "notes": [
+        "ZIP verificado de forma independente pelo chatgpt (T-a840-pixelation 7673) e pelo claude: SHA-256 do arquivo, manifesto 9/9, ELF 5.7.16.1 OneUI, hash de ajustes.",
+        "Perfil original SGSR Edge + FXAA, Res1X, mesmo hash de ajustes da captura 20261026-205617-7853 (5.7.15.1 OneUI, ruído). Três fotos de gameplay nítidas (SHA-256 4ca731f1…, e3b27cd0…, 0d59577b…).",
+        "Fotos recebidas também pelo claude (EXIF 11:59:52 a 12:06:19 UTC−3, dentro da sessão iniciada às 14:59:05Z): gameplay nítido, métrica de grade de 32/64 px de 0,00 a 0,01 (era 0,20 a 0,65 com ruído). Os hashes das fotos diferem dos do chatgpt por recompressão no envio.",
+        "GPU p50/p90/p99 da cena 28,0/33,2/42,6 ms. Intervalo p99 50,25 ms, máximo 333,955 ms; 120 de 12.789 quadros ≥ 50 ms.",
+        "21 pipelines gráficas criadas em runtime, sem falha; criação máx. 97,4 ms e espera máx. 96,1 ms explicam parte das travadas; a maior pausa (334 ms, em 40,8 s) não coincide com criação nem espera registrada.",
+        "Sem device lost ou erro fatal no log do Eden. Um evento low_memory e estado térmico máximo 2, sem causalidade atribuída."
+      ],
+      "loaded_elf_sha256": "28cea848c357623b646e614a29104ee8d692c2e96dbdcd4ad1e8a2f492af3da0",
+      "draws_per_frame": 990.3
     }
   ]
 }
