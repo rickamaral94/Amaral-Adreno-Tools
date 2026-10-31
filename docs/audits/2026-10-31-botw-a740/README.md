@@ -177,11 +177,14 @@ O Rick rodou as duas no Odin, com LRZ ligado, 1x, framegen 2x e `perf-diag` de 6
 | **Total ligado ao bind de pipeline** | **1,87%** (37 amostras) | **4,92%** (102 amostras) |
 | Fatia do módulo `libvulkan_freedreno.so` | 28,3% | 26,9% |
 
-- **Mecanismo confirmado.**
-  - Normalizado pelo número de binds na janela, o custo de CPU por `vkCmdBindPipeline` caiu ~60%.
+- **Mecanismo confirmado; magnitude preliminar.**
+  - A remoção da cópia está demonstrada pelo código e pelo disassembly.
+  - A queda de ~60% por `vkCmdBindPipeline` é uma estimativa. As amostras vêm só dos blocos de 5 s com a amostragem
+    ligada, e a contagem de binds é da janela inteira; CPU e carga também diferiram.
   - Na lab, o que ainda aparece como chamador em `tu_CmdBindPipeline` é a chamada de
     `vk_cmd_set_dynamic_graphics_state`, um custo separado. A cópia de `0x2770` bytes não está mais lá.
-  - Em tempo, são ~0,3 ms → ~0,1 ms por apresentação, ou ~0,4 ms de CPU poupados por quadro real.
+  - Em tempo, ~0,3 ms → ~0,1 ms por apresentação. Não converti para quadro real: 2x de framegen não garante duas
+    apresentações por quadro real.
 - **O que não dá para atribuir à lab:** FPS (29,20 × 27,24), GPU por quadro real (14,65 × 8,14 ms) e a CPU total da
   thread. As janelas diferem em carga (+8% de desenhos e +11% de binds na 5.7.16.1) e em temperatura, e a da 5.7.16.1
   inclui uma parada de ~3 s por compilação de shaders do app (cache de pipeline vazio).
@@ -189,8 +192,8 @@ O Rick rodou as duas no Odin, com LRZ ligado, 1x, framegen 2x e `perf-diag` de 6
     contra 7.928 e 4.856 na lab.
 - **Estabilidade:** a sessão da lab durou ~7,5 min sem device lost nem erro registrado. A conferência visual é do
   Rick.
-- **Para fechar o gate de desempenho:** AB/BA com cache de pipeline aquecido e o aparelho na mesma temperatura,
-  medindo o custo por bind e a CPU da thread de render.
+- **Para fechar o gate de desempenho:** AB/BA com cache de pipeline aquecido, mesma cena e o aparelho na mesma
+  temperatura, em cinco rodadas por variante, medindo o custo por bind e a CPU da thread de render.
 
 ## 8. Revisão do ChatGPT (4b6b, 31/10)
 
