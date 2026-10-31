@@ -140,8 +140,8 @@ importa para o A740 já está na triagem c89d:
   - No disassembly, `tu_CmdBindPipeline` da 5.7.13.1 e da 5.7.16.1 tem a cópia de `0x2770` bytes; a da lab não tem.
   - Não houve dupla build de reprodutibilidade, CTS nem hardware.
 - **Referência do A/B:** 5.7.16.1 Standard, ZIP `3b27ca71d5719edf16ed746755cf2cf82f075e16c034be602124a1f03ea38792`.
-- **Previsão:** a fatia do `memcpy` chamado por `tu_CmdBindPipeline` (3,9%) some, e o Turnip cai ~3–4 pontos na
-  thread de render. Tempo de GPU e FPS sem mudança fora do ruído, porque a thread de render não está saturada (seção 2).
+- **Previsão:** a fatia do `memcpy` chamado por `tu_CmdBindPipeline` (3,9%) some. (Escrevi antes "o Turnip cai
+  ~3–4 pontos"; estava errado, porque esse `memcpy` é contado no módulo `libc.so`, não no Turnip.) Tempo de GPU e FPS sem mudança fora do ruído, porque a thread de render não está saturada (seção 2).
 - **O que derruba a hipótese:**
   - a fatia não cair;
   - aparecer qualquer defeito visual ou travamento que a 5.7.16.1 não tem no mesmo trecho.
@@ -161,3 +161,33 @@ importa para o A740 já está na triagem c89d:
    - a extensão de feedback loop.
 
    Cada um com o mesmo A/B.
+
+## 7. Resultado do A/B (31/10, 09:17 e 09:25)
+
+O Rick rodou as duas no Odin, com LRZ ligado, 1x, framegen 2x e `perf-diag` de 60 s: primeiro a lab, depois a
+5.7.16.1. Cada `libvulkan_freedreno` carregado foi traduzido com o próprio binário.
+
+| | Lab bindpipeline | 5.7.16.1 |
+|---|---:|---:|
+| Desenhos / binds de pipeline / sets por 2 s (média na janela) | 90.655 / 21.818 / 73.645 | 97.864 / 24.266 / 79.258 |
+| Temperatura do SoC | 39–55 °C | 51–69 °C |
+| CPU da thread de render por apresentação | 5,35 ms | 6,07 ms |
+| `tu_CmdBindPipeline` (código próprio) | 1,06% | 1,73% |
+| `memcpy` etc. chamados de `tu_CmdBindPipeline` | 0,81% | 3,19% |
+| **Total ligado ao bind de pipeline** | **1,87%** (37 amostras) | **4,92%** (102 amostras) |
+| Fatia do módulo `libvulkan_freedreno.so` | 28,3% | 26,9% |
+
+- **Mecanismo confirmado.**
+  - Normalizado pelo número de binds na janela, o custo de CPU por `vkCmdBindPipeline` caiu ~60%.
+  - Na lab, o que ainda aparece como chamador em `tu_CmdBindPipeline` é a chamada de
+    `vk_cmd_set_dynamic_graphics_state`, um custo separado. A cópia de `0x2770` bytes não está mais lá.
+  - Em tempo, são ~0,3 ms → ~0,1 ms por apresentação, ou ~0,4 ms de CPU poupados por quadro real.
+- **O que não dá para atribuir à lab:** FPS (29,20 × 27,24), GPU por quadro real (14,65 × 8,14 ms) e a CPU total da
+  thread. As janelas diferem em carga (+8% de desenhos e +11% de binds na 5.7.16.1) e em temperatura, e a da 5.7.16.1
+  inclui uma parada de ~3 s por compilação de shaders do app (cache de pipeline vazio).
+  - A métrica de GPU também é inconsistente entre as duas: 3.828 intervalos contados e 8.430 aninhados na 5.7.16.1,
+    contra 7.928 e 4.856 na lab.
+- **Estabilidade:** a sessão da lab durou ~7,5 min sem device lost nem erro registrado. A conferência visual é do
+  Rick.
+- **Para fechar o gate de desempenho:** AB/BA com cache de pipeline aquecido e o aparelho na mesma temperatura,
+  medindo o custo por bind e a CPU da thread de render.
