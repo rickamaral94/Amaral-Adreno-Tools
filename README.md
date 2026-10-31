@@ -9,9 +9,11 @@ permanece o controle estável publicado. A linha atual de desenvolvimento é uma
 
 ## Candidata atual
 
-Mesa `27.0.0-devel`, commit `4b0f64ceac6a86af38c1e69cd38cf29f84ba611d`.
-Correções upstream de invalidação bindless, coleta de push constants e IR3
-(offsets de constantes e ordem do lowering) justificam a avaliação.
+**5.8.17.1**: Mesa `27.0.0-devel`, commit `fd8ef2befafd01190e33f12dbfd109b924c8ebc3`
+(main de 31/10/2026), headers Vulkan `1.4.366`. Inclui as candidatas de teste
+5.7.14.1 a 5.7.16.1 e o patch `0009`, que remove a cópia do estado do programa
+a cada `vkCmdBindPipeline`. Hardware desta Mesa, CTS e VVL: not-run. Veja as
+[notas](docs/releases/mesa-27.0.0-devel-v5.8.17.1.md).
 
 Os defaults de GCM, suballocadores e regras BOTW/TOTK voltam ao upstream.
 As extensões Amaral de profundidade não são expostas sem qualificação do caminho

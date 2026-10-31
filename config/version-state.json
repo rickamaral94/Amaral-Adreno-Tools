@@ -1,22 +1,22 @@
 {
   "schema": 1,
-  "current_version": "5.7.8.1",
+  "current_version": "5.8.17.1",
   "stable_version": "4.7.7.2",
   "mesa": {
     "generation": 5,
     "normalized_version": "27.0.0"
   },
   "vulkan": {
-    "generation": 7,
-    "version": "1.4.363"
+    "generation": 8,
+    "version": "1.4.366"
   },
-  "amaral_revision": 8,
+  "amaral_revision": 17,
   "upstream_revision": 1,
   "last_released_mesa_commit": "378a5dc61b982b7d36e744cf44407e6b55dc98b7",
   "stable_patchset_sha256": "01078851b363a40806c1d67d64daa838ffeaf9a65324e71a93db8f7e7280860e",
   "candidate": {
-    "version": "5.7.8.1",
-    "patchset_sha256": "cc52dbd9ae58c1e39089a1277d5e9f39aca9c4fa7d9402e1301456f88d44fce6",
-    "mesa_commit": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d"
+    "version": "5.8.17.1",
+    "patchset_sha256": "71fd7e4d44feaff194d5ccde01ac39959b15a7dd2461d6e79ae565c2da45f999",
+    "mesa_commit": "fd8ef2befafd01190e33f12dbfd109b924c8ebc3"
   }
 }

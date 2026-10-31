@@ -1,8 +1,8 @@
 diff --git a/src/freedreno/vulkan/00-turnip-defaults.conf b/src/freedreno/vulkan/00-turnip-defaults.conf
-index 2f97ad1d467..32278328023 100644
+index da85f99413a..a205576d473 100644
 --- a/src/freedreno/vulkan/00-turnip-defaults.conf
 +++ b/src/freedreno/vulkan/00-turnip-defaults.conf
-@@ -129,11 +129,5 @@
+@@ -144,12 +144,6 @@
              -->
              <option name="tu_expose_device_local_only_memory_type" value="true" />
          </application>
@@ -12,5 +12,6 @@ index 2f97ad1d467..32278328023 100644
 -             -->
 -             <option name="force_vk_vendor" value="0x1002" />
 -        </application>
-     </device>
- </driconf>
+         <application name="Beat Saber" application_name_match="Beat Saber.exe">
+             <option name="tu_autotune_algorithm" value="prefer_gmem" />
+         </application>

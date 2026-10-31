@@ -10,7 +10,7 @@
       "reason": "Compatibiliza os tipos de native_handle do Mesa com o NDK r29; não altera a política de execução do Turnip.",
       "source": "Repositórios Amaral 6xx/7xx/8xx",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d"
+      "patch_apply_verified_on_mesa": "fd8ef2befafd01190e33f12dbfd109b924c8ebc3"
     },
     {
       "id": "force-gmem-or-sysmem-global",
@@ -51,7 +51,7 @@
       "reason": "Adiciona o alias KGSL 0x44010000 ao perfil A810 já upstream e reconhece a A812 pelos IDs 0xffff44010200 e 0x44010200. A A812 reutiliza deliberadamente o perfil conservador A810 do Mesa fixado; não importa gmem_size para GPUProps, caches comunitários, UBWC global nem aumento de shared memory.",
       "source": "Mesa A810 upstream + whitebelyash/mesa-unified turnip/gen8 V32",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
+      "patch_apply_verified_on_mesa": "fd8ef2befafd01190e33f12dbfd109b924c8ebc3",
       "evidence": [
         "https://github.com/whitebelyash/mesa-unified/commit/9c7e022677dfa3abb356c2b6732cbd2e25783d01",
         "https://github.com/whitebelyash/AdrenoToolsDrivers/releases/tag/tu_v32"
@@ -67,7 +67,7 @@
       "reason": "Adiciona o ID KGSL e o perfil A825 refinado após evidência comunitária em hardware real nos modos GMEM e SYSMEM: color/depth cache GMEM em HALF/128 KiB, tile 64x32, shared memory de 64 KiB e offsets VPC preservados, sem forçar o modo de memória.",
       "source": "Mesa A830 gen1 + whitebelyash/mesa-unified + DiskDVD/A8XX-Y; propriedades revisadas e isoladas para A825",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
+      "patch_apply_verified_on_mesa": "fd8ef2befafd01190e33f12dbfd109b924c8ebc3",
       "evidence": [
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/37",
         "https://github.com/rickamaral94/Amaral-Driver-Lab/issues/38",
@@ -86,7 +86,7 @@
       "reason": "Gera uma variante separada que ativa TP_UBWC_FLAG_HINT somente nas duas entradas KGSL da FD740, sem afetar o ID legado ou a Adreno X1-85.",
       "source": "Mesa 3D e builds comunitários OneUI",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d"
+      "patch_apply_verified_on_mesa": "fd8ef2befafd01190e33f12dbfd109b924c8ebc3"
     },
     {
       "id": "depth-extensions",
@@ -154,7 +154,7 @@
       "reason": "Quatro correções externas de lifetime e tratamento de erro preservadas: cleanup de pipeline/OOM, binding com memória nula, contadores derivados e variantes de shader. A correção KGSL de profiling foi substituída pela MR upstream 44838. Sem tuning global.",
       "source": "whitebelyash/mesa-unified PR #12; commits individuais revisados contra o Mesa fixado",
       "license_review": "compatible-mit",
-      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
+      "patch_apply_verified_on_mesa": "fd8ef2befafd01190e33f12dbfd109b924c8ebc3",
       "evidence": [
         "https://github.com/whitebelyash/mesa-unified/pull/12"
       ],
@@ -223,7 +223,22 @@
       "reason": "Remove regra upstream de identificação AMD em mgs4.exe.",
       "source": "Mesa 3D upstream com exclusão Amaral",
       "license_review": "compatible",
-      "patch_apply_verified_on_mesa": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d"
+      "patch_apply_verified_on_mesa": "fd8ef2befafd01190e33f12dbfd109b924c8ebc3"
+    },
+    {
+      "id": "tu-program-state-pointer",
+      "kind": "performance-cpu",
+      "status": "testing",
+      "default": true,
+      "patch": "patches/0009-tu-program-state-pointer.patch",
+      "reason": "tu_CmdBindPipeline deixa de copiar tu_program_state (~10 KB) a cada bind gráfico e passa a apontar para o estado do pipeline vinculado.",
+      "source": "Amaral (claude), revisado por chatgpt em T-botwrecomp-a740 (4b6b)",
+      "license_review": "compatible-mit",
+      "patch_apply_verified_on_mesa": "fd8ef2befafd01190e33f12dbfd109b924c8ebc3",
+      "evidence": [
+        "docs/audits/2026-10-31-botw-a740/README.md"
+      ],
+      "evidence_scope": "Revisão estática dos dois agentes; perfil simbolizado do BOTWRecomp no A740 mostra a cópia em ~3,9% das amostras da thread de render. Um A/B de 60 s no A740 (Odin 2 Portal) indicou queda preliminar de ~60% no custo por bind, sem erro em ~7,5 min. Not-run: CTS, VVL, A6xx, A8xx, AB/BA de 5 rodadas e os casos GPL/secondary/tess/FDM/trace pedidos na revisão."
     }
   ]
 }
