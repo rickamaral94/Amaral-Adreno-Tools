@@ -22,10 +22,12 @@ o Eden; no BOTW o filtro fica desligado.
 
 Números do `perf-diag` de 30/10 23:16 (LRZ ligado, 1x, framegen 2x).
 
-- **GPU:** 14,9 ms por quadro real, mais ~4–5 ms do LSFG, ≈ 19–20 ms. A 28 quadros reais/s, o quadro real dura
-  ~35,7 ms, então a GPU fica ocupada pouco mais da metade do tempo. Isso bate com os ~70% de ocupação a clock reduzido.
-- **Thread de render:** 31,5% do tempo ociosa (`render-idle`) e 29% bloqueada dentro do `vkQueuePresentKHR`
-  (média de 5,9 ms; p95 de 22,7 ms). Esse bloqueio é a contrapressão do FIFO no BufferQueue do Android, não o Turnip.
+- **GPU:** o diagnóstico informa 14,9 ms por quadro real. Não se sabe se as submissões do LSFG (~4–5 ms) já entram
+  nessa conta, e a união de timestamps é um envelope, não ocupação provada (ver PR #38). Mesmo somando as duas, ≈ 20 ms
+  contra ~35,7 ms por quadro real a 28 quadros/s.
+- **Thread de render:** 31,5% do tempo de parede ociosa (`render-idle`) e 29% dentro do `vkQueuePresentKHR`
+  (média de 5,9 ms por apresentação; p95 de 22,7 ms). Os valores "por frame" do diagnóstico são **por apresentação**:
+  o PR #38 estima ~10,6 ms de CPU de render por quadro real. Esse bloqueio é a contrapressão do FIFO no BufferQueue do Android, não o Turnip.
 - **Thread principal do jogo (t80):** metade do tempo em `svc-block` (ArbitrateLock, WaitForAddress).
 
 **Leitura (hipótese):** se o alvo de quadros reais é 30, nesse trecho nem a GPU nem a thread de render são o
@@ -64,11 +66,12 @@ isso está dito.
      ser antes do fim do trabalho anterior. O spec permite isso.
    - `ALL_COMMANDS` emite WFI e depois lê `CP_ALWAYS_ON_COUNTER`. Na mesma fila, ele não pode sair antes do fim do
      trabalho anterior.
-   - O fim de uma submissão dentro de outra indica **outra fila ou outro `VkDevice`**: cada um tem o seu contexto
-     KGSL, e eles se intercalam. O Turnip expõe uma única fila gráfica.
-   - Hipótese: o LSFG usa um device próprio.
-   - Teste: marcar cada intervalo com a fila ou o device. Para medir uma submissão com exatidão, usar `ALL_COMMANDS`
-     no início também: custa um WFI por submissão, ~9 por quadro. A união dos intervalos continua correta.
+   - O fim de uma submissão dentro de outra não deveria acontecer na mesma fila.
+   - **Hipótese:** outra fila ou outro `VkDevice` (o LSFG), cada um com o seu contexto KGSL, que se intercalam.
+   - **Rival** (PR #38): reuso ou reset de slot de query antes da leitura no `diag.c`.
+   - Teste que separa as duas: marcar cada intervalo com fila/device, serial de submissão e geração do slot.
+   - Para medir uma submissão com exatidão, usar `ALL_COMMANDS` no início também. Isso custa um WFI por submissão,
+     ~9 por quadro. A união dos intervalos é envelope, não ocupação.
 2. **UBWC em A2B10G10R10.** O defeito foi visto na **A830 com o Turnip 26.3-devel**, que é o caminho A8xx
    experimental.
    - O padrão de blocos 16x4 é o bloco UBWC de 32 bpp. Isso sugere ler dado comprimido sem a decodificação dos
@@ -108,9 +111,10 @@ isso está dito.
 8. **26.2 "Turnio R4" bloqueando no `ioctl`.** É um build de terceiros sem fonte publicada. Sem a fonte não dá para
    atribuir a causa.
 9. **Medição.**
-   - `VK_KHR_performance_query` só aparece com `TU_DEBUG=perfc`, e só se o KGSL deixar selecionar contadores.
-   - Para separar trabalho de frequência sem root, comparar o `CP_ALWAYS_ON_COUNTER` (relógio fixo) com um contador
-     de ciclos do CP no mesmo intervalo.
+   - `VK_KHR_performance_query` exige `TU_DEBUG=perfc` **e** `is_perf_cntr_selectable`, que é `false` no backend
+     KGSL. Então não está disponível no Odin.
+   - O `CP_ALWAYS_ON_COUNTER` é um relógio fixo de timestamps, não a frequência do núcleo.
+   - Sem contador de frequência confiável, fixar o modo de energia e registrar a temperatura.
 
 **Upstream desde a `69f1f21` (main de 31/10, `fd8ef2befaf`):** nada novo sobre custo por desenho ou por passe. O que
 importa para o A740 já está na triagem c89d:
