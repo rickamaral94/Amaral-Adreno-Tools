@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "note": "Public upstream snapshots inspected; not proof of binary patchset equivalence or hardware behavior.",
+  "snapshots": [
+    {
+      "role": "measured-baseline",
+      "mesa_commit": "4b0f64ceac6a86af38c1e69cd38cf29f84ba611d",
+      "source": "https://gitlab.freedesktop.org/mesa/mesa",
+      "download_sha256": "501e19f1d0ada95e09d5a4db2b877f4df4a0ab54360211677ce33586db8d375a",
+      "files": {
+        "src/freedreno/vulkan/tu_cmd_buffer.cc": "06b8d2c252a084e24997469823988def91f57ef656cc7a62d9dc92eba291afe1",
+        "src/freedreno/vulkan/tu_descriptor_set.cc": "b64bcde50d9445accd8d016a2749d3709ac6af0b43d94849cd0e31f955740a8b",
+        "src/freedreno/vulkan/tu_query_pool.cc": "d237e8f4a3f3e0f6961bc931c8f23784a5160327f2d8bfab24d1ce23b07390ba",
+        "src/freedreno/vulkan/tu_device.cc": "49269566ee8755d298a96a505164ee4afdbb291149fbe1657602cfc62c3b8479",
+        "src/freedreno/vulkan/tu_knl_kgsl.cc": "fa10fcfbacda442ece75e487ee431431574caab80690ad8def2a080e514e8455",
+        "src/freedreno/vulkan/tu_autotune.cc": "78db9c35d251890563efbadb2ee30eaede52aed670b14151b325e52ef157753b",
+        "src/freedreno/vulkan/tu_lrz.cc": "bf7b4e1e6d017b9c8c24cb586d53b77cb083b984bf80769badbb55fff78b11c7",
+        "src/freedreno/vulkan/tu_image.cc": "58910c36b2d89c6b9dd798fda8255912edfa986ec13a91ff0c133233b94e8fff",
+        "src/freedreno/vulkan/tu_formats.cc": "4cff26b6b9b97dd795dff63f596c92149cf993e92bdc078f7f6467b5bb6dc3c6",
+        "src/freedreno/ir3/ir3_nir_analyze_ubo_ranges.c": "7cf046ea1f09c3ff18ef4b4a2d69cfeb87d9913fa5806e8b27e2da2903f2f0bf"
+      }
+    },
+    {
+      "role": "candidate-base",
+      "mesa_commit": "69f1f21f0258a77046dbaeb8ed7a8ad37a683006",
+      "source": "https://gitlab.freedesktop.org/mesa/mesa",
+      "download_sha256": "f20448342afeb5dcc2a36abc89804ef51e66c7db4403ff0c90a3a7bf291da394",
+      "files": {
+        "src/freedreno/vulkan/tu_cmd_buffer.cc": "48e16745a0011c463b7f866b38bce732ee4f6c07829a5a3c8b61a2dde22e079c",
+        "src/freedreno/vulkan/tu_descriptor_set.cc": "b64bcde50d9445accd8d016a2749d3709ac6af0b43d94849cd0e31f955740a8b",
+        "src/freedreno/vulkan/tu_query_pool.cc": "d237e8f4a3f3e0f6961bc931c8f23784a5160327f2d8bfab24d1ce23b07390ba",
+        "src/freedreno/vulkan/tu_device.cc": "cc557dfe2c7102c04e6a4119697f0237cb2b1e682b0324632f528f4d17bd4e0b",
+        "src/freedreno/vulkan/tu_knl_kgsl.cc": "fa10fcfbacda442ece75e487ee431431574caab80690ad8def2a080e514e8455",
+        "src/freedreno/vulkan/tu_autotune.cc": "78db9c35d251890563efbadb2ee30eaede52aed670b14151b325e52ef157753b",
+        "src/freedreno/vulkan/tu_lrz.cc": "bf7b4e1e6d017b9c8c24cb586d53b77cb083b984bf80769badbb55fff78b11c7",
+        "src/freedreno/vulkan/tu_image.cc": "58910c36b2d89c6b9dd798fda8255912edfa986ec13a91ff0c133233b94e8fff",
+        "src/freedreno/vulkan/tu_formats.cc": "4cff26b6b9b97dd795dff63f596c92149cf993e92bdc078f7f6467b5bb6dc3c6",
+        "src/freedreno/ir3/ir3_nir_analyze_ubo_ranges.c": "7cf046ea1f09c3ff18ef4b4a2d69cfeb87d9913fa5806e8b27e2da2903f2f0bf"
+      }
+    }
+  ]
+}
