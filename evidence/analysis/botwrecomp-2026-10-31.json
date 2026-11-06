@@ -1,0 +1,216 @@
+{
+  "schema": 1,
+  "archive_sha256": "bf459f1da63787a36be6d7979115553cb3403f5b59ca968e50f36131cd21035f",
+  "text_members": 60,
+  "exact_duplicate_text_members": 16,
+  "distinct_summary_groups": 7,
+  "qualification": "observations only; matching summaries do not prove independent runs; GPU busy interpretation unverified",
+  "reports": [
+    {
+      "metrics": {
+        "duration_s": 120,
+        "presents": 6849,
+        "gameplay_presents": 6815,
+        "other_presents": 34,
+        "driver": "amaral-5.7.13.1",
+        "lrz": "off",
+        "real_fps_reported": 28.79,
+        "gpu_ms_per_real_frame_reported": 16.53,
+        "resolution": "Dynamic (now 0.55)",
+        "frame_generation": "2x",
+        "screen_ms_p50_p95_p99": [
+          16.71,
+          33.43,
+          41.78
+        ],
+        "render_cpu_ms_per_present_reported": 6.07,
+        "render_cpu_seconds_observed": 41.52,
+        "render_cpu_ms_per_real_frame_approx": 12.018061827023272,
+        "cpu_conversion_note": "Approximation: CPU observation window versus reported real FPS window may differ.",
+        "timestamp_count": 22658,
+        "nested_intervals_reported": 7319
+      },
+      "source_sha256": [
+        "0141f1cc5d9b9e1417379e8d850b78ac57ff47bf43b2b5697c30564c16e15536",
+        "f909b151f485925d529cd3175c52637793f9c6b40ffd9a62d34c4f6aa375dbef"
+      ],
+      "occurrences": 2
+    },
+    {
+      "metrics": {
+        "duration_s": 120,
+        "presents": 3101,
+        "gameplay_presents": 3077,
+        "other_presents": 24,
+        "driver": "other",
+        "lrz": "off",
+        "real_fps_reported": 14.83,
+        "gpu_ms_per_real_frame_reported": 17.67,
+        "resolution": "Dynamic (now 0.50)",
+        "frame_generation": "2x",
+        "screen_ms_p50_p95_p99": [
+          25.06,
+          75.16,
+          75.22
+        ],
+        "render_cpu_ms_per_present_reported": 10.94,
+        "render_cpu_seconds_observed": 33.96,
+        "render_cpu_ms_per_real_frame_approx": 19.082939986513825,
+        "cpu_conversion_note": "Approximation: CPU observation window versus reported real FPS window may differ.",
+        "timestamp_count": 4338,
+        "nested_intervals_reported": 1895
+      },
+      "source_sha256": [
+        "c8359b71d57a9f3f1e138896d8e2249fdb182901e6595e4044c75ac4934768f7"
+      ],
+      "occurrences": 1
+    },
+    {
+      "metrics": {
+        "duration_s": 60,
+        "presents": 2967,
+        "gameplay_presents": 2933,
+        "other_presents": 34,
+        "driver": "amaral-5.7.13.1",
+        "lrz": "on",
+        "real_fps_reported": 28.0,
+        "gpu_ms_per_real_frame_reported": 14.89,
+        "resolution": "1x",
+        "frame_generation": "2x",
+        "screen_ms_p50_p95_p99": [
+          16.71,
+          33.42,
+          41.77
+        ],
+        "render_cpu_ms_per_present_reported": 6.01,
+        "render_cpu_seconds_observed": 17.7903,
+        "render_cpu_ms_per_real_frame_approx": 10.589464285714286,
+        "cpu_conversion_note": "Approximation: CPU observation window versus reported real FPS window may differ.",
+        "timestamp_count": 7715,
+        "nested_intervals_reported": 5128
+      },
+      "source_sha256": [
+        "01ab605bc9ae3204ede30e837540d185740b57bb3b1122374f8f19bca9fb438f",
+        "0f77076fd247ce843987db0ae559cade9ebd95f69094493d98f91fc6119a4d3f"
+      ],
+      "occurrences": 3
+    },
+    {
+      "metrics": {
+        "duration_s": 60,
+        "presents": 1856,
+        "gameplay_presents": 1832,
+        "other_presents": 24,
+        "driver": "turnio-26.2-R4",
+        "lrz": "on",
+        "real_fps_reported": 15.65,
+        "gpu_ms_per_real_frame_reported": 17.15,
+        "resolution": "1x",
+        "frame_generation": "2x",
+        "screen_ms_p50_p95_p99": [
+          41.78,
+          75.2,
+          75.23
+        ],
+        "render_cpu_ms_per_present_reported": 7.18,
+        "render_cpu_seconds_observed": 13.32,
+        "render_cpu_ms_per_real_frame_approx": 14.185303514376997,
+        "cpu_conversion_note": "Approximation: CPU observation window versus reported real FPS window may differ.",
+        "timestamp_count": 7562,
+        "nested_intervals_reported": 6900
+      },
+      "source_sha256": [
+        "90e9f085d8a859163b79519e0c4233b512e973dd814dedf23c94797cac2e7017",
+        "f8193b9bd261fd182d7ee857987b65e1ef124bd39ff23bcdc686db866a6c8655"
+      ],
+      "occurrences": 2
+    },
+    {
+      "metrics": {
+        "duration_s": 60,
+        "presents": 3396,
+        "gameplay_presents": 3362,
+        "other_presents": 34,
+        "driver": "amaral-5.7.13.1",
+        "lrz": "on",
+        "real_fps_reported": 28.67,
+        "gpu_ms_per_real_frame_reported": 10.53,
+        "resolution": "1x",
+        "frame_generation": "2x",
+        "screen_ms_p50_p95_p99": [
+          16.72,
+          33.43,
+          41.78
+        ],
+        "render_cpu_ms_per_present_reported": 5.86,
+        "render_cpu_seconds_observed": 19.8868,
+        "render_cpu_ms_per_real_frame_approx": 11.560748750145331,
+        "cpu_conversion_note": "Approximation: CPU observation window versus reported real FPS window may differ.",
+        "timestamp_count": 6344,
+        "nested_intervals_reported": 8242
+      },
+      "source_sha256": [
+        "81da88a89b1c9623e8c3dafa3d55d12e88fe533409472e36e35c7961754d8482"
+      ],
+      "occurrences": 2
+    },
+    {
+      "metrics": {
+        "duration_s": 60,
+        "presents": 3335,
+        "gameplay_presents": 3301,
+        "other_presents": 34,
+        "driver": "amaral-5.7.13.1",
+        "lrz": "on",
+        "real_fps_reported": 28.28,
+        "gpu_ms_per_real_frame_reported": 10.12,
+        "resolution": "1x",
+        "frame_generation": "2x",
+        "screen_ms_p50_p95_p99": [
+          16.72,
+          33.44,
+          41.8
+        ],
+        "render_cpu_ms_per_present_reported": 5.75,
+        "render_cpu_seconds_observed": 19.1081,
+        "render_cpu_ms_per_real_frame_approx": 11.261256482791135,
+        "cpu_conversion_note": "Approximation: CPU observation window versus reported real FPS window may differ.",
+        "timestamp_count": 5561,
+        "nested_intervals_reported": 8616
+      },
+      "source_sha256": [
+        "4b1380379eccda00546a2ac0622f133c78824ea6861c4bb80e482e50583ec11d"
+      ],
+      "occurrences": 1
+    },
+    {
+      "metrics": {
+        "duration_s": 60,
+        "presents": 3214,
+        "gameplay_presents": 3180,
+        "other_presents": 34,
+        "driver": "amaral-5.7.13.1",
+        "lrz": "on",
+        "real_fps_reported": 27.11,
+        "gpu_ms_per_real_frame_reported": 5.66,
+        "resolution": "1x",
+        "frame_generation": "2x",
+        "screen_ms_p50_p95_p99": [
+          16.73,
+          33.45,
+          41.81
+        ],
+        "render_cpu_ms_per_present_reported": 5.65,
+        "render_cpu_seconds_observed": 18.18,
+        "render_cpu_ms_per_real_frame_approx": 11.176687569162672,
+        "cpu_conversion_note": "Approximation: CPU observation window versus reported real FPS window may differ.",
+        "timestamp_count": 3434,
+        "nested_intervals_reported": 10215
+      },
+      "source_sha256": [
+        "2b7e3e54396268284f11aa459aaf3396a75ca9f198724d99e00ca9d8a01a1dbc"
+      ],
+      "occurrences": 2
+    }
+  ]
+}
