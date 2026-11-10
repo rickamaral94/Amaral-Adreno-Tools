@@ -32,3 +32,11 @@ Decisões comunitárias atuais:
 
 Patches 0004/0005/0006 preservados como referência, sem distribuição. Pesquisa deve
 seguir spec → backend → teste → hardware → A/B → revisão, nunca exposure por flag.
+
+## A8xx: método e gate de perfis
+
+A [auditoria de 25/10](audits/2026-10-25-a8xx-strategy.md) compara Mesa,
+whitebelyash, Steven, Banners, WinNative e Droid-Deck por commit/mecanismo.
+Priorizar correções upstream e laboratórios mínimos com revisão cruzada.
+`tools/check_a8xx_profiles.py` protege os perfis avaliados e a separação
+Standard/OneUI na CI; passar nesse gate não qualifica hardware.
