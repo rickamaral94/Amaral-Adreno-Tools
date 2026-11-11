@@ -25,5 +25,6 @@ jobs:
           git -C work/mesa checkout --detach FETCH_HEAD
           python3 tools/apply_patches.py work/mesa --variant standard
           python3 tools/check_a840_topology.py work/mesa
+          python3 tools/check_a22_coverage.py work/mesa
           python3 tools/check_vulkan_roadmap.py work/mesa --fail-on-new-support
           git -C work/mesa apply --check "$GITHUB_WORKSPACE/patches/0003-oneui-ubwc.patch"
