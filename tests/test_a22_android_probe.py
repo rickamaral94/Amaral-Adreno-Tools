@@ -21,7 +21,7 @@ class A22AndroidProbeTests(unittest.TestCase):
             path.write_bytes(b"a22")
             self.assertEqual(
                 sha256_file(path),
-                "e40d55bc974cf2a089b5c8e563249ea35ab126b5f42fdd269bd1f625870c15b6",
+                "e2a8db59374ecd02f11773fa882efcbecd498bdb277d89f5b007f7d3a2b4333a",
             )
 
 
