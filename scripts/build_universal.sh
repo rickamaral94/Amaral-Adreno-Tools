@@ -60,6 +60,7 @@ fi
 
 python3 "${repo_root}/tools/apply_patches.py" "${mesa_src}" --variant "${driver_variant}"
 python3 "${repo_root}/tools/check_a840_topology.py" "${mesa_src}"
+python3 "${repo_root}/tools/check_a22_coverage.py" "${mesa_src}"
 python3 "${repo_root}/tools/check_vulkan_roadmap.py" "${mesa_src}"
 
 ndk_bin="${ndk_root}/toolchains/llvm/prebuilt/linux-x86_64/bin"
@@ -168,4 +169,6 @@ python3 "${mesa_src}/src/freedreno/registers/gen_header.py" \
   > "${work_root}/generated-registers/a6xx.py"
 python3 "${mesa_src}/src/freedreno/common/freedreno_devices.py" \
   -p "${work_root}/generated-registers" > "${output_root}/GPU_CATALOG_${driver_variant}.h"
+python3 "${repo_root}/tools/check_a22_coverage.py" "${mesa_src}" \
+  --catalog "${output_root}/GPU_CATALOG_${driver_variant}.h"
 echo "${artifact_path}"
