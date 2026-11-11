@@ -16,6 +16,7 @@ jobs:
       - run: |
           python3 tools/validate_project.py
           python3 -m unittest discover -s tests -v
+          cc -Wall -Wextra -Werror -fsyntax-only tools/a22_kgsl_probe.c
           for script in scripts/*.sh; do bash -n "$script"; done
       - name: Apply exact patch manifest against official pinned Mesa
         run: |
