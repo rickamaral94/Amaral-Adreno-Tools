@@ -30,10 +30,17 @@ No caminho Android/KGSL, Turnip consulta `KGSL_PROP_DEVICE_INFO` e copia
 `kgsl_devinfo.chip_id` para `device->dev_id.chip_id`. A seleção da tabela
 Freedreno passa por `dev_id_compare()`.
 
-A entrada `0xffff43030b00` usa os bits 47..32 como wildcard de fuse. Portanto,
-um aparelho que reporte a mesma combinação core/major/minor/patch de
-`0x43030b00` continua casando mesmo que o speed bin nesses bits varie. A entrada
-`0xffff43030e01` tem a mesma regra para a família `0x43030e01`.
+A entrada `0xffff43030b00` usa os bits 47..32 como wildcard de fuse. A entrada
+`0xffff43030e01` faz o mesmo para a família `0x43030e01`.
+
+No backend **KGSL** da revisão fixada, `struct kgsl_devinfo.chip_id` é um
+`unsigned int` de 32 bits e `tu_knl_kgsl.cc` o copia diretamente para
+`device->dev_id.chip_id`. Portanto o valor que esperamos capturar no Android é
+a parte `0x43030b00` ou `0x43030e01`; os bits de fuse não vêm nesse campo
+KGSL. O wildcard continua casando esses valores porque `dev_id_compare()`
+aplica a máscara de fuse ao comparar. O fix `9c82a78f18d` é especialmente
+importante para caminhos que fornecem fuse/speed-bin, e mantém o caminho KGSL
+sem fuse compatível.
 
 Isso **não** significa que qualquer produto chamado “Adreno A22” seja coberto.
 Se RG DDS ou Pocket G2 reportarem outra combinação de core/major/minor/patch,
@@ -114,6 +121,8 @@ pacote do RG DDS.
   https://github.com/eden-emulator/Issue-Reports/issues/557
 - Commit upstream de wildcard FD735:
   https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/45682
+- Exemplo público de probe KGSL read-only via adb shell:
+  https://github.com/Droid-Deck/DroidDeck/issues/245
 
 A página oficial brasileira ainda classificava o RG DDS como pré-venda, com
 início de envios previsto para 10/12/2026. Por isso a ausência de hardware de
@@ -121,12 +130,23 @@ varejo e de pacote público nesta data não é tratada como regressão.
 
 ## Coleta de identidade sem root
 
-O coletor sanitizado roda via ADB:
+Para obter o mesmo `KGSL_PROP_DEVICE_INFO` usado pelo Turnip, compile primeiro
+o probe ARM64 read-only. Ele só abre `/dev/kgsl-3d0` e executa GETPROPERTY; não
+aloca memória nem submete comandos:
+
+```bash
+$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang \
+  -O2 -Wall -Wextra tools/a22_kgsl_probe.c -o /tmp/a22_kgsl_probe
+```
+
+O coletor sanitizado roda via ADB e empurra/remove esse binário em
+`/data/local/tmp`:
 
 ```bash
 python3 tools/collect_a22_android_probe.py \
   --serial <serial-adb> \
   --driver-label amaral-5.8.17.1-standard \
+  --kgsl-probe /tmp/a22_kgsl_probe \
   --driver-zip /caminho/turnip_amaral_27.0.0-devel_v5.8.17.1.zip \
   --driver-elf /caminho/libvulkan_freedreno.so \
   --runtime-json /caminho/runtime-vulkan.json \
@@ -141,9 +161,12 @@ partir de `VkPhysicalDeviceProperties2` +
 `VkPhysicalDeviceDriverProperties`. Vulkan do sistema, `dumpsys` ou strings
 do ELF não provam que um driver AdrenoTools foi carregado pelo Azahar/Eden.
 
-O coletor tenta ler nós KGSL públicos. Se o firmware esconder o chip ID em
-sysfs, deixe o campo como indisponível; isso não é zero nem prova ausência. O
-valor autoritativo usado pelo Turnip é `KGSL_PROP_DEVICE_INFO.chip_id`.
+O coletor também tenta ler nós KGSL públicos, mas o campo decisivo é
+`kgsl.device_info.chip_id`, vindo de `KGSL_PROP_DEVICE_INFO`. Se o probe for
+bloqueado pelo firmware/SELinux, registre a falha como pendente; não substitua
+por um nome comercial de GPU. Há evidência pública de Android Qualcomm onde o
+GETPROPERTY funciona em `adb shell` mesmo com ioctls de alocação bloqueados,
+mas cada firmware precisa ser confirmado.
 
 ## Protocolo A/B em hardware
 
