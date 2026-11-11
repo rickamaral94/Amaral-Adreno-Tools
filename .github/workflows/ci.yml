@@ -26,5 +26,15 @@ jobs:
           python3 tools/apply_patches.py work/mesa --variant standard
           python3 tools/check_a840_topology.py work/mesa
           python3 tools/check_a22_coverage.py work/mesa
+          python3 -m venv work/a22-venv
+          work/a22-venv/bin/pip install --quiet --requirement requirements-build.txt
+          mkdir -p work/a22-registers
+          work/a22-venv/bin/python work/mesa/src/freedreno/registers/gen_header.py \
+            --rnn work/mesa/src/freedreno/registers \
+            --xml work/mesa/src/freedreno/registers/adreno/a6xx.xml py-defines \
+            > work/a22-registers/a6xx.py
+          work/a22-venv/bin/python work/mesa/src/freedreno/common/freedreno_devices.py \
+            -p work/a22-registers > work/GPU_CATALOG_standard.h
+          python3 tools/check_a22_coverage.py work/mesa --catalog work/GPU_CATALOG_standard.h
           python3 tools/check_vulkan_roadmap.py work/mesa --fail-on-new-support
           git -C work/mesa apply --check "$GITHUB_WORKSPACE/patches/0003-oneui-ubwc.patch"
