@@ -55,6 +55,9 @@ Todas as famílias:
 
 - `8a494f248a7` tu: emite os flushes pendentes ao terminar um command buffer
   numa cadeia suspend/resume (UE5 via vkd3d, Mortal Shell 2).
+- `64adb6a1bf7` tu: passa a anunciar `VK_KHR_shader_maximal_reconvergence` onde o
+  perfil da GPU tem `has_getfiberid`. É exposição nova herdada do upstream; o CTS
+  `dEQP-VK.reconvergence.maximal.*` está not-run aqui (roadmap atualizado).
 - `e4415d24616` tu/kgsl: `VK_KHR_calibrated_timestamps` funcionando no KGSL;
   antes, `vkGetCalibratedTimestampsKHR` caía em `UNREACHABLE`.
 - `73196ec50b0`, `a84e5bacf90`: emulação de SSBO e de texel buffer também no
