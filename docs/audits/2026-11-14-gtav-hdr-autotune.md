@@ -37,6 +37,22 @@ Qualcomm, a ~2,5 ms, é coerente com renderização direta.
 **Hipótese rival:** o passe é caro em GMEM e o autotune passa a escolher GMEM depois do aquecimento, sem contagem
 corrompida.
 
+## Evidência nova: "Isolar o passe HDR" (14/11, medido no Odin pelo Gtavport)
+
+Tabela completa na [campainha do Gtavport](https://github.com/rickamaral94/Gtavport/pull/2). Turnip v5.9.18.1,
+cada um dos 24 pixel shaders do passe desligado, um por vez:
+
+- p95 continua entre 237 e 242 ms em todos os braços;
+- o maior alívio vem do `6A497187391DEA22` (54 desenhos por quadro): GPU média de 59 para 44 ms, p95 ainda em 240;
+- a linha do tempo repete as fases: 60 fps até ~14 s e, a partir de ~16 s, quadros de ~300 ms, com GPU a 680 MHz e
+  58 °C (não é limitação térmica nem clock baixo);
+- driver do sistema: 60 fps cravados em todos os braços.
+
+Leitura: nenhum shader explica o custo. Um custo que escala com o número de desenhos, e não com um shader, é o que
+se espera de GMEM com muitos bins, em que cada desenho é reexecutado por bin. A transição depois de um aquecimento
+fixo combina com a média móvel do autotune. Isso reforça a hipótese principal sem descartar a rival; os testes abaixo
+seguem necessários.
+
 ## Testes pedidos (só variáveis, 120 s cada)
 
 1. `TU_AUTOTUNE_ALGO=prefer_sysmem`. Previsão: 60 fps estáveis, sem fases.
