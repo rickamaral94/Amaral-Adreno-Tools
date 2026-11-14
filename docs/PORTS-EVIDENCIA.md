@@ -6,6 +6,26 @@ rodada de perguntas, e os dois projetos avançam juntos: o port ganha diagnósti
 
 Opções e nomes conferidos no Turnip da v5.8.17.1 (Mesa `fd8ef2b`).
 
+## 0. Mínimo que cada app deve exportar (pedido de 14/11)
+
+Pedido aos três ports em 14/11/2026. Cada um compara o que já coleta com esta lista e responde na própria campainha
+com "já tem / parcial / falta". O que faltar, ele implementa e entrega num APK assinado com a chave fixa do projeto
+(mesmo pacote, `versionCode` maior), para o Rick só instalar por cima.
+
+| Item | O que o relatório/zip do app traz |
+| --- | --- |
+| M1 | Driver carregado, lido no processo do jogo: `driverName`, `driverInfo`, `apiVersion` e `driverID`; pacote escolhido; SHA-256 e build-id do `libvulkan_freedreno.so` aberto; motivo de uma eventual volta ao driver do sistema |
+| M2 | `gpu_model` do KGSL, `chip_id` quando der, versão do Android e do kernel |
+| M3 | Configuração efetiva: escala, limite de FPS, framegen, AA/upscaler, opções de compatibilidade do driver, variáveis aplicadas e cache frio ou quente |
+| M4 | Linha do tempo de ~2 s: FPS reais e apresentados, p50/p95/p99, GPU por quadro, CPU por thread, clock da GPU e temperatura |
+| M5 | Contagens por quadro real: draws, binds de pipeline e de descriptor set, render passes, submits, cópias e uploads |
+| M6 | Variáveis por driver aplicáveis sem rebuild e coleta do logcat do processo com as tags `TU`, `MESA`, `vulkan` e `adrenotools` (para `TU_DEBUG=perf`) |
+| M7 | Em crash ou device lost: `VkResult`, a chamada que falhou, o último marcador de cena/passe e o backtrace com o build-id do driver |
+
+Respostas, quando chegarem: [Gtavport #2](https://github.com/rickamaral94/Gtavport/pull/2),
+[Botwnspxci #3](https://github.com/rickamaral94/Botwnspxci/pull/3),
+[Totknspcxi #4](https://github.com/rickamaral94/Totknspcxi/pull/4).
+
 ## 1. Sempre, em qualquer pedido
 
 **Identidade** (sem isto o resto não é comparável):
