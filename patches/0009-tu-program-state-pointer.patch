@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Amaral Driver Lab <rickamaral94@users.noreply.github.com>
-Date: Sat, 31 Oct 2026 10:28:31 +0000
+Date: Sat, 14 Nov 2026 01:40:00 +0000
 Subject: [PATCH] tu: reference the bound program state instead of copying it
 
 tu_CmdBindPipeline copied the whole tu_program_state (about 10 KB: the
@@ -14,17 +14,43 @@ recording a draw, after a pipeline was bound, and the pipeline has to
 outlive the commands that use it, as it already does for the shaders
 in cmd->state.shaders. The draw tracepoint copies the shader hashes
 with strcpy, so it keeps no pointer into the state.
+
+The descriptor-set bind paths read uses_bindless_base_addrs (Mesa
+88b01a7c269), which can run before any pipeline is bound; a NULL
+program there means "not used", as the zeroed copy did before.
+
+Generated-by: LLM
 ---
- src/freedreno/vulkan/tu_cmd_buffer.cc | 26 +++++++++++++-------------
+ src/freedreno/vulkan/tu_cmd_buffer.cc | 32 +++++++++++++++++---------------
  src/freedreno/vulkan/tu_cmd_buffer.h  |  6 +++++-
  src/freedreno/vulkan/tu_pipeline.cc   |  8 ++++----
- 3 files changed, 22 insertions(+), 18 deletions(-)
+ 3 files changed, 26 insertions(+), 20 deletions(-)
 
 diff --git a/src/freedreno/vulkan/tu_cmd_buffer.cc b/src/freedreno/vulkan/tu_cmd_buffer.cc
-index ccff3ea46c1..2a1ea95307f 100644
+index e9c74541616..8e82c287ed7 100644
 --- a/src/freedreno/vulkan/tu_cmd_buffer.cc
 +++ b/src/freedreno/vulkan/tu_cmd_buffer.cc
-@@ -5650,7 +5650,7 @@ tu_CmdBindPipeline(VkCommandBuffer commandBuffer,
+@@ -4895,7 +4895,8 @@ tu_bind_descriptor_sets(struct tu_cmd_buffer *cmd,
+          (set->va | BINDLESS_DESCRIPTOR_64B) : 0;
+ 
+       /* Compute consts are emitted on every dispatch. */
+-      if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS && cmd->state.program.uses_bindless_base_addrs)
++      if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS && cmd->state.program &&
++          cmd->state.program->uses_bindless_base_addrs)
+          cmd->state.dirty |= TU_CMD_DIRTY_SHADER_CONSTS;
+ 
+       if (!set)
+@@ -5072,7 +5073,8 @@ tu_set_descriptor_buffer_offsets(
+          BINDLESS_DESCRIPTOR_64B;
+ 
+       /* Compute consts are emitted on every dispatch. */
+-      if ((bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS && cmd->state.program.uses_bindless_base_addrs) ||
++      if ((bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS && cmd->state.program &&
++           cmd->state.program->uses_bindless_base_addrs) ||
+           set_layout->has_inline_uniforms)
+          cmd->state.dirty |= TU_CMD_DIRTY_SHADER_CONSTS;
+    }
+@@ -5660,7 +5662,7 @@ tu_CmdBindPipeline(VkCommandBuffer commandBuffer,
  
     vk_cmd_set_dynamic_graphics_state(&cmd->vk,
                                       &gfx_pipeline->dynamic_state);
@@ -33,7 +59,7 @@ index ccff3ea46c1..2a1ea95307f 100644
  
     cmd->state.load_state = pipeline->load_state;
     cmd->state.prim_order_gmem = pipeline->prim_order.state_gmem;
-@@ -8061,7 +8061,7 @@ tu_emit_consts(struct tu_cmd_buffer *cmd, bool compute)
+@@ -8071,7 +8073,7 @@ tu_emit_consts(struct tu_cmd_buffer *cmd, bool compute)
     uint32_t dwords = 0;
     const struct tu_push_constant_range *shared_consts =
        compute ? &cmd->state.shaders[MESA_SHADER_COMPUTE]->const_state.push_consts :
@@ -42,7 +68,7 @@ index ccff3ea46c1..2a1ea95307f 100644
  
     dwords = tu6_const_size(cmd, shared_consts, compute);
  
-@@ -8098,7 +8098,7 @@ tu_emit_consts(struct tu_cmd_buffer *cmd, bool compute)
+@@ -8108,7 +8110,7 @@ tu_emit_consts(struct tu_cmd_buffer *cmd, bool compute)
           tu_get_descriptors_state(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS);
        for (uint32_t type = MESA_SHADER_VERTEX; type <= MESA_SHADER_FRAGMENT; type++) {
           const struct tu_program_descriptor_linkage *link =
@@ -51,7 +77,7 @@ index ccff3ea46c1..2a1ea95307f 100644
           tu6_emit_per_stage_push_consts(&cs, &link->tu_const_state,
                                          &link->const_state,
                                          static_cast<mesa_shader_stage>(type),
-@@ -8348,7 +8348,7 @@ static uint32_t
+@@ -8358,7 +8360,7 @@ static uint32_t
  fs_params_offset(struct tu_cmd_buffer *cmd)
  {
     const struct tu_program_descriptor_linkage *link =
@@ -60,7 +86,7 @@ index ccff3ea46c1..2a1ea95307f 100644
     const struct ir3_const_state *const_state = &link->const_state;
  
     if (const_state->num_driver_params <= IR3_DP_FS_DYNAMIC)
-@@ -8367,7 +8367,7 @@ static uint32_t
+@@ -8377,7 +8379,7 @@ static uint32_t
  fs_params_size(struct tu_cmd_buffer *cmd)
  {
     const struct tu_program_descriptor_linkage *link =
@@ -69,7 +95,7 @@ index ccff3ea46c1..2a1ea95307f 100644
     const struct ir3_const_state *const_state = &link->const_state;
  
     return DIV_ROUND_UP(const_state->num_driver_params - IR3_DP_FS_DYNAMIC, 4);
-@@ -8625,16 +8625,16 @@ tu6_draw_common(struct tu_cmd_buffer *cmd,
+@@ -8635,16 +8637,16 @@ tu6_draw_common(struct tu_cmd_buffer *cmd,
                  /* note: draw_count is 0 for indirect */
                  uint32_t draw_count)
  {
@@ -92,16 +118,16 @@ index ccff3ea46c1..2a1ea95307f 100644
  
     /* Emit state first, because it's needed for bandwidth calculations */
     uint32_t dynamic_draw_state_dirty = 0;
-@@ -8707,7 +8707,7 @@ tu6_draw_common(struct tu_cmd_buffer *cmd,
+@@ -8717,7 +8719,7 @@ tu6_draw_common(struct tu_cmd_buffer *cmd,
     }
  
-    if (cmd->device->physical_device->info->props.has_rt_workaround &&
+    if (FD_QUIRK(cmd->device->physical_device->info, QCTDD10497382_rt_workaround) &&
 -       cmd->state.program.uses_ray_intersection) {
 +       cmd->state.program->uses_ray_intersection) {
        tu_set_render_mode<CHIP>(cs, { .shader_uses_rt = true });
     }
  
-@@ -8965,7 +8965,7 @@ static uint32_t
+@@ -8975,7 +8977,7 @@ static uint32_t
  vs_params_offset(struct tu_cmd_buffer *cmd)
  {
     const struct tu_program_descriptor_linkage *link =
@@ -128,10 +154,10 @@ index 75673e88980..48577e76e88 100644
     struct tu_render_pass_state rp;
  
 diff --git a/src/freedreno/vulkan/tu_pipeline.cc b/src/freedreno/vulkan/tu_pipeline.cc
-index 93c505c54c1..38915c2cd55 100644
+index da9ba54ecde..0e32f79df84 100644
 --- a/src/freedreno/vulkan/tu_pipeline.cc
 +++ b/src/freedreno/vulkan/tu_pipeline.cc
-@@ -2854,7 +2854,7 @@ tu6_emit_viewport_fdm(struct tu_cs *cs, struct tu_cmd_buffer *cmd,
+@@ -2857,7 +2857,7 @@ tu6_emit_viewport_fdm(struct tu_cs *cs, struct tu_cmd_buffer *cmd,
     tu_create_fdm_bin_patchpoint(cmd, cs, size, TU_FDM_NONE,
                                  fdm_apply_viewports, state);
     cmd->state.rp.shared_viewport |= !cmd->state.per_view_viewport &&
@@ -140,7 +166,7 @@ index 93c505c54c1..38915c2cd55 100644
  }
  
  static const enum mesa_vk_dynamic_graphics_state tu_scissor_state[] = {
-@@ -4339,8 +4339,8 @@ tu_emit_draw_state(struct tu_cmd_buffer *cmd)
+@@ -4349,8 +4349,8 @@ tu_emit_draw_state(struct tu_cmd_buffer *cmd)
                 cmd->state.dirty & (TU_CMD_DIRTY_SUBPASS | TU_CMD_DIRTY_SHADING_RATE),
                 &cmd->vk.dynamic_graphics_state.fsr,
                 cmd->state.subpass->fsr_attachment != VK_ATTACHMENT_UNUSED,
@@ -151,7 +177,7 @@ index 93c505c54c1..38915c2cd55 100644
     }
     /* For SW multiview (no HW multiview), don't enable HW multiview
      * registers -- the driver handles multiview via draw duplication.
-@@ -4373,7 +4373,7 @@ tu_emit_draw_state(struct tu_cmd_buffer *cmd)
+@@ -4383,7 +4383,7 @@ tu_emit_draw_state(struct tu_cmd_buffer *cmd)
                     cmd->state.shaders[MESA_SHADER_VERTEX],
                     cmd->state.shaders[MESA_SHADER_TESS_CTRL],
                     cmd->state.shaders[MESA_SHADER_TESS_EVAL],
@@ -160,6 +186,3 @@ index 93c505c54c1..38915c2cd55 100644
                     cmd->vk.dynamic_graphics_state.ts.patch_control_points);
     if (!cmd->device->physical_device->info->props.has_coherent_ubwc_flag_caches) {
        DRAW_STATE_COND(prim_mode_sysmem,
--- 
-2.43.0
-
