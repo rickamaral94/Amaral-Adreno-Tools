@@ -39,4 +39,4 @@ comentário novo.
 | --- | --- | --- |
 | BOTW, TOTK, LAS (runtime LARecomp) | `LARecomp` / `LARecomp` | `runtime/nvn/vulkan/device.c` dos ports |
 | UnleashedRecomp (plume) | `plume` (`pApplicationName`) | `thirdparty/plume/plume_vulkan.cpp` |
-| Gtavport (plume, via gtav-recomp) | `plume` / `plume`, versão 1.0.0 (genérico; o agente do Gtavport propôs passar a `Gtavport` / `gtav-recomp`) | `plume_vulkan.cpp:4907` (informado pelo agente do Gtavport em 14/11) |
+| Gtavport (plume, via gtav-recomp) | até a v0.3.0-pre1: `plume` / `plume` 1.0.0 (genérico). A partir da próxima build: `Gtavport` 0.3.0 / `gtav-recomp` 0.4.0 | patch `odin2/patches/0033-nome-do-app-no-vulkan.patch`, commit `31c1ea7` do Gtavport (informado em 14/11) |
