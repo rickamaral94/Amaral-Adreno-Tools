@@ -128,12 +128,16 @@
     {
       "name": "VK_KHR_shader_maximal_reconvergence",
       "roadmap_2026": true,
-      "status": "missing-turnip",
+      "status": "upstream-hardware-gated",
       "source_marker": ".KHR_shader_maximal_reconvergence",
-      "source_marker_expected": false,
-      "android_driver_status": "missing",
-      "action": "audit-nir-ir3-control-flow",
-      "priority": "medium"
+      "source_marker_expected": true,
+      "android_driver_status": "implemented",
+      "action": "validate-cts-and-device-query",
+      "priority": "medium",
+      "gates": [
+        "has_getfiberid"
+      ],
+      "upstream_commit": "64adb6a1bf7"
     }
   ],
   "qcom_watchlist": [
