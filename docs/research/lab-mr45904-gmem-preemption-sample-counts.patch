@@ -1,0 +1,792 @@
+From bdc814940af782df7f5aa601ad4078125ebb0e8c Mon Sep 17 00:00:00 2001
+From: Dhruv Mark Collins <mark@igalia.com>
+Date: Mon, 26 Oct 2026 20:55:05 +0000
+Subject: [PATCH 1/3] tu/autotune: Count samples passed per tile in GMEM
+
+GMEM rendering can be preempted between tiles, and the sample count
+isn't kept across the context switch, so a ZPASS_DONE pair around a
+whole GMEM render pass can count too few samples, or end below its
+start.
+
+Where the events can accumulate their difference, emit a pair around
+each tile instead and read the sum, which is zeroed on the GPU at the
+start of the render pass since a command buffer can be submitted more
+than once. SYSMEM render passes, and GPUs whose events can't
+accumulate, keep one pair.
+
+Signed-off-by: Dhruv Mark Collins <mark@igalia.com>
+Assisted-by: LLM
+---
+ src/freedreno/vulkan/tu_autotune.cc | 39 ++++++++++++++++++++++++++---
+ 1 file changed, 36 insertions(+), 3 deletions(-)
+
+diff --git a/src/freedreno/vulkan/tu_autotune.cc b/src/freedreno/vulkan/tu_autotune.cc
+index 2e3dd4d3d72..21533c94e8e 100644
+--- a/src/freedreno/vulkan/tu_autotune.cc
++++ b/src/freedreno/vulkan/tu_autotune.cc
+@@ -423,6 +423,8 @@ tu_autotune::get_cs_for_fence(uint32_t fence)
+ struct PACKED tu_autotune::rp_gpu_data {
+    /* HW requires the sample start/stop locations to be 128b aligned. */
+    alignas(16) uint64_t samples_start;
++   /* The sum of the samples passed in each tile, see samples_per_tile(). */
++   uint64_t samples_accum;
+    alignas(16) uint64_t samples_end;
+    uint64_t ts_start;
+    uint64_t ts_end;
+@@ -519,6 +521,7 @@ struct tu_autotune::rp_entry {
+ 
+    static_assert(alignof(rp_gpu_data) == 16);
+    static_assert(offsetof(rp_gpu_data, samples_start) == 0);
++   static_assert(offsetof(rp_gpu_data, samples_accum) == 8);
+    static_assert(offsetof(rp_gpu_data, samples_end) == 16);
+    static_assert(sizeof(rp_gpu_data) % alignof(tile_gpu_data) == 0);
+ 
+@@ -581,10 +584,21 @@ struct tu_autotune::rp_entry {
+ 
+    /** Samples-Passed Metric **/
+ 
++   /* A GMEM pass can be preempted between tiles, and the sample counter doesn't carry its count over the switch, so
++    * a pair of events around the whole pass can count too few samples or end below its start. Where the events can
++    * accumulate, each tile counts its own samples instead.
++    */
++   bool samples_per_tile()
++   {
++      return !sysmem && device->physical_device->info->props.has_event_write_sample_count;
++   }
++
+    uint64_t get_samples_passed()
+    {
+       assert(config.test(metric_flag::SAMPLES));
+       rp_gpu_data &gpu = get_gpu_data();
++      if (samples_per_tile())
++         return gpu.samples_accum;
+       return gpu.samples_end - gpu.samples_start;
+    }
+ 
+@@ -641,6 +655,14 @@ struct tu_autotune::rp_entry {
+       }
+    }
+ 
++   /* A command buffer can run more than once, so the sum starts from zero on the GPU. */
++   void emit_metric_samples_reset(struct tu_cs *cs, uint64_t accum_iova)
++   {
++      tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 4);
++      tu_cs_emit_qw(cs, accum_iova);
++      tu_cs_emit_qw(cs, 0);
++   }
++
+    /** RP/Tile Timestamp Metric **/
+ 
+    uint64_t get_rp_duration()
+@@ -692,8 +714,12 @@ struct tu_autotune::rp_entry {
+    {
+       assert(map && bo.iova);
+       uint64_t bo_iova = bo.iova;
+-      if (config.test(metric_flag::SAMPLES))
+-         emit_metric_samples_start(cmd, cs, bo_iova + offsetof(rp_gpu_data, samples_start));
++      if (config.test(metric_flag::SAMPLES)) {
++         if (samples_per_tile())
++            emit_metric_samples_reset(cs, bo_iova + offsetof(rp_gpu_data, samples_accum));
++         else
++            emit_metric_samples_start(cmd, cs, bo_iova + offsetof(rp_gpu_data, samples_start));
++      }
+ 
+       if (config.test(metric_flag::TS))
+          emit_metric_timestamp(cs, bo_iova + offsetof(rp_gpu_data, ts_start));
+@@ -703,7 +729,7 @@ struct tu_autotune::rp_entry {
+    {
+       assert(map && bo.iova);
+       uint64_t bo_iova = bo.iova;
+-      if (config.test(metric_flag::SAMPLES))
++      if (config.test(metric_flag::SAMPLES) && !samples_per_tile())
+          emit_metric_samples_end(cmd, cs, bo_iova + offsetof(rp_gpu_data, samples_start),
+                                  bo_iova + offsetof(rp_gpu_data, samples_end));
+ 
+@@ -716,6 +742,9 @@ struct tu_autotune::rp_entry {
+       assert(map && bo.iova);
+       assert(!sysmem);
+       assert(tile_index < tile_count);
++      if (config.test(metric_flag::SAMPLES) && samples_per_tile())
++         emit_metric_samples_start(cmd, cs, bo.iova + offsetof(rp_gpu_data, samples_start));
++
+       if (config.test(metric_flag::TS_TILE))
+          emit_metric_timestamp(cs, bo.iova + tile_gpu_data::offset(tile_index) + offsetof(tile_gpu_data, ts_start));
+    }
+@@ -725,6 +754,10 @@ struct tu_autotune::rp_entry {
+       assert(map && bo.iova);
+       assert(!sysmem);
+       assert(tile_index < tile_count);
++      if (config.test(metric_flag::SAMPLES) && samples_per_tile())
++         emit_metric_samples_end(cmd, cs, bo.iova + offsetof(rp_gpu_data, samples_start),
++                                 bo.iova + offsetof(rp_gpu_data, samples_end));
++
+       if (config.test(metric_flag::TS_TILE))
+          emit_metric_timestamp(cs, bo.iova + tile_gpu_data::offset(tile_index) + offsetof(tile_gpu_data, ts_end));
+    }
+-- 
+2.43.0
+
+
+From ffa094b79398fae92be612d5366c200fb864b2b4 Mon Sep 17 00:00:00 2001
+From: Dhruv Mark Collins <mark@igalia.com>
+Date: Mon, 2 Nov 2026 21:37:44 +0000
+Subject: [PATCH 2/3] tu: Split the sample counting pair out of occlusion query
+ begin and end
+
+Move emitting the ZPASS_DONE pair into functions that take the command
+stream and the query slot, so that the next commit can emit them where
+render passes are rendered.
+
+No functional change.
+
+Signed-off-by: Dhruv Mark Collins <mark@igalia.com>
+Assisted-by: LLM
+---
+ src/freedreno/vulkan/tu_query_pool.cc | 117 ++++++++++++++++----------
+ 1 file changed, 74 insertions(+), 43 deletions(-)
+
+diff --git a/src/freedreno/vulkan/tu_query_pool.cc b/src/freedreno/vulkan/tu_query_pool.cc
+index f5a27c80a48..99ae93fe11c 100644
+--- a/src/freedreno/vulkan/tu_query_pool.cc
++++ b/src/freedreno/vulkan/tu_query_pool.cc
+@@ -1087,31 +1087,22 @@ tu_ResetQueryPool(VkDevice device,
+ }
+ TU_GENX(tu_ResetQueryPool);
+ 
++/* The begin, result and end of an occlusion query slot, from begin_iova on. */
++static_assert(offsetof(struct occlusion_query_slot, result) ==
++              offsetof(struct occlusion_query_slot, begin) + 8);
++static_assert(offsetof(struct occlusion_query_slot, end) ==
++              offsetof(struct occlusion_query_slot, begin) + 16);
++
++/* Resume counting samples into the slot at begin_iova: the begin half of a
++ * ZPASS_DONE event pair, which emit_occlusion_query_pause() closes and adds to
++ * the slot's result.
++ */
+ template <chip CHIP>
+ static void
+-emit_begin_occlusion_query(struct tu_cmd_buffer *cmdbuf,
+-                           struct tu_query_pool *pool,
+-                           uint32_t query)
++emit_occlusion_query_resume(struct tu_cmd_buffer *cmdbuf,
++                            struct tu_cs *cs,
++                            uint64_t begin_iova)
+ {
+-   /* From the Vulkan 1.1.130 spec:
+-    *
+-    *    A query must begin and end inside the same subpass of a render pass
+-    *    instance, or must both begin and end outside of a render pass
+-    *    instance.
+-    *
+-    * Unlike on an immediate-mode renderer, Turnip renders all tiles on
+-    * vkCmdEndRenderPass, not individually on each vkCmdDraw*. As such, if a
+-    * query begins/ends inside the same subpass of a render pass, we need to
+-    * record the packets on the secondary draw command stream. cmdbuf->draw_cs
+-    * is then run on every tile during render, so we just need to accumulate
+-    * sample counts in slot->result to compute the query result.
+-    */
+-   struct tu_cs *cs = cmdbuf->state.pass ? &cmdbuf->draw_cs : &cmdbuf->cs;
+-   cmdbuf->state.occlusion_query_may_be_running = true;
+-   cmdbuf->state.dirty |= TU_CMD_DIRTY_DISABLE_FS | TU_CMD_DIRTY_LRZ;
+-
+-   uint64_t begin_iova = occlusion_query_iova(pool, query, begin);
+-
+    tu_cs_emit_regs(cs,
+                    A6XX_RB_SAMPLE_COUNTER_CNTL(.copy = true));
+ 
+@@ -1135,11 +1126,11 @@ emit_begin_occlusion_query(struct tu_cmd_buffer *cmdbuf,
+        * occlusion query outside of a renderpass, we emit a fake end event that
+        * closes the previous one since the autotuner's ZPASS_DONE use could end
+        * up causing problems. This events writes into the end field of the query
+-       * slot, but it will be overwritten by events in emit_end_occlusion_query
+-       * with the proper value.
++       * slot, but it will be overwritten by events in
++       * emit_occlusion_query_pause() with the proper value.
+        * When inside a renderpass, the corresponding ZPASS_DONE event will be
+-       * emitted in emit_end_occlusion_query. We note the use of ZPASS_DONE on
+-       * the state object, enabling autotuner to optimize its own events.
++       * emitted in emit_occlusion_query_pause(). We note the use of ZPASS_DONE
++       * on the state object, enabling autotuner to optimize its own events.
+        */
+       if (!cmdbuf->state.pass) {
+          tu_cs_emit_pkt7(cs, CP_EVENT_WRITE7, 3);
+@@ -1154,6 +1145,33 @@ emit_begin_occlusion_query(struct tu_cmd_buffer *cmdbuf,
+    }
+ }
+ 
++template <chip CHIP>
++static void
++emit_begin_occlusion_query(struct tu_cmd_buffer *cmdbuf,
++                           struct tu_query_pool *pool,
++                           uint32_t query)
++{
++   /* From the Vulkan 1.1.130 spec:
++    *
++    *    A query must begin and end inside the same subpass of a render pass
++    *    instance, or must both begin and end outside of a render pass
++    *    instance.
++    *
++    * Unlike on an immediate-mode renderer, Turnip renders all tiles on
++    * vkCmdEndRenderPass, not individually on each vkCmdDraw*. As such, if a
++    * query begins/ends inside the same subpass of a render pass, we need to
++    * record the packets on the secondary draw command stream. cmdbuf->draw_cs
++    * is then run on every tile during render, so we just need to accumulate
++    * sample counts in slot->result to compute the query result.
++    */
++   struct tu_cs *cs = cmdbuf->state.pass ? &cmdbuf->draw_cs : &cmdbuf->cs;
++   cmdbuf->state.occlusion_query_may_be_running = true;
++   cmdbuf->state.dirty |= TU_CMD_DIRTY_DISABLE_FS | TU_CMD_DIRTY_LRZ;
++
++   emit_occlusion_query_resume<CHIP>(cmdbuf, cs,
++                                     occlusion_query_iova(pool, query, begin));
++}
++
+ template <chip CHIP>
+ static void
+ emit_begin_stat_query(struct tu_cmd_buffer *cmdbuf,
+@@ -1487,13 +1505,17 @@ tu_CmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer,
+ }
+ TU_GENX(tu_CmdBeginQueryIndexedEXT);
+ 
++/* Pause counting samples into the slot at begin_iova, closing the pair that
++ * emit_occlusion_query_resume() began, and add the samples counted between
++ * them to the slot's result.
++ */
+ template <chip CHIP>
+ static void
+-emit_end_occlusion_query(struct tu_cmd_buffer *cmdbuf,
+-                         struct tu_query_pool *pool,
+-                         uint32_t query)
++emit_occlusion_query_pause(struct tu_cmd_buffer *cmdbuf,
++                           struct tu_cs *cs,
++                           uint64_t begin_iova)
+ {
+-   /* Ending an occlusion query happens in a few steps:
++   /* Pausing happens in a few steps:
+     *    1) Set the slot->end to UINT64_MAX.
+     *    2) Set up the SAMPLE_COUNT registers and trigger a CP_EVENT_WRITE to
+     *       write the current sample count value into slot->end.
+@@ -1501,19 +1523,9 @@ emit_end_occlusion_query(struct tu_cmd_buffer *cmdbuf,
+     *       UINT64_MAX before continuing via CP_WAIT_REG_MEM.
+     *    4) Accumulate the results of the query (slot->end - slot->begin) into
+     *       slot->result.
+-    *    5) If vkCmdEndQuery is *not* called from within the scope of a render
+-    *       pass, set the slot's available bit since the query is now done.
+-    *    6) If vkCmdEndQuery *is* called from within the scope of a render
+-    *       pass, we cannot mark as available yet since the commands in
+-    *       draw_cs are not run until vkCmdEndRenderPass.
+     */
+-   const struct tu_render_pass *pass = cmdbuf->state.pass;
+-   struct tu_cs *cs = pass ? &cmdbuf->draw_cs : &cmdbuf->cs;
+-
+-   uint64_t available_iova = query_available_iova(pool, query);
+-   uint64_t begin_iova = occlusion_query_iova(pool, query, begin);
+-   uint64_t result_iova = occlusion_query_iova(pool, query, result);
+-   uint64_t end_iova = occlusion_query_iova(pool, query, end);
++   uint64_t result_iova = begin_iova + 8;
++   uint64_t end_iova = begin_iova + 16;
+ 
+    if (!cmdbuf->device->physical_device->info->props.has_event_write_sample_count) {
+       tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 4);
+@@ -1578,6 +1590,25 @@ emit_end_occlusion_query(struct tu_cmd_buffer *cmdbuf,
+ 
+       emit_counter_barrier<CHIP>(cs);
+    }
++}
++
++template <chip CHIP>
++static void
++emit_end_occlusion_query(struct tu_cmd_buffer *cmdbuf,
++                         struct tu_query_pool *pool,
++                         uint32_t query)
++{
++   /* If vkCmdEndQuery is *not* called from within the scope of a render pass,
++    * the slot's available bit can be set since the query is now done. If it
++    * *is* called from within the scope of a render pass, we cannot mark it as
++    * available yet since the commands in draw_cs are not run until
++    * vkCmdEndRenderPass.
++    */
++   const struct tu_render_pass *pass = cmdbuf->state.pass;
++   struct tu_cs *cs = pass ? &cmdbuf->draw_cs : &cmdbuf->cs;
++
++   emit_occlusion_query_pause<CHIP>(cmdbuf, cs,
++                                    occlusion_query_iova(pool, query, begin));
+ 
+    if (pass)
+       /* Technically, queries should be tracked per-subpass, but here we track
+@@ -1589,7 +1620,7 @@ emit_end_occlusion_query(struct tu_cmd_buffer *cmdbuf,
+       cs = &cmdbuf->draw_epilogue_cs;
+ 
+    tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 4);
+-   tu_cs_emit_qw(cs, available_iova);
++   tu_cs_emit_qw(cs, query_available_iova(pool, query));
+    tu_cs_emit_qw(cs, 0x1);
+ 
+    cmdbuf->state.occlusion_query_may_be_running = false;
+-- 
+2.43.0
+
+
+From 306739e220c5d20eff8b3ad4872f18d21bdcfe8d Mon Sep 17 00:00:00 2001
+From: Dhruv Mark Collins <mark@igalia.com>
+Date: Mon, 2 Nov 2026 21:40:15 +0000
+Subject: [PATCH 3/3] tu: Count occlusion queries outside of render passes
+ around each tile
+
+An occlusion query begun outside of a render pass emitted one ZPASS_DONE
+pair around everything it contained. GMEM rendering can be preempted
+between tiles, and the sample count isn't kept across the context
+switch, so that pair could count too few samples, or end below its
+start.
+
+Count such a query when the render passes it contains are rendered
+instead, with a pair around the draws of each tile, or of a SYSMEM
+render pass. vkCmdBeginQuery then emits nothing, and vkCmdEndQuery only
+marks the query available.
+
+A secondary command buffer recorded with occlusionQueryEnable counts
+the render passes it renders itself into a slot of its own, which the
+command buffer executing it zeroes before and adds to its count after.
+
+Signed-off-by: Dhruv Mark Collins <mark@igalia.com>
+Assisted-by: LLM
+---
+ src/freedreno/vulkan/tu_cmd_buffer.cc |  15 ++
+ src/freedreno/vulkan/tu_cmd_buffer.h  |   9 ++
+ src/freedreno/vulkan/tu_query_pool.cc | 220 ++++++++++++++++++++------
+ src/freedreno/vulkan/tu_query_pool.h  |  29 ++++
+ 4 files changed, 227 insertions(+), 46 deletions(-)
+
+diff --git a/src/freedreno/vulkan/tu_cmd_buffer.cc b/src/freedreno/vulkan/tu_cmd_buffer.cc
+index 8e82c287ed7..c1252bbb8d0 100644
+--- a/src/freedreno/vulkan/tu_cmd_buffer.cc
++++ b/src/freedreno/vulkan/tu_cmd_buffer.cc
+@@ -25,6 +25,7 @@
+ #include "tu_image.h"
+ #include "tu_knl.h"
+ #include "tu_perfetto.h"
++#include "tu_query_pool.h"
+ #include "tu_scratch_ram.h"
+ #include "tu_subsampled_image.h"
+ #include "tu_tile_config.h"
+@@ -3806,7 +3807,9 @@ tu6_render_tile(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
+    if (cmd->state.prim_generated_query_running_before_rp)
+       tu_emit_event_write<CHIP>(cmd, cs, FD_STOP_PRIMITIVE_CTRS);
+ 
++   tu_occlusion_query_draws_begin<CHIP>(cmd, cs);
+    tu_cs_emit_call(cs, &cmd->draw_cs);
++   tu_occlusion_query_draws_end<CHIP>(cmd, cs);
+ 
+    if (cmd->state.prim_generated_query_running_before_rp)
+       tu_emit_event_write<CHIP>(cmd, cs, FD_START_PRIMITIVE_CTRS);
+@@ -4169,7 +4172,9 @@ tu_cmd_render_sysmem(struct tu_cmd_buffer *cmd,
+ 
+    trace_start_draw_ib_sysmem(&cmd->trace, &cmd->cs, cmd);
+ 
++   tu_occlusion_query_draws_begin<CHIP>(cmd, &cmd->cs);
+    tu_cs_emit_call(&cmd->cs, &cmd->draw_cs);
++   tu_occlusion_query_draws_end<CHIP>(cmd, &cmd->cs);
+ 
+    trace_end_draw_ib_sysmem(&cmd->trace, &cmd->cs);
+ 
+@@ -4194,11 +4199,15 @@ tu_cmd_render(struct tu_cmd_buffer *cmd_buffer,
+ 
+    tu_autotune::rp_key_opt rp_key = cmd_buffer->device->autotune->emit_preempt_latency_tracking_rp_hash(cmd_buffer);
+ 
++   tu_occlusion_query_render_begin<CHIP>(cmd_buffer);
++
+    tu_autotune::rp_ctx_t rp_ctx = NULL;
+    if (use_sysmem_rendering(cmd_buffer, &rp_ctx, rp_key))
+       tu_cmd_render_sysmem<CHIP>(cmd_buffer, rp_ctx);
+    else
+       tu_cmd_render_tiles<CHIP>(cmd_buffer, rp_ctx, fdm_offsets);
++
++   tu_occlusion_query_render_end<CHIP>(cmd_buffer);
+ }
+ 
+ static void tu_reset_render_pass(struct tu_cmd_buffer *cmd_buffer)
+@@ -4553,6 +4562,8 @@ tu_BeginCommandBuffer(VkCommandBuffer commandBuffer,
+ 
+       cmd_buffer->inherited_pipeline_statistics =
+          pBeginInfo->pInheritanceInfo->pipelineStatistics;
++      cmd_buffer->inherited_occlusion_query =
++         pBeginInfo->pInheritanceInfo->occlusionQueryEnable;
+ 
+       cmd_buffer->state.occlusion_query_may_be_running =
+          pBeginInfo->pInheritanceInfo->occlusionQueryEnable;
+@@ -6615,7 +6626,9 @@ tu_CmdExecuteCommands(VkCommandBuffer commandBuffer,
+          case SR_NONE:
+             assert(tu_cs_is_empty(&secondary->draw_cs));
+             assert(tu_cs_is_empty(&secondary->draw_epilogue_cs));
++            TU_CALLX(cmd->device, tu_occlusion_query_execute_begin)(cmd, secondary);
+             tu_cs_add_entries(&cmd->cs, &secondary->cs);
++            TU_CALLX(cmd->device, tu_occlusion_query_execute_end)(cmd, secondary);
+             TU_CALLX(cmd->device, tu_clone_trace)(cmd, &cmd->cs, &cmd->trace, &secondary->trace);
+             break;
+ 
+@@ -6686,7 +6699,9 @@ tu_CmdExecuteCommands(VkCommandBuffer commandBuffer,
+                tu_reset_render_pass(cmd);
+             }
+ 
++            TU_CALLX(cmd->device, tu_occlusion_query_execute_begin)(cmd, secondary);
+             tu_cs_add_entries(&cmd->cs, &secondary->cs);
++            TU_CALLX(cmd->device, tu_occlusion_query_execute_end)(cmd, secondary);
+ 
+             if (secondary->state.suspend_resume == SR_IN_CHAIN_AFTER_PRE_CHAIN ||
+                 secondary->state.suspend_resume == SR_IN_CHAIN) {
+diff --git a/src/freedreno/vulkan/tu_cmd_buffer.h b/src/freedreno/vulkan/tu_cmd_buffer.h
+index 48577e76e88..f925bb60b58 100644
+--- a/src/freedreno/vulkan/tu_cmd_buffer.h
++++ b/src/freedreno/vulkan/tu_cmd_buffer.h
+@@ -654,6 +654,14 @@ struct tu_cmd_state
+ 
+    bool occlusion_query_may_be_running;
+ 
++   /* The occlusion query begun outside of a render pass, if any, and how its
++    * samples are counted.
++    */
++   struct tu_query_pool *outside_occlusion_query_pool;
++   uint32_t outside_occlusion_query;
++   uint64_t own_occlusion_query_iova;
++   uint64_t rendering_occlusion_query_iova;
++
+    bool trace_draws_enabled;
+    enum tu_pipeline_type trace_draws_pipeline_type;
+ 
+@@ -730,6 +738,7 @@ struct tu_cmd_buffer
+    VkCommandBufferUsageFlags usage_flags;
+ 
+    VkQueryPipelineStatisticFlags inherited_pipeline_statistics;
++   bool inherited_occlusion_query;
+ 
+    struct tu_cmd_state state;
+    uint32_t queue_family_index;
+diff --git a/src/freedreno/vulkan/tu_query_pool.cc b/src/freedreno/vulkan/tu_query_pool.cc
+index 99ae93fe11c..0172f16ac97 100644
+--- a/src/freedreno/vulkan/tu_query_pool.cc
++++ b/src/freedreno/vulkan/tu_query_pool.cc
+@@ -1087,7 +1087,9 @@ tu_ResetQueryPool(VkDevice device,
+ }
+ TU_GENX(tu_ResetQueryPool);
+ 
+-/* The begin, result and end of an occlusion query slot, from begin_iova on. */
++/* The begin, result and end of an occlusion query slot, from begin_iova on,
++ * which is also the layout of a secondary command buffer's own slot.
++ */
+ static_assert(offsetof(struct occlusion_query_slot, result) ==
+               offsetof(struct occlusion_query_slot, begin) + 8);
+ static_assert(offsetof(struct occlusion_query_slot, end) ==
+@@ -1095,7 +1097,9 @@ static_assert(offsetof(struct occlusion_query_slot, end) ==
+ 
+ /* Resume counting samples into the slot at begin_iova: the begin half of a
+  * ZPASS_DONE event pair, which emit_occlusion_query_pause() closes and adds to
+- * the slot's result.
++ * the slot's result. The pair is emitted around draws that run on one tile at
++ * a time (draw_cs, or each tile's call of it), so each tile's samples are
++ * added on their own.
+  */
+ template <chip CHIP>
+ static void
+@@ -1122,26 +1126,12 @@ emit_occlusion_query_resume(struct tu_cmd_buffer *cmdbuf,
+                                        .write_sample_count = true).value);
+       tu_cs_emit_qw(cs, begin_iova);
+ 
+-      /* ZPASS_DONE events should come in begin-end pairs. When emitting and
+-       * occlusion query outside of a renderpass, we emit a fake end event that
+-       * closes the previous one since the autotuner's ZPASS_DONE use could end
+-       * up causing problems. This events writes into the end field of the query
+-       * slot, but it will be overwritten by events in
+-       * emit_occlusion_query_pause() with the proper value.
+-       * When inside a renderpass, the corresponding ZPASS_DONE event will be
+-       * emitted in emit_occlusion_query_pause(). We note the use of ZPASS_DONE
+-       * on the state object, enabling autotuner to optimize its own events.
++      /* ZPASS_DONE events should come in begin-end pairs. The corresponding
++       * ZPASS_DONE event will be emitted in emit_occlusion_query_pause(). We
++       * note the use of ZPASS_DONE on the state object, enabling autotuner to
++       * optimize its own events.
+        */
+-      if (!cmdbuf->state.pass) {
+-         tu_cs_emit_pkt7(cs, CP_EVENT_WRITE7, 3);
+-         tu_cs_emit(cs, CP_EVENT_WRITE7_0(.event = ZPASS_DONE,
+-                                          .write_sample_count = true,
+-                                          .sample_count_end_offset = true,
+-                                          .write_accum_sample_count_diff = true).value);
+-         tu_cs_emit_qw(cs, begin_iova);
+-      } else {
+-         cmdbuf->state.rp.has_zpass_done_sample_count_write_in_rp = true;
+-      }
++      cmdbuf->state.rp.has_zpass_done_sample_count_write_in_rp = true;
+    }
+ }
+ 
+@@ -1164,12 +1154,16 @@ emit_begin_occlusion_query(struct tu_cmd_buffer *cmdbuf,
+     * is then run on every tile during render, so we just need to accumulate
+     * sample counts in slot->result to compute the query result.
+     */
+-   struct tu_cs *cs = cmdbuf->state.pass ? &cmdbuf->draw_cs : &cmdbuf->cs;
+    cmdbuf->state.occlusion_query_may_be_running = true;
+    cmdbuf->state.dirty |= TU_CMD_DIRTY_DISABLE_FS | TU_CMD_DIRTY_LRZ;
+ 
+-   emit_occlusion_query_resume<CHIP>(cmdbuf, cs,
+-                                     occlusion_query_iova(pool, query, begin));
++   if (cmdbuf->state.pass) {
++      uint64_t begin_iova = occlusion_query_iova(pool, query, begin);
++      emit_occlusion_query_resume<CHIP>(cmdbuf, &cmdbuf->draw_cs, begin_iova);
++   } else {
++      cmdbuf->state.outside_occlusion_query_pool = pool;
++      cmdbuf->state.outside_occlusion_query = query;
++   }
+ }
+ 
+ template <chip CHIP>
+@@ -1567,20 +1561,6 @@ emit_occlusion_query_pause(struct tu_cmd_buffer *cmdbuf,
+ 
+       tu_cs_emit_pkt7(cs, CP_WAIT_MEM_WRITES, 0);
+    } else {
+-      /* When outside of renderpass, potential autotuner activity can cause
+-       * interference between ZPASS_DONE event pairs. In that case, like at the
+-       * beginning of the occlusion query, a fake ZPASS_DONE event is emitted to
+-       * compose a begin-end event pair. The first event will write into the end
+-       * field, but that will be overwritten by the second ZPASS_DONE which will
+-       * also handle the diff accumulation.
+-       */
+-      if (!cmdbuf->state.pass) {
+-         tu_cs_emit_pkt7(cs, CP_EVENT_WRITE7, 3);
+-         tu_cs_emit(cs, CP_EVENT_WRITE7_0(.event = ZPASS_DONE,
+-                                          .write_sample_count = true).value);
+-         tu_cs_emit_qw(cs, end_iova);
+-      }
+-
+       tu_cs_emit_pkt7(cs, CP_EVENT_WRITE7, 3);
+       tu_cs_emit(cs, CP_EVENT_WRITE7_0(.event = ZPASS_DONE,
+                                        .write_sample_count = true,
+@@ -1599,18 +1579,17 @@ emit_end_occlusion_query(struct tu_cmd_buffer *cmdbuf,
+                          uint32_t query)
+ {
+    /* If vkCmdEndQuery is *not* called from within the scope of a render pass,
+-    * the slot's available bit can be set since the query is now done. If it
+-    * *is* called from within the scope of a render pass, we cannot mark it as
++    * the render passes the query contained have counted its samples, and the
++    * slot's available bit can be set since the query is now done. If it *is*
++    * called from within the scope of a render pass, we cannot mark it as
+     * available yet since the commands in draw_cs are not run until
+     * vkCmdEndRenderPass.
+     */
+-   const struct tu_render_pass *pass = cmdbuf->state.pass;
+-   struct tu_cs *cs = pass ? &cmdbuf->draw_cs : &cmdbuf->cs;
+-
+-   emit_occlusion_query_pause<CHIP>(cmdbuf, cs,
+-                                    occlusion_query_iova(pool, query, begin));
++   struct tu_cs *cs = &cmdbuf->cs;
++   if (cmdbuf->state.pass) {
++      emit_occlusion_query_pause<CHIP>(cmdbuf, &cmdbuf->draw_cs,
++                                       occlusion_query_iova(pool, query, begin));
+ 
+-   if (pass)
+       /* Technically, queries should be tracked per-subpass, but here we track
+        * at the render pass level to simply the code a bit. This is safe
+        * because the only commands that use the available bit are
+@@ -1618,6 +1597,11 @@ emit_end_occlusion_query(struct tu_cmd_buffer *cmdbuf,
+        * cannot be invoked from inside a render pass scope.
+        */
+       cs = &cmdbuf->draw_epilogue_cs;
++   } else {
++      assert(cmdbuf->state.outside_occlusion_query_pool == pool &&
++             cmdbuf->state.outside_occlusion_query == query);
++      cmdbuf->state.outside_occlusion_query_pool = NULL;
++   }
+ 
+    tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 4);
+    tu_cs_emit_qw(cs, query_available_iova(pool, query));
+@@ -1627,6 +1611,150 @@ emit_end_occlusion_query(struct tu_cmd_buffer *cmdbuf,
+    cmdbuf->state.dirty |= TU_CMD_DIRTY_DISABLE_FS | TU_CMD_DIRTY_LRZ;
+ }
+ 
++/* The slot that cmd counts the samples of an occlusion query begun outside of
++ * render passes into, 0 if there is none.
++ */
++static uint64_t
++get_outside_occlusion_query_iova(struct tu_cmd_buffer *cmd)
++{
++   if (cmd->state.outside_occlusion_query_pool) {
++      /* The query cmd began itself. */
++      return occlusion_query_iova(cmd->state.outside_occlusion_query_pool,
++                                  cmd->state.outside_occlusion_query, begin);
++   }
++
++   if (cmd->inherited_occlusion_query) {
++      /* A secondary that may run inside a query begun by the command buffer
++       * executing it counts into a slot of its own, which that command buffer
++       * adds to its count after executing it.
++       */
++      if (!cmd->state.own_occlusion_query_iova) {
++         /* begin, result and end, with begin 16-byte aligned */
++         struct tu_cs_memory memory;
++         tu_cs_set_writeable(&cmd->sub_cs, true);
++         VkResult result = tu_cs_alloc(&cmd->sub_cs, 1, 8, &memory);
++         tu_cs_set_writeable(&cmd->sub_cs, false);
++         if (result != VK_SUCCESS) {
++            vk_command_buffer_set_error(&cmd->vk, result);
++            return 0;
++         }
++         cmd->state.own_occlusion_query_iova = memory.iova;
++      }
++
++      return cmd->state.own_occlusion_query_iova;
++   }
++
++   return 0;
++}
++
++/* An occlusion query begun outside of a render pass is counted when each
++ * render pass it contains is rendered, with a ZPASS_DONE pair around the draws
++ * of each tile, or of the SYSMEM render pass: GMEM rendering can be preempted
++ * between tiles, and the sample count isn't kept across the switch, so no pair
++ * may stay open across tiles. Only draws count samples, and a query contains
++ * whole render passes, so one that is active when a render pass is rendered
++ * contains every suspended and resumed part of it, wherever they were recorded.
++ */
++template <chip CHIP>
++void
++tu_occlusion_query_render_begin(struct tu_cmd_buffer *cmd)
++{
++   /* A secondary command buffer that begins an occlusion query in this render
++    * pass can't be executed while one is active
++    * (VUID-vkCmdExecuteCommands-pCommandBuffers-00105), so nothing would read
++    * its own slot, and the pair counting into it would be around the query's.
++    */
++   if (!cmd->state.outside_occlusion_query_pool &&
++       cmd->state.rp.has_zpass_done_sample_count_write_in_rp)
++      return;
++
++   cmd->state.rendering_occlusion_query_iova =
++      get_outside_occlusion_query_iova(cmd);
++
++   /* The autotuner's ZPASS_DONE events go around ours. */
++   if (cmd->state.rendering_occlusion_query_iova &&
++       cmd->device->physical_device->info->props.has_event_write_sample_count)
++      cmd->state.rp.has_zpass_done_sample_count_write_in_rp = true;
++}
++TU_GENX(tu_occlusion_query_render_begin);
++
++template <chip CHIP>
++void
++tu_occlusion_query_render_end(struct tu_cmd_buffer *cmd)
++{
++   cmd->state.rendering_occlusion_query_iova = 0;
++}
++TU_GENX(tu_occlusion_query_render_end);
++
++template <chip CHIP>
++void
++tu_occlusion_query_draws_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
++{
++   uint64_t iova = cmd->state.rendering_occlusion_query_iova;
++   if (iova)
++      emit_occlusion_query_resume<CHIP>(cmd, cs, iova);
++}
++TU_GENX(tu_occlusion_query_draws_begin);
++
++template <chip CHIP>
++void
++tu_occlusion_query_draws_end(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
++{
++   uint64_t iova = cmd->state.rendering_occlusion_query_iova;
++   if (iova)
++      emit_occlusion_query_pause<CHIP>(cmd, cs, iova);
++}
++TU_GENX(tu_occlusion_query_draws_end);
++
++template <chip CHIP>
++void
++tu_occlusion_query_execute_begin(struct tu_cmd_buffer *cmd,
++                                 struct tu_cmd_buffer *secondary)
++{
++   uint64_t secondary_iova = secondary->state.own_occlusion_query_iova;
++   if (!secondary_iova || !get_outside_occlusion_query_iova(cmd))
++      return;
++
++   /* Every execution of the secondary shares its slot, which is safe because
++    * executions never overlap: even with
++    * VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, Turnip has one graphics
++    * queue, and an emulated second queue shares its submit queue.
++    */
++   uint64_t secondary_result_iova = secondary_iova + 8;
++   tu_cs_emit_pkt7(&cmd->cs, CP_MEM_WRITE, 4);
++   tu_cs_emit_qw(&cmd->cs, secondary_result_iova);
++   tu_cs_emit_qw(&cmd->cs, 0);
++}
++TU_GENX(tu_occlusion_query_execute_begin);
++
++template <chip CHIP>
++void
++tu_occlusion_query_execute_end(struct tu_cmd_buffer *cmd,
++                               struct tu_cmd_buffer *secondary)
++{
++   uint64_t secondary_iova = secondary->state.own_occlusion_query_iova;
++   if (!secondary_iova)
++      return;
++
++   uint64_t iova = get_outside_occlusion_query_iova(cmd);
++   if (!iova)
++      return;
++
++   uint64_t result_iova = iova + 8;
++   uint64_t secondary_result_iova = secondary_iova + 8;
++
++   /* result (dst) = result (srcA) + the secondary's result (srcB) */
++   tu_cs_emit_pkt7(&cmd->cs, CP_MEM_TO_MEM, 7);
++   tu_cs_emit(&cmd->cs, CP_MEM_TO_MEM_0_DOUBLE |
++                        CP_MEM_TO_MEM_0_WAIT_FOR_MEM_WRITES);
++   tu_cs_emit_qw(&cmd->cs, result_iova);
++   tu_cs_emit_qw(&cmd->cs, result_iova);
++   tu_cs_emit_qw(&cmd->cs, secondary_result_iova);
++
++   tu_cs_emit_pkt7(&cmd->cs, CP_WAIT_MEM_WRITES, 0);
++}
++TU_GENX(tu_occlusion_query_execute_end);
++
+ /* PRIMITIVE_CTRS is used for two distinct queries:
+  * - VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT
+  * - VK_QUERY_TYPE_PIPELINE_STATISTICS
+diff --git a/src/freedreno/vulkan/tu_query_pool.h b/src/freedreno/vulkan/tu_query_pool.h
+index b1c004fd484..fcf14dbb1ec 100644
+--- a/src/freedreno/vulkan/tu_query_pool.h
++++ b/src/freedreno/vulkan/tu_query_pool.h
+@@ -65,4 +65,33 @@ struct tu_query_pool
+ VK_DEFINE_NONDISP_HANDLE_CASTS(tu_query_pool, vk.base, VkQueryPool,
+                                VK_OBJECT_TYPE_QUERY_POOL)
+ 
++/* Before and after rendering a render pass. */
++template <chip CHIP>
++void
++tu_occlusion_query_render_begin(struct tu_cmd_buffer *cmd);
++
++template <chip CHIP>
++void
++tu_occlusion_query_render_end(struct tu_cmd_buffer *cmd);
++
++/* Around each call of draw_cs while rendering, in cs. */
++template <chip CHIP>
++void
++tu_occlusion_query_draws_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs);
++
++template <chip CHIP>
++void
++tu_occlusion_query_draws_end(struct tu_cmd_buffer *cmd, struct tu_cs *cs);
++
++/* Around executing a secondary. */
++template <chip CHIP>
++void
++tu_occlusion_query_execute_begin(struct tu_cmd_buffer *cmd,
++                                 struct tu_cmd_buffer *secondary);
++
++template <chip CHIP>
++void
++tu_occlusion_query_execute_end(struct tu_cmd_buffer *cmd,
++                               struct tu_cmd_buffer *secondary);
++
+ #endif /* TU_QUERY_POOL_H */
+-- 
+2.43.0
+
