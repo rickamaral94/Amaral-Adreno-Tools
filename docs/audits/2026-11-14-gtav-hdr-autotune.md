@@ -53,6 +53,46 @@ se espera de GMEM com muitos bins, em que cada desenho é reexecutado por bin. A
 fixo combina com a média móvel do autotune. Isso reforça a hipótese principal sem descartar a rival; os testes abaixo
 seguem necessários.
 
+## Rodada do Rick, 14/11 04:15–05:25 (logs enviados no chat, medição no aparelho)
+
+Zip recebido: SHA-256 `98ef10ed7053f5bd9a46538dcf825242533e94707595e2a3a5b2e1f8b14af509`. Ele fica com o Rick; aqui só
+os resumos do `perf-diag` do Gtavport (Odin 2 Portal, A740v2, Android 13, kernel 5.15.123; 1280x720, 60 fps, vsync,
+FXAA, SGSR1). Mesma cena e configuração em todos os braços.
+
+| Hora | Driver (ELF conferido) | Janela | FPS reais | p95 / p99 (ms) | GPU/quadro | `TU_DEBUG` |
+| --- | --- | --- | --- | --- | --- | --- |
+| 04:15 | 5.9.18.1 Standard, `7b8ff2f8…` (= manifesto da release), build-id `e6bfc6bd…` | 60 s | 21,6 | 300,7 / 305,2 | 42,0 ms | nenhum |
+| 04:20 | sistema (Qualcomm) | 60 s | 59,9 | 20,5 / 22,3 | 12,4 ms | — |
+| 04:34 | 5.9.18.1 Standard, `7b8ff2f8…` | 600 s | 13,2 | 239,9 / 242,1 | 72,0 ms | nenhum |
+| 05:10 | sistema (Qualcomm) | 600 s | 60,0 | 20,7 / 22,2 | 12,6 ms | — |
+| 05:25 | lab !45904, `9f01e24c…`, build-id `8b0b742d…` (= este lab) | 60 s | 23,0 | 247,7 / 249,9 | 39,0 ms | nenhum |
+
+O `perf-diag` registra só `ODIN2_VK_DRIVER`, `TU_DEBUG`, `MESA_VK_ABORT_ON_DEVICE_LOSS` e `FD_DEV_FEATURES`
+(`odin2/perf/odin2_perf.cpp` do Gtavport). `TU_AUTOTUNE_ALGO` não aparece no relatório, então não dá para afirmar
+se alguma rodada usou essa variável.
+
+Leitura:
+
+1. **O lab !45904 não muda nada** (p95 de 248 contra 240–300 ms). A contagem de amostras corrompida por preempção,
+   na forma que o MR corrige, não explica este caso. A hipótese "autotune enganado por contagem corrompida" cai; a
+   de "GMEM escolhido e caro" continua aberta.
+2. **A virada aos ~16 s é troca de cena, não necessariamente aquecimento do autotune.** O passe de 4 alvos
+   `1280x721 4c fmt 20 +depth` (G-buffer) só existe nas janelas lentas (0 → 1,8 ms). Antes de ~16 s o jogo não
+   desenha o mundo deferred.
+3. **O custo está no passe HDR** `1280x721 1c fmt 10 (RGBA16F) +depth`, 6 por quadro: de ~3 ms para ~80 ms por
+   quadro, na média da janela.
+4. **O tempo dos quadros lentos é quase fixo** (238–244 ms na rodada de 600 s, ~300 ms na de 04:15) e não acompanha a
+   carga. Desligar shaders mexe na média, não no p95. Isso se parece mais com uma espera ou um custo fixo por passe do
+   que com custo de shader.
+5. **As esperas do processador de comandos são consequência.** No Turnip, o processador de comandos do Gtavport
+   esgota a espera de 100 ms (`gtav_native_fence_wait_ms`) milhares de vezes: 4851 vezes em 600 s, contra 7 no driver
+   do sistema. É a thread do jogo esperando o renderer gravar o quadro, enquanto o renderer espera a GPU (~290 ms).
+   Não é uma espera da GPU por algo da CPU.
+
+Pendente: o mesmo trecho com `TU_DEBUG=sysmem` e com `TU_DEBUG=gmem`. As duas aparecem no relatório e respondem
+direto se o custo depende do modo de renderização. Pedido ao Gtavport: incluir `TU_AUTOTUNE_ALGO`,
+`TU_AUTOTUNE_FLAGS`, `IR3_SHADER_DEBUG` e `MESA_*` na lista de variáveis registradas.
+
 ## Testes pedidos (só variáveis, 120 s cada)
 
 1. `TU_AUTOTUNE_ALGO=prefer_sysmem`. Previsão: 60 fps estáveis, sem fases.
