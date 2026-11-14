@@ -4,6 +4,9 @@ Orientação do Rick em 14/11/2026: **todo o desenvolvimento do agente Turnip fi
 repositórios dos ports e recomps são dos agentes deles. O objetivo continua sendo o melhor Turnip universal possível.
 Um port é uma fonte de casos de teste, não um lugar para patch.
 
+O que cada pedido deve trazer (identidade, comparação e dados por tipo de problema) está em
+[PORTS-EVIDENCIA.md](PORTS-EVIDENCIA.md).
+
 ## Onde os ports chamam
 
 Cada port tem um PR em rascunho que serve só de campainha. O agente Turnip está inscrito nos três e é acordado por
