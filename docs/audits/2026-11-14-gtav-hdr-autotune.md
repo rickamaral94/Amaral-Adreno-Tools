@@ -93,6 +93,39 @@ Pendente: o mesmo trecho com `TU_DEBUG=sysmem` e com `TU_DEBUG=gmem`. As duas ap
 direto se o custo depende do modo de renderização. Pedido ao Gtavport: incluir `TU_AUTOTUNE_ALGO`,
 `TU_AUTOTUNE_FLAGS`, `IR3_SHADER_DEBUG` e `MESA_*` na lista de variáveis registradas.
 
+## Rodada do Rick, 14/11 21:50–21:55: modo de renderização (medição no aparelho)
+
+Zip: SHA-256 `275070732e34a920622c307a7dbf5a21c0825a350579e798f99cd37867e126b2`. O driver usado foi o lab !45904 (ELF
+`9f01e24c…`, build-id `8b0b742d…`, conferido no relatório), em vez da 5.9.18.1 pura. Como o lab não mudou nada na rodada
+anterior, os dois servem como base equivalente para este teste. As variáveis aparecem no relatório e no logcat.
+
+| `TU_DEBUG` | FPS reais | p95 (ms) | GPU/quadro | Antes de ~16 s | Passe HDR, janela lenta |
+| --- | --- | --- | --- | --- | --- |
+| nenhum (rodada anterior, lab) | 23,0 | 247,7 | 39,0 ms | 60 fps | 81 ms |
+| `sysmem` | 21,9 | 289,0 | 41,3 ms | 60 fps | 96 ms |
+| `gmem` | 19,7 | 251,1 | 49,2 ms | ~49 fps | 57 ms |
+| `sysmem,nolrz` | 22,0 | 286,5 | 41,0 ms | 60 fps | 88 ms |
+
+Nenhuma mensagem do Turnip no logcat além do gralloc.
+
+**Conclusão:** o problema **não depende do modo** (GMEM ou SYSMEM) nem do LRZ. A hipótese de autotune/GMEM está
+**refutada**: forçar SYSMEM não cura. O `gmem` só deixa a cena inicial mais lenta, o custo normal de GMEM.
+
+Hipóteses que restam (todas no passe RGBA16F + depth):
+
+1. **Execução de shader no ir3:** spill, memória privada (arrays indexados vindos do endereçamento relativo do Xenos)
+   ou poucas waves. Um passe de tela cheia em resolução fixa dá exatamente um custo fixo por quadro.
+2. **Amostragem cara:** formato, tiling linear ou anisotropia 16x numa textura que o Turnip amostra devagar.
+3. **Custo fixo por desenho:** flush/WFI por barreira entre luzes. Isso não escala com pixels.
+
+Testes que separam as três (pedidos na campainha):
+
+- render scale 0,5: o custo cai ~4x se for por pixel (1 ou 2); fica igual se for por desenho (3);
+- anisotropia 1: separa 2;
+- estatísticas de `VK_KHR_pipeline_executable_properties` dos 24 pixel shaders do passe e dos vertex shaders (instruções,
+  max waves, registradores, spill, memória privada) e o IR3 dos 3 mais desenhados. Separa 1. O agente do port coleta
+  isso sem o Rick.
+
 ## Testes pedidos (só variáveis, 120 s cada)
 
 1. `TU_AUTOTUNE_ALGO=prefer_sysmem`. Previsão: 60 fps estáveis, sem fases.
