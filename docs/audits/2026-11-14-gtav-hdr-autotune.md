@@ -262,6 +262,37 @@ de capacidade).
   compilador da Qualcomm faz, nas estatísticas da rodada "system" ainda pendente.
 - A reprodução local permite medir na hora qualquer versão nova do shader que o port gerar.
 
+## Resolvido no port (pre5, 15/11, medição no aparelho)
+
+Zip: SHA-256 `36ff7bd42fa835e26ad26b0dc7659a42e7f362eb8999eb697733fdc0bd838a24`. Gtavport v0.3.0-pre5 (`bb81e39`,
+APK `e85d315e…`), patch 0041 do XenosRecomp: um shader cujos saltos só vão para frente sai como blocos em ordem, sem
+`while/switch(pc)`. O SPIR-V do `EFEADDD8` na pre4 tinha 11 voltas ao laço, todas para frente, por isso se encaixa.
+Turnip 5.9.18.1 Standard (ELF `7b8ff2f8…`), mesma cena:
+
+| Braço | FPS reais | p95 | Quadros >100 ms | Passe HDR (rápida → lenta) | GPU/quadro |
+| --- | --- | --- | --- | --- | --- |
+| Turnip, pre4 (antes) | 13–23 | 240–357 ms | 116–2135 | ~3 → 80–111 ms | 39–72 ms |
+| Turnip, pre5, sem variável | 60,0 | 20,8 ms | 0 | 2,44 → 3,13 ms | 11,5 ms |
+| Turnip, pre5, com `GTAVPORT_PIPELINE_SPIRV` (2 rodadas) | 60,0 | 20,5 / 20,9 ms | 0 | 2,4 → 2,8–3,1 ms | 11,4–11,5 ms |
+| Driver do sistema, 15:31 (referência) | 60,0 | 20,7 ms | 0 | — | 12,7 ms |
+
+A linha do tempo fica em 60 fps também depois de ~16 s, quando o G-buffer aparece. **O Turnip empata com o driver da
+Qualcomm nesta cena.** O SPIR-V gravado no zip ainda é o da pre4 (mesmo SHA-256); a medição do shader novo na
+reprodução local fica pendente de um novo dump.
+
+**O driver da Qualcomm cai em `vkGetPipelineExecutableStatisticsKHR`** (driver 0676.53, compilador E031.41.03.47).
+SIGSEGV em endereço 0x0, chamada a partir de `vulkan.adreno.so`, na consulta de contagem do executável 0. Contorno do
+port (plume 0045): uma chamada só, com 64 entradas pré-alocadas; ainda sem APK. Defeito do driver proprietário, não do
+Turnip.
+
+**O que fica para o driver** (universal, sem urgência para o GTA V):
+
+1. Captura de IR com shader deduplicado no pipeline cache: com `executable_info`, manter o próprio objeto.
+2. Captura com acerto no cache de disco do ir3: não consultar o cache quando `write_disasm` estiver pedido.
+3. Pressão de registradores em máquinas de estado `loop { switch (pc) }`. Outros tradutores (Xenos, NVN, DXBC) geram o
+   mesmo padrão quando há salto para trás. Um passe de jump threading no NIR seria o equivalente ao que o compilador
+   proprietário provavelmente faz. É pesquisa, medida com `tools/research/pipeline-repro`.
+
 ## Testes pedidos (só variáveis, 120 s cada)
 
 1. `TU_AUTOTUNE_ALGO=prefer_sysmem`. Previsão: 60 fps estáveis, sem fases.
