@@ -215,12 +215,19 @@ que a captura volta a trazer as três representações com cache quente.
 Zip: SHA-256 `1f4791fcd4869e9ea55a684492f5566f6d5af72cd5be65c2583aab17a5203336`. Trouxe o SPIR-V do VS e do FS do
 pipeline #36 e o estado: RGBA16F com blend, depth com teste e escrita, spec constant 0 = 2 e `early_tests`.
 
-**Mesmo com `IR3_SHADER_DEBUG=nocache` aplicado (está na linha `env`), o #36 do aparelho trouxe só "NIR from
-SPIRV".** Isso aponta para a deduplicação do pipeline cache do Turnip. Depois de compilar, `tu_pipeline_cache_insert`
+**Mesmo com `IR3_SHADER_DEBUG=nocache` aplicado (está na linha `env`), o pipeline do `EFEADDD8` (#37 neste dump)
+trouxe só "NIR from SPIRV".** Isso aponta para a deduplicação do pipeline cache do Turnip. Depois de compilar, `tu_pipeline_cache_insert`
 → `vk_pipeline_cache_insert_object` devolve o objeto que já estava no cache se ele estiver completo, e descarta o
 recém-compilado, que tinha o IR. Um objeto completo existe se o mesmo shader já foi compilado no processo sem a flag de
 captura. Pedido ao port: confirmar se toda criação de pipeline, inclusive o warmer em background, leva a flag.
 Candidato a correção universal: com `executable_info`, manter o próprio objeto mesmo havendo duplicata.
+
+Confirmado em 15/11. O port passava ao `vkCreateGraphicsPipelines` um `VkPipelineCache` semeado com o `pipelines.bin`
+de rodadas sem captura. Ao carregar esse cache, o runtime já desserializa cada entrada como `tu_shader` completo
+(`vk_pipeline_cache.c`, `find_ops_for_type`; o Turnip registra `pipeline_cache_import_ops` em `tu_device.cc`). Por isso
+a duplicata vence o objeto recém-compilado. O port passa `VK_NULL_HANDLE` com a captura ligada (Gtavport `048ce5e`,
+pre5). A reprodução sem `EarlyFragmentTests` dá estatísticas idênticas: o FS não exporta profundidade, e o "write 1" do
+estado é a escrita do attachment.
 
 **Reprodução local** (`tools/research/pipeline-repro`): Turnip 5.9.18.1 Standard para o host, drm-shim com
 `FD_GPU_ID=740` (chip id `0x43050a01`, igual ao Odin), SPIR-V do zip com `EarlyFragmentTests` inserido e layout do
