@@ -193,6 +193,23 @@ HDR com 3,6 ms sem o shader e ~2,5 ms no driver do sistema) mostra que o mesmo S
 
    Entra como lab só se reduzir spill e tempo sem regressão no shader-db.
 
+## Achado de driver: captura de representações com cache quente do ir3 (15/11)
+
+No dump de 15/11, as 67 representações eram todas "NIR from SPIRV". Causa, conferida no código (Mesa `a6aacf6`, igual
+no `main` de 15/11):
+
+- com `VK_PIPELINE_CREATE_2_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR`, o Turnip pula o próprio pipeline cache
+  (`tu_pipeline.cc`, `if (!executable_info)`), e por isso o NIR inicial sai;
+- a variante do ir3 tem um cache de disco à parte. `create_variant` (`ir3_shader.c`) chama `ir3_disk_cache_retrieve`
+  antes de preencher `disasm_info.nir` e `disasm_info.disasm`; um acerto devolve o binário sem "Final NIR" nem
+  "IR3 Assembly".
+
+Contorno para coleta: `IR3_SHADER_DEBUG=nocache`, que desliga só esse cache (`ir3_disk_cache_init`).
+
+Candidato a correção universal e pequena: não consultar o cache de disco do ir3 quando `write_disasm` estiver pedido.
+Isso tira a dependência do estado do cache do aparelho para ferramentas de perfil. Ainda não implementado; exige teste de
+que a captura volta a trazer as três representações com cache quente.
+
 ## Testes pedidos (só variáveis, 120 s cada)
 
 1. `TU_AUTOTUNE_ALGO=prefer_sysmem`. Previsão: 60 fps estáveis, sem fases.
