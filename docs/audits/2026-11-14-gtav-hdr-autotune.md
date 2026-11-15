@@ -126,6 +126,35 @@ Testes que separam as três (pedidos na campainha):
   max waves, registradores, spill, memória privada) e o IR3 dos 3 mais desenhados. Separa 1. O agente do port coleta
   isso sem o Rick.
 
+## Culpado confirmado, 15/11 (medição no aparelho, números do Gtavport na campainha)
+
+- **Custo por pixel:** com render scale 0,5, o passe fica ~3× mais barato. A anisotropia não muda nada.
+- **Estatísticas de pipeline no Turnip.** O fragment shader `EFEADDD82B576B06` foge do padrão:
+  - ~8000 instruções e 1 laço;
+  - 48 registradores full (o teto do ir3) e 4 waves;
+  - ~400 STP e ~640 LDP de spill.
+
+  Em 10 min ele tem ~2170 desenhos, para 2135 quadros acima de 100 ms. Ficou fora do rodízio dos 24 (27º lugar).
+- **Teste de exclusão no Odin** (lab 5.9.18.1):
+
+  | Braço | FPS | p95 | Passe HDR | Quadros >100 ms |
+  | --- | --- | --- | --- | --- |
+  | `GTAV_NATIVE_SKIP_PS=EFEADDD82B576B06` | 60,0 | 20,8 ms | 3,6 ms (igual ao driver do sistema) | 0 |
+  | controle `311BC83470B3F7A2` | 21,1 | 357 ms | até 111 ms | — |
+
+**Mecanismo provável (hipótese, pelo código do XenosRecomp):** quando o shader Xenos tem salto incondicional ou para
+trás, o tradutor gera o shader inteiro como máquina de estados (`while (true) { switch (pc) { ... } }`). Todo valor
+que atravessa um `case` fica vivo no laço inteiro, a pressão passa do teto de 48 registradores e o spill cai dentro do
+laço. O driver da Qualcomm executa o mesmo SPIR-V em ~2,5 ms.
+
+Próximo passo:
+
+- Ler localmente o IR3 do pipeline #36 (zip do Rick de 15/11). O assembly é derivado do jogo e **não** entra em
+  repositório; aqui ficam só números agregados.
+- Separar o que é padrão de entrada (correção no tradutor do port, vale para qualquer driver) do que é perda evitável no
+  NIR/ir3: switch → cadeia de `if` com phis, recarga de constantes de UBO com índice dinâmico, escolha de spill dentro do
+  laço. Só a segunda parte vira lab aqui, e só se aparecer no assembly.
+
 ## Testes pedidos (só variáveis, 120 s cada)
 
 1. `TU_AUTOTUNE_ALGO=prefer_sysmem`. Previsão: 60 fps estáveis, sem fases.
