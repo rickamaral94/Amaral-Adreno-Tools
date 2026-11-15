@@ -210,6 +210,51 @@ Candidato a correção universal e pequena: não consultar o cache de disco do i
 Isso tira a dependência do estado do cache do aparelho para ferramentas de perfil. Ainda não implementado; exige teste de
 que a captura volta a trazer as três representações com cache quente.
 
+## Reprodução fora do aparelho (15/11, zip da pre4)
+
+Zip: SHA-256 `1f4791fcd4869e9ea55a684492f5566f6d5af72cd5be65c2583aab17a5203336`. Trouxe o SPIR-V do VS e do FS do
+pipeline #36 e o estado: RGBA16F com blend, depth com teste e escrita, spec constant 0 = 2 e `early_tests`.
+
+**Mesmo com `IR3_SHADER_DEBUG=nocache` aplicado (está na linha `env`), o #36 do aparelho trouxe só "NIR from
+SPIRV".** Isso aponta para a deduplicação do pipeline cache do Turnip. Depois de compilar, `tu_pipeline_cache_insert`
+→ `vk_pipeline_cache_insert_object` devolve o objeto que já estava no cache se ele estiver completo, e descarta o
+recém-compilado, que tinha o IR. Um objeto completo existe se o mesmo shader já foi compilado no processo sem a flag de
+captura. Pedido ao port: confirmar se toda criação de pipeline, inclusive o warmer em background, leva a flag.
+Candidato a correção universal: com `executable_info`, manter o próprio objeto mesmo havendo duplicata.
+
+**Reprodução local** (`tools/research/pipeline-repro`): Turnip 5.9.18.1 Standard para o host, drm-shim com
+`FD_GPU_ID=740` (chip id `0x43050a01`, igual ao Odin), SPIR-V do zip com `EarlyFragmentTests` inserido e layout do
+Gtavport. O SPIR-V fica só local.
+
+| FS `EFEADDD82B576B06` | Instruções | MOVs | Registradores | Waves | STP | LDP |
+| --- | --- | --- | --- | --- | --- | --- |
+| Aparelho (Odin) | 8089 | 2454 | 48 | 4 | 400 | 636 |
+| Reprodução local | 8114 | 2454 | 48 | 4 | 400 | 636 |
+
+A reprodução é fiel. Sem cache, ela devolve as três representações. No NIR final, o único laço tem **188 phis no
+cabeçalho**; 2454 MOVs (30% das instruções) são, em boa parte, as cópias desses phis no fim de cada `case`. O spill
+aparece como blocos repetidos de STP no fim de cada caminho que volta ao cabeçalho, ou seja, a cada volta.
+
+Opções do ir3 testadas na reprodução (estatísticas estáticas):
+
+| `IR3_SHADER_DEBUG` | Instruções | STP | LDP | Registradores |
+| --- | --- | --- | --- | --- |
+| `nocache` (base) | 8114 | 400 | 636 | 48 |
+| `nopreamble` | 7856 | 371 | 617 | 48 |
+| `nouboopt` | 9172 | 529 | 670 | 48 |
+| `noearlypreamble`, `nofp16`, `thread64` | igual à base | | | |
+
+Nenhuma opção existente tira o shader do teto. A pressão vem do estado carregado pelo laço (188 escalares contra 192
+de capacidade).
+
+**Conclusão de trabalho:**
+
+- A correção eficaz é estrutural. No port: o tradutor não gerar `while/switch(pc)`, ou gerar só com os registradores
+  vivos de cada trecho.
+- No driver, o equivalente seria um passe NIR de jump threading para esse padrão: grande, e só depois de ver o que o
+  compilador da Qualcomm faz, nas estatísticas da rodada "system" ainda pendente.
+- A reprodução local permite medir na hora qualquer versão nova do shader que o port gerar.
+
 ## Testes pedidos (só variáveis, 120 s cada)
 
 1. `TU_AUTOTUNE_ALGO=prefer_sysmem`. Previsão: 60 fps estáveis, sem fases.
