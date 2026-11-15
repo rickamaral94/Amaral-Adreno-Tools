@@ -155,6 +155,44 @@ Próximo passo:
   NIR/ir3: switch → cadeia de `if` com phis, recarga de constantes de UBO com índice dinâmico, escolha de spill dentro do
   laço. Só a segunda parte vira lab aqui, e só se aparecer no assembly.
 
+## Por que o driver da Qualcomm não trava no `EFEADDD82B576B06` (15/11, leitura local do zip do Rick)
+
+Zip: SHA-256 `333f231cfc25b6da9f901fdeeb2fbbb03418818f4a3a6192aec123d1a510bd56`. O `pipeline-stats.txt` trouxe as
+estatísticas e só a primeira representação ("NIR from SPIRV") de cada executável; o "Final NIR" e o "IR3 Assembly", que
+o Turnip também expõe (`tu_pipeline.cc`), não vieram. Leitura local; nenhum trecho do shader entra aqui.
+
+**Verificado no NIR (pipeline #36, FS):**
+
+- **Máquina de estados.** Um único `loop` envolve o shader inteiro. No topo há um despacho por `pc`: 89 comparações
+  `ieq pc, k` em cadeia de `if`, ou seja, o caso 4 do XenosRecomp.
+- **~184 valores escalares (≈46 vec4) carregados pela volta do laço** (phis do cabeçalho). O ir3 tem 48 vec4 (192
+  escalares) por fibra. Só o estado carregado ocupa ~96% do teto antes de qualquer temporário de um `case`.
+- **Resultado no Turnip** (estatísticas do executável): 8089 instruções, 48 registradores, 4 waves, 400 STP e 636 LDP
+  (spill), 2454 MOVs. Ciclos de espera estimados em `(sy)`: 7570. O spill fica dentro do laço, então se repete a cada
+  volta e em cada pixel.
+
+**Por que a Qualcomm não sofre (hipótese, sem acesso ao binário dela):**
+
+- O compilador proprietário (de base LLVM) tem passes que desfazem máquinas de estado em laço, como o jump threading
+  sobre `switch`. Com eles, cada valor só fica vivo no trecho em que é usado, não no laço inteiro, e a pressão cai
+  abaixo do teto.
+- Ele também pode escolher spill e rematerialização de outro jeito, ou trocar waves por registradores.
+
+O ir3 não tem um passe que reestruture esse padrão. Ele aloca o laço como está e faz spill. A medida do port (passe
+HDR com 3,6 ms sem o shader e ~2,5 ms no driver do sistema) mostra que o mesmo SPIR-V cabe num driver bom.
+
+**Caminhos:**
+
+1. **No port (mais eficaz e vale para qualquer driver):** o tradutor estrutura o fluxo em vez de gerar
+   `while/switch(pc)`, ou ao menos tira do estado carregado os registradores que cada trecho não usa.
+2. **No driver (pesquisa aqui):**
+   - reproduzir o pipeline #36 fora do aparelho: Turnip com drm-shim emulando o A740 e o SPIR-V do pipeline vindo do zip
+     do Rick, só local;
+   - medir duas melhorias universais no NIR/ir3: (a) desfazer o despacho por `pc` quando o destino de cada volta é
+     conhecido (jump threading); (b) spill dos valores carregados que o `case` atual não usa, fora do caminho quente.
+
+   Entra como lab só se reduzir spill e tempo sem regressão no shader-db.
+
 ## Testes pedidos (só variáveis, 120 s cada)
 
 1. `TU_AUTOTUNE_ALGO=prefer_sysmem`. Previsão: 60 fps estáveis, sem fases.
