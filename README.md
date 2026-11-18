@@ -9,13 +9,12 @@ permanece o controle estável publicado. A linha atual de desenvolvimento é uma
 
 ## Candidata atual
 
-**5.9.18.1** (pré-release): Mesa `27.0.0-devel`, commit
-`a6aacf6b0fb0468b1dbe57fa34a0bba7c5ee2413` (main de 14/11/2026), headers Vulkan `1.4.368`.
-Traz 74 commits upstream em Freedreno/Turnip/ir3, entre eles o novo `SP_DBG_ECO_CNTL`
-do A740, LRZ por slice e descritores de buffer de 1 GiB no A8xx, e menos CPU no bind
-de descriptor set. O `0009` foi rebaseado. Hardware desta Mesa, CTS e VVL: not-run.
-A Latest continua sendo a 5.8.17.1. Veja as
-[notas](docs/releases/mesa-27.0.0-devel-v5.9.18.1.md).
+**5.9.19.1** (pré-release): Mesa `27.0.0-devel`, commit
+`8e0f6be8759fa657e80f6cade416970097df1c81` (main de 18/11/2026), headers Vulkan `1.4.368`.
+Traz o upstream de 14 a 18/11, com correções de alias no ir3 e LRZ desligado em depth importado, e o
+patch `0010`: a captura de estatísticas e código dos shaders passa a funcionar com o cache do app
+quente. Hardware desta Mesa, CTS e VVL: not-run. A Latest continua sendo a 5.8.17.1. Veja as
+[notas](docs/releases/mesa-27.0.0-devel-v5.9.19.1.md).
 
 Os defaults de GCM, suballocadores e regras BOTW/TOTK voltam ao upstream.
 As extensões Amaral de profundidade não são expostas sem qualificação do caminho
