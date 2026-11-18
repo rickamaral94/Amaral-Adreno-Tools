@@ -21,6 +21,28 @@ BASE_STATE = {
 
 
 class VersionTests(unittest.TestCase):
+    def test_apply_evidence_does_not_claim_reference_patch_was_checked(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "config").mkdir()
+            (root / "evidence").mkdir()
+            (root / "config/patches.json").write_text(json.dumps({
+                "standard": ["patches/active.patch"], "oneui_extra": [],
+                "research_only": ["patches/reference.patch"],
+            }))
+            evidence = {"candidates": [
+                {"patch": "patches/active.patch", "patch_apply_verified_on_mesa": "a" * 40},
+                {"patch": "patches/reference.patch", "patch_apply_verified_on_mesa": "a" * 40},
+            ]}
+            path = root / "evidence/candidates.json"
+            path.write_text(json.dumps(evidence))
+            with (patch.object(release_version, "ROOT", root),
+                  patch.object(release_version, "EVIDENCE_PATH", path)):
+                release_version.update_patch_apply_evidence("b" * 40)
+            updated = json.loads(path.read_text())["candidates"]
+            self.assertEqual(updated[0]["patch_apply_verified_on_mesa"], "b" * 40)
+            self.assertEqual(updated[1]["patch_apply_verified_on_mesa"], "a" * 40)
+
     def test_candidate_resume_accepts_new_mesa_without_changing_stable_commit(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)

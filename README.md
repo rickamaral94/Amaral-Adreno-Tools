@@ -9,9 +9,13 @@ permanece o controle estável publicado. A linha atual de desenvolvimento é uma
 
 ## Candidata atual
 
-Mesa `27.0.0-devel`, commit `4b0f64ceac6a86af38c1e69cd38cf29f84ba611d`.
-Correções upstream de invalidação bindless, coleta de push constants e IR3
-(offsets de constantes e ordem do lowering) justificam a avaliação.
+**5.9.18.1** (pré-release): Mesa `27.0.0-devel`, commit
+`a6aacf6b0fb0468b1dbe57fa34a0bba7c5ee2413` (main de 14/11/2026), headers Vulkan `1.4.368`.
+Traz 74 commits upstream em Freedreno/Turnip/ir3, entre eles o novo `SP_DBG_ECO_CNTL`
+do A740, LRZ por slice e descritores de buffer de 1 GiB no A8xx, e menos CPU no bind
+de descriptor set. O `0009` foi rebaseado. Hardware desta Mesa, CTS e VVL: not-run.
+A Latest continua sendo a 5.8.17.1. Veja as
+[notas](docs/releases/mesa-27.0.0-devel-v5.9.18.1.md).
 
 Os defaults de GCM, suballocadores e regras BOTW/TOTK voltam ao upstream.
 As extensões Amaral de profundidade não são expostas sem qualificação do caminho

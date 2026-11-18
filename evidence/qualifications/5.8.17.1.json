@@ -1,0 +1,67 @@
+{
+  "version": "5.8.17.1",
+  "mesa_commit": "fd8ef2befafd01190e33f12dbfd109b924c8ebc3",
+  "patchset_sha256": "71fd7e4d44feaff194d5ccde01ac39959b15a7dd2461d6e79ae565c2da45f999",
+  "artifacts": {
+    "standard": {
+      "zip_sha256": "030e901d428203ea92e463cf2cd9acd88f4e81885161e848070c4342b0e2e092",
+      "elf_sha256": "e64f5306c5c8f52f013f01f3d2627a81704f07ba71ab9518c27be2b209863a96"
+    },
+    "oneui": {
+      "zip_sha256": "76140ab58de471b5b1c504ab51c9bdf80747e6b05361a21ff6b899d98958a8f9",
+      "elf_sha256": "0f275b21c9d4426d68a982c6939af67f2621ab8be4d1fbae611ac14e4c29dc02"
+    }
+  },
+  "ci": {
+    "status": "pass",
+    "evidence": [
+      "https://github.com/rickamaral94/Amaral-Adreno-Tools/actions/runs/41204650341",
+      "https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/39"
+    ]
+  },
+  "reproducibility": {
+    "status": "pass",
+    "evidence": [
+      "https://github.com/rickamaral94/Amaral-Adreno-Tools/releases/download/mesa-27.0.0-devel-v5.8.17.1/REPRODUCIBILITY_standard.txt",
+      "https://github.com/rickamaral94/Amaral-Adreno-Tools/releases/download/mesa-27.0.0-devel-v5.8.17.1/REPRODUCIBILITY_oneui.txt",
+      "https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/39#issuecomment-6543824950"
+    ]
+  },
+  "cts": {
+    "status": "not-run"
+  },
+  "vvl": {
+    "status": "not-run"
+  },
+  "regressions": {
+    "status": "not-run"
+  },
+  "hardware": {
+    "status": "pass",
+    "families": [
+      "A7xx",
+      "A8xx"
+    ],
+    "evidence": [
+      "docs/tests/2026-10-31-v5.8.17.1-owner-smoke.md"
+    ],
+    "scope": "Relato do dono em 31/10/2026: Odin 2 Portal (A740) com BOTWRecomp e outros jogos; SM-F971B (A840) com MUA3/Eden e outros jogos; 'já testei e está ok'. Sem capturas, logs ou hashes do aparelho anexados."
+  },
+  "ab": {
+    "status": "not-run"
+  },
+  "reviewer": "claude (integração e revisão); 0009 revisado também por chatgpt (T-botwrecomp-a740 4b6b)",
+  "reviewed_at": "2026-10-31",
+  "owner_exception": {
+    "approved_by": "rickamaral94",
+    "approved_at": "2026-10-31",
+    "rationale": "O dono testou a 5.8.17.1 no A740 e no A840 e pediu a promoção a Latest sem esperar CTS, VVL, A6xx, regressões formais e A/B de 5 rodadas.",
+    "waived": [
+      "cts",
+      "vvl",
+      "regressions",
+      "ab",
+      "hardware_families"
+    ]
+  }
+}

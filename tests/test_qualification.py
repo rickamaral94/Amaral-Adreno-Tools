@@ -48,6 +48,34 @@ class QualificationTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):self.run_gate(data)
 
 
+    def owner_exception(self, waived):
+        data=qualification()
+        for key in waived:
+            if key=='hardware_families':data['hardware']['families']=['A7xx','A8xx']
+            else:data[key]={'status':'not-run'}
+        data['owner_exception']={'approved_by':'owner','approved_at':'2026-10-31','rationale':'fixture','waived':waived}
+        return data
+
+    def test_owner_exception_waives_listed_gates(self):
+        self.run_gate(self.owner_exception(['cts','vvl','regressions','ab','hardware_families']))
+
+    def test_owner_exception_cannot_waive_hardware(self):
+        data=self.owner_exception(['cts']);data['owner_exception']['waived']=['cts','hardware'];data['hardware']['status']='not-run'
+        with self.assertRaises(RuntimeError):self.run_gate(data)
+
+    def test_waived_gate_cannot_claim_pass(self):
+        data=self.owner_exception(['cts']);data['cts']={'status':'pass','evidence':['fixture']}
+        with self.assertRaises(RuntimeError):self.run_gate(data)
+
+    def test_owner_exception_requires_approver(self):
+        data=self.owner_exception(['cts']);del data['owner_exception']['approved_by']
+        with self.assertRaises(RuntimeError):self.run_gate(data)
+
+    def test_unlisted_gate_is_still_enforced(self):
+        data=self.owner_exception(['cts']);data['vvl']={'status':'not-run'}
+        with self.assertRaises(RuntimeError):self.run_gate(data)
+
+
 class ElfTests(unittest.TestCase):
     symbols='1: 0 8 OBJECT GLOBAL DEFAULT 12 HMI'
     def test_host_dependency_rejected(self):

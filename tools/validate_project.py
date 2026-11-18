@@ -28,6 +28,8 @@ def main():
     version_state = load("config/version-state.json")
     evidence = load("evidence/candidates.json")
     sources = load("evidence/sources.json")
+    patch_manifest = load("config/patches.json")
+    distributed_patches = set(patch_manifest["standard"] + patch_manifest["oneui_extra"])
 
     commit = lock["mesa"]["commit"]
     assert re.fullmatch(r"[0-9a-f]{40}", commit), "Mesa commit must be a full SHA"
@@ -85,9 +87,10 @@ def main():
             assert not item.get("patch"), "upstream fixes must not keep external patches"
         if item.get("patch"):
             assert (ROOT / item["patch"]).is_file(), item["patch"]
-            assert (
-                item["patch_apply_verified_on_mesa"] == commit
-            ), f"{item['id']} was not apply-checked on the locked Mesa commit"
+            if item["patch"] in distributed_patches:
+                assert (
+                    item["patch_apply_verified_on_mesa"] == commit
+                ), f"{item['id']} was not apply-checked on the locked Mesa commit"
 
     a8xx_patch = read_text("patches/0002-a8xx-experimental-device-support.patch")
     assert 'GPUId(chip_id=0x44010000, name="Adreno (TM) 810")' in a8xx_patch
@@ -186,7 +189,7 @@ def main():
     assert '+             <option name="force_vk_vendor"' not in vendor_patch
     build_script = read_text("scripts/build_universal.sh")
     assert 'apply_patches.py" "${mesa_src}"' in build_script
-    manifest = load("config/patches.json")
+    manifest = patch_manifest
     assert "patches/0008-remove-mgs4-vendor-spoof.patch" in manifest["standard"]
     assert not set(manifest["standard"] + manifest["oneui_extra"]) & set(manifest["research_only"])
     assert manifest["oneui_extra"] == ["patches/0003-oneui-ubwc.patch"]

@@ -36,7 +36,7 @@ O Amaral continua proibindo spoof de capability.
 | `VK_KHR_shader_untyped_pointers` | ausente | ausente | auditar NIR/IR3 e CTS |
 | `VK_KHR_cooperative_matrix` | ausente | ausente | pesquisa de hardware + lowering IR3, inicialmente A8xx |
 | `VK_KHR_copy_memory_indirect` | ausente | ausente | pesquisa |
-| `VK_KHR_shader_maximal_reconvergence` | ausente | ausente | auditar controle de fluxo NIR/IR3 |
+| `VK_KHR_shader_maximal_reconvergence` | anunciada upstream desde `64adb6a1bf7` (Mesa da 5.9.18.1), gateada por `has_getfiberid` | disponível onde o perfil da GPU tem `has_getfiberid` | CTS `dEQP-VK.reconvergence.maximal.*` + device query em A740/A750/A830 |
 
 ### O que já está melhor do que parecia
 
