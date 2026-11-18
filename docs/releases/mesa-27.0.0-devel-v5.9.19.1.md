@@ -78,6 +78,16 @@ Nenhuma mudança upstream duplica ou contradiz um patch nosso. `check_mesa_polic
 Por isso esta versão é pré-release. Ela só vira Latest pelo fluxo de promoção, com qualificação em hardware vinculada a
 estes hashes.
 
+## Promoção por exceção do dono
+
+Em 18/11/2026 o Rick validou esta versão no Odin 2 Portal (A740) com o Gtavport e pediu a promoção a Latest
+([relato](../tests/2026-11-18-v5.9.19.1-owner-smoke.md)).
+
+A promoção usou a exceção do dono do `promotion_gate`, registrada em `evidence/qualifications/5.9.19.1.json`.
+
+- **Dispensados, e registrados como not-run:** CTS, VVL, regressões formais, A/B de 5 rodadas e cobertura A6xx/A8xx.
+- **Cumpridos:** identidade exata dos artefatos, CI, dupla build reproduzível e hardware A7xx relatado pelo dono.
+
 ## Variantes
 
 - Standard: Android/KGSL universal.

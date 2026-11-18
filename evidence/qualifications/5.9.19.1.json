@@ -1,0 +1,66 @@
+{
+  "version": "5.9.19.1",
+  "mesa_commit": "8e0f6be8759fa657e80f6cade416970097df1c81",
+  "patchset_sha256": "add6c9078dda5177045973424366d0fc1a0f4d77e75d17feaafdcb8769187ba4",
+  "artifacts": {
+    "standard": {
+      "zip_sha256": "5e329817f02ddb49e27c2d998a50b1b5e36154ce164d4b6df9337430879831c3",
+      "elf_sha256": "409218094d6c680d9d4ee706bac21ac77d0b2911a7657e4cf2ee5636dd25c6d7"
+    },
+    "oneui": {
+      "zip_sha256": "0531f4041c9b8fd50b1dada5942747d0c839fb909c2cafd4b6c257bfcc81403a",
+      "elf_sha256": "dbd284e6ebe7e8379ee76358ed03a25ee81e3b0dc41a5f2530b7c7e30c5d1e2a"
+    }
+  },
+  "ci": {
+    "status": "pass",
+    "evidence": [
+      "https://github.com/rickamaral94/Amaral-Adreno-Tools/actions/runs/44321530811",
+      "https://github.com/rickamaral94/Amaral-Adreno-Tools/actions/runs/44322109767",
+      "https://github.com/rickamaral94/Amaral-Adreno-Tools/pull/44"
+    ]
+  },
+  "reproducibility": {
+    "status": "pass",
+    "evidence": [
+      "https://github.com/rickamaral94/Amaral-Adreno-Tools/releases/download/mesa-27.0.0-devel-v5.9.19.1/REPRODUCIBILITY_standard.txt",
+      "https://github.com/rickamaral94/Amaral-Adreno-Tools/releases/download/mesa-27.0.0-devel-v5.9.19.1/REPRODUCIBILITY_oneui.txt"
+    ]
+  },
+  "cts": {
+    "status": "not-run"
+  },
+  "vvl": {
+    "status": "not-run"
+  },
+  "regressions": {
+    "status": "not-run"
+  },
+  "hardware": {
+    "status": "pass",
+    "families": [
+      "A7xx"
+    ],
+    "evidence": [
+      "docs/tests/2026-11-18-v5.9.19.1-owner-smoke.md"
+    ],
+    "scope": "Relato do dono em 18/11/2026: Odin 2 Portal (A740) com o Gtavport na última sessão, validado e pedido de promoção. Sem capturas, logs ou hash do ELF carregado anexados. A8xx e A6xx não testados nesta versão."
+  },
+  "ab": {
+    "status": "not-run"
+  },
+  "reviewer": "claude (integração, revisão do upstream contra o patchset e verificação do pacote publicado)",
+  "reviewed_at": "2026-11-18",
+  "owner_exception": {
+    "approved_by": "rickamaral94",
+    "approved_at": "2026-11-18",
+    "rationale": "O dono validou a 5.9.19.1 no A740 com o Gtavport e pediu a promoção a Latest sem esperar CTS, VVL, regressões formais, A/B de 5 rodadas e cobertura A6xx/A8xx.",
+    "waived": [
+      "cts",
+      "vvl",
+      "regressions",
+      "ab",
+      "hardware_families"
+    ]
+  }
+}
