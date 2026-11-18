@@ -210,6 +210,11 @@ Candidato a correção universal e pequena: não consultar o cache de disco do i
 Isso tira a dependência do estado do cache do aparelho para ferramentas de perfil. Ainda não implementado; exige teste de
 que a captura volta a trazer as três representações com cache quente.
 
+**Corrigido em 18/11:** o Turnip cria o compilador do ir3 com `.disable_cache = true` (`tu_device.cc`). O cache de disco
+do ir3 nunca roda no Turnip; só no driver OpenGL (freedreno). Este item não se aplica, e o `nocache` não muda nada no
+Turnip. A causa real era só a deduplicação do pipeline cache, abaixo. O teste na reprodução local confirma: com o cache
+de disco do Mesa quente e sem o cache do app, a captura traz as três representações.
+
 ## Reprodução fora do aparelho (15/11, zip da pre4)
 
 Zip: SHA-256 `1f4791fcd4869e9ea55a684492f5566f6d5af72cd5be65c2583aab17a5203336`. Trouxe o SPIR-V do VS e do FS do
@@ -287,8 +292,8 @@ Turnip.
 
 **O que fica para o driver** (universal, sem urgência para o GTA V):
 
-1. Captura de IR com shader deduplicado no pipeline cache: com `executable_info`, manter o próprio objeto.
-2. Captura com acerto no cache de disco do ir3: não consultar o cache quando `write_disasm` estiver pedido.
+1. Captura de IR com shader deduplicado no pipeline cache: com `executable_info`, manter o próprio objeto. **Implementado em 18/11:** `docs/research/tu-capture-ir-cache-dedup.patch` (candidato `tu-capture-ir-cache-dedup`, `proposed`). Na reprodução local, a captura com cache do app semeado passa de 1 para 3 representações, e o caminho sem captura fica idêntico. Entra na próxima candidata.
+2. ~~Captura com acerto no cache de disco do ir3~~: não se aplica ao Turnip (o cache do ir3 é desligado nele; ver a correção de 18/11 acima).
 3. Pressão de registradores em máquinas de estado `loop { switch (pc) }`. Outros tradutores (Xenos, NVN, DXBC) geram o
    mesmo padrão quando há salto para trás. Um passe de jump threading no NIR seria o equivalente ao que o compilador
    proprietário provavelmente faz. É pesquisa, medida com `tools/research/pipeline-repro`.
