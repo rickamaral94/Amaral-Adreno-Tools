@@ -2,7 +2,7 @@
 
 ## Classificação
 
-**Pré-release (candidata).** A Latest continua sendo a 5.8.17.1.
+**Pré-release para A/B.**
 
 ## Base rastreável
 
@@ -75,8 +75,8 @@ Nenhuma mudança upstream duplica ou contradiz um patch nosso. `check_mesa_polic
     as três representações.
 - CTS e VVL: **not-run**.
 
-Por isso esta versão é pré-release. Ela só vira Latest pelo fluxo de promoção, com qualificação em hardware vinculada a
-estes hashes.
+Ela só vira Latest pelo fluxo de promoção, com qualificação em hardware vinculada a estes hashes (ver a seção de
+promoção abaixo).
 
 ## Promoção por exceção do dono
 
