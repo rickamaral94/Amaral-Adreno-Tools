@@ -52,3 +52,17 @@ outros ports, ajuste o layout e o estado no `repro.c`.
 
 Para o `EFEADDD82B576B06` do Gtavport (15/11), o harness reproduz as estatísticas do aparelho: 48 registradores,
 4 waves, 400 STP, 636 LDP e ~8100 instruções.
+
+## Tempo de compilação (`compile_timing.c`)
+
+```sh
+gcc -O1 -o compile_timing compile_timing.c -lvulkan
+MODE=mono ./compile_timing vs.spv fs.spv      # pipeline monolítico, frio
+MODE=gpl ./compile_timing vs.spv fs.spv       # 4 bibliotecas + fast-link + link com LTO
+MODE=combo ./compile_timing vs.spv fs.spv     # mesmos shaders com outro formato/blend/vértice/depth/topologia
+VS2=outro_vs.spv MODE=partner ./compile_timing vs.spv fs.spv   # mesmo FS com outro VS
+```
+
+O Turnip mantém um cache em memória por device, então cada medida fria precisa de um processo novo. Use as mesmas
+variáveis de ambiente da reprodução (`MESA_SHADER_CACHE_DISABLE=true IR3_SHADER_DEBUG=nocache` para medir sem cache).
+Os tempos são do host x86; no aparelho, compare só as proporções.
