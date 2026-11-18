@@ -1,0 +1,60 @@
+From 7a28da73c759ac6a04963a70f0f666223fa8d542 Mon Sep 17 00:00:00 2001
+From: Amaral Adreno Tools <noreply@anthropic.com>
+Date: Wed, 18 Nov 2026 14:00:04 +0000
+Subject: [PATCH] tu: keep captured internal representations when the cache has
+ a twin
+
+A pipeline created with VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS
+could expose only "NIR from SPIRV", without "Final NIR" or
+"IR3 Assembly".
+
+tu skips its cache lookup when capturing, but then inserts the freshly
+compiled shader into the pipeline cache.  If an equal object is already
+there (for instance one deserialized from the application's pipeline
+cache data), the insert returns that object, which carries no IR, and
+drops the new one.  Keep our own objects when capturing, for graphics
+and compute pipelines.
+
+Only the capture path changes; pipelines created without the capture
+flag take exactly the same code as before.
+
+Generated-by: LLM
+---
+ src/freedreno/vulkan/tu_pipeline.cc | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/src/freedreno/vulkan/tu_pipeline.cc b/src/freedreno/vulkan/tu_pipeline.cc
+index 0e32f79df84..2d366c67fda 100644
+--- a/src/freedreno/vulkan/tu_pipeline.cc
++++ b/src/freedreno/vulkan/tu_pipeline.cc
+@@ -2055,6 +2055,16 @@ tu_pipeline_builder_compile_shaders(struct tu_pipeline_builder *builder,
+          if (!nir[stage])
+             continue;
+ 
++         /* With CAPTURE_INTERNAL_REPRESENTATIONS the lookup above was
++          * skipped, so these freshly compiled shaders carry the IR the
++          * application asked for. Inserting them could hand back an equal
++          * object that is already in the cache (for instance one imported
++          * from the application's pipeline cache data), which has no IR.
++          * Keep our own objects in that case.
++          */
++         if (executable_info)
++            continue;
++
+          shaders[stage] = tu_pipeline_cache_insert(builder->cache, shaders[stage]);
+       }
+    }
+@@ -5076,7 +5086,9 @@ tu_compute_pipeline_create(VkDevice device,
+          goto fail;
+       }
+ 
+-      shader = tu_pipeline_cache_insert(cache, shader);
++      /* Keep the captured IR, see tu_pipeline_builder_compile_shaders(). */
++      if (!executable_info)
++         shader = tu_pipeline_cache_insert(cache, shader);
+    }
+ 
+    pipeline_feedback.duration = os_time_get_nano() - pipeline_start;
+-- 
+2.43.0
+

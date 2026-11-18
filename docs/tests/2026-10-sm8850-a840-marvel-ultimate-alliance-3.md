@@ -30,6 +30,8 @@ idênticos. Ser Samsung não muda a variante para esta GPU.
 |---|---:|---:|---:|---|---|---|---|
 | `20261025-024143-0731` | 1,21 s | 28,62 | indisponível | indisponível | 9,0 / 11,8 / 12,3 | Global: Handheld, NearestNeighbor, dynamic state desligado | Manifesto verificado |
 | `20261025-025226-4468` | 77,35 s | 29,87 | 20,77 | 33,76 / 35,32 ms | 12,0 / 16,5 / 20,0 | Perfil do jogo: Docked, SgsrEdge, FXAA, EDS3 | Manifesto verificado |
+| `20261027-103106-1338` | 322,14 s de jogo (sessão 991 s) | 29,84 | indisponível | indisponível | 17,4 / 24,0 / 31,8 | Lab SnapAlloc; Bilinear, AA None, Docked, Res1X, EDS3 | Hashes do manifesto verificados |
+| `20261027-104847-1572` | 511,28 s | 29,79 | indisponível | indisponível | 20,6 / 28,7 / 35,7 | 5.7.14.1 Standard; mesmos ajustes | Hashes do manifesto verificados |
 
 Clock e ocupação da GPU pelo KGSL: indisponíveis (leitura do sysfs bloqueada).
 Bateria até 30,8 °C, estado térmico 0. Sem mensagens do driver, device lost ou
@@ -82,8 +84,9 @@ Escopo de código (revisão do `chatgpt` em T-a840-pixelation, 25/10/2026):
 | `5.7.14.1-a840lab-noubwc` | `TU_DEBUG=noubwc` | `63f545022ab515e234f4d686a9dc2cad0aff2394e5c28eae3256099bd290d710` | `0546fff7f19871a05381df60fd32914cfe92f0838f6b1264b80c2e2baa9e108d` |
 | `5.7.14.1-a840lab-sysmem` | `TU_DEBUG=sysmem` | `7e2f65c7f43bd6bfe53cf4707b902103010bb3609709f75546aecd1b1be3eb56` | `ed661f2e84dab5414df1f36aa0410e9bd3d52d3dff32cb7cf1073e5039b624de` |
 | `5.7.14.1-a840lab-gen8state` | MR !43940 4/7, 5/7, 6/7 (estado após blit 3D em gen8) | `20fd9db6fb4628603f8ab69b780504ac5ace553e19984e7761fe6c63655e436a` | `2cf55f99dcba098ecd6cf99ae45be57801a39d1610d6d90c2b9d07d51c0e4028` |
+| `5.7.14.1-a840lab-snapalloc` | MR !44464 (detecção de UBWC/linear em handles SnapAlloc) | `35afac66c3a564cad06fe4157f64fd5bf972bdf1dd8bb045bff3033783e79ea1` | `be0532f5aa62235e89a01538f405a4a50c66344387636e887da81d944aadfc16` |
 
-Testar os três labs sempre, na mesma cena e com o mesmo critério visual. Cada
+Testar os quatro labs sempre, na mesma cena e com o mesmo critério visual. Cada
 flag muda mais de um caminho, então um resultado orienta a bisecção e não prova
 a causa:
 
@@ -94,8 +97,83 @@ a causa:
   sysmem. Separar com um binário por commit.
 - Só o `gen8state` corrige: hipótese de 6/7 (`RB_SAMPLE_COUNTER_CNTL` nos blits
   r3d, também em sysmem), não prova; confirmar com binário só do 6/7.
+- Só o `snapalloc` corrige: favorece a importação dos buffers do swapchain
+  (modificador do gralloc), não o render do jogo; ver a seção abaixo.
 - Nenhum corrige: comparar com o driver Qualcomm para separar Turnip de
   Eden/jogo.
 
 Qualquer correção real exige binários separados por commit, mecanismo
 identificado, checagem de A7xx e A/B antes de entrar numa candidata.
+
+## Lab SnapAlloc (25/10/2026, auditoria Mesa/MRs em T-a8xx-strategy)
+
+Hipótese com mecanismo identificado no código, ainda sem prova física. O
+SM8850 usa o gralloc SnapAlloc, cujo handle não tem o magic `gmsm` da QTI.
+No Mesa `69f1f21` o build NDK não compila os backends IMapper4/5, e o backend
+`qcom` exige o HAL gralloc1 legado. O caminho ativo é então o fallback, que só
+reconhece `gmsm` e devolve `DRM_FORMAT_MOD_INVALID` para buffers SnapAlloc.
+`vk_android` repassa esse valor como modificador explícito e o Turnip escolhe o
+próprio layout, que pode não ser o da alocação. O efeito esperado é imagem
+embaralhada em blocos em toda saída Vulkan do swapchain, com a UI Android
+intacta. A MR upstream !44464 corrige esse caso; o autor testou na A840.
+
+O lab aplica a MR sem mudar o código, só com o contexto rebaseado sobre o patch
+0001 do NDK. Escopo: handles com `gmsm` (QTI gralloc: A6xx, A7xx, Odin)
+seguem idênticos. O ramo `parrot` da MR (SM7435) usa uma varredura heurística
+que atinge A7xx e precisa de revisão antes de qualquer candidata.
+
+Leitura do resultado (revisão do `chatgpt`, 26/10/2026): só o `snapalloc`
+corrigir favorece a hipótese do gralloc. Outro lab também corrigir exige
+bisecção e não exclui essa hipótese: o `noubwc`, por exemplo, muda o layout que
+o Turnip escolhe para a imagem importada com modificador `INVALID` e pode
+mascarar a incompatibilidade.
+
+## Par lab SnapAlloc × 5.7.14.1 (27/10/2026)
+
+As duas capturas usam o mesmo Eden (`604cde0b1b`), o mesmo jogo e o mesmo hash
+de ajustes efetivos (`01faf4958aca79948c1c856672ef68aa1e95f14bbbcf17535d3a09177aa47f40`,
+idêntico ao do controle Qualcomm `20261026-211757-8120`). O swapchain também é o
+mesmo: RGBA8 2448×1848, FIFO, cinco imagens. Os nove arquivos de cada ZIP batem
+com o manifesto.
+
+| Captura | Driver carregado (ELF) | Imagem |
+|---|---|---|
+| `20261027-103106-1338` | lab 5.7.14.1-a840lab-snapalloc, `be0532f5aa62235e89a01538f405a4a50c66344387636e887da81d944aadfc16` | foto da tela de título nítida (EXIF 07:31:24, UTC−3); o Rick relata a sessão inteira sem erros, incluindo gameplay |
+| `20261027-104847-1572` | 5.7.14.1 Standard, `7fcdb9fb922357a04c05e8fa7dad128b8b85de7763b6c90901007c8fc76916ab` | duas fotos com ruído em colunas (EXIF 07:49:25 e 07:51:44) |
+
+As fotos não estão dentro dos ZIPs. A associação foto↔sessão usa o horário EXIF
+dentro da janela de cada sessão. O fuso UTC−3 foi conferido com as fotos de
+26/10 da captura `20261026-215741-1874`.
+
+**Leitura:** o resultado favorece o tratamento de layout/modifier dos handles
+SnapAlloc no fallback do u_gralloc. A base 5.7.14.1 reproduz o ruído, e o lab,
+que só acrescenta a MR !44464, não. Limites:
+- não há dump do modifier antes e depois, nem observação direta do ramo do
+  patch executado neste aparelho;
+- só há uma foto do lab, a do título; o gameplay limpo é relato do Rick;
+- o lab tinha a MR completa (34 e 33 ints). Pela descrição da MR, o caminho
+  esperado no A840 é o de 34 ints, mas estes ZIPs não registram qual ramo rodou.
+
+A candidata [5.7.16.1](../candidates/5.7.16.1/README.md) leva só o caminho de
+34 ints e ainda não foi testada em hardware.
+
+## Candidata 5.7.16.1 OneUI no perfil SGSR/FXAA (27/10/2026)
+
+A captura `20261027-145905-6375` (ZIP SHA-256
+`ff17d8f45ee7745e689dacc1f5fa652667d1bcc59dc8f7d969c8641cf6e46b49`) carregou a
+5.7.16.1 OneUI (ELF `28cea848c357623b646e614a29104ee8d692c2e96dbdcd4ad1e8a2f492af3da0`)
+com o perfil original SGSR Edge + FXAA. Esse é o mesmo hash de ajustes da
+captura `20261026-205617-7853` da 5.7.15.1 OneUI, que tinha ruído em colunas. As
+três fotos de gameplay estão nítidas. O Rick relata "funcionando perfeito,
+algumas travadas na criação de shaders". O ZIP e as fotos foram verificados
+de forma independente pelo `chatgpt` (T-a840-pixelation 7673) e pelo `claude`.
+Nas fotos, a grade de ruído de 32/64 px some: a métrica fica entre 0,00 e 0,01,
+contra 0,20 a 0,65 com o ruído. GPU p50/p90/p99 da cena: 28,0/33,2/42,6 ms.
+
+As travadas são em parte criação de pipeline em runtime: 21 criadas, máximo de
+97 ms. A maior pausa, de 334 ms, não coincide com criação nem com espera
+registrada. Não é atribuída ao patch, porque não há captura do mesmo trecho
+com a 5.7.15.1 legível para comparar.
+
+Esta captura não substitui os testes que faltam: Bilinear/None com a 5.7.16.1,
+para parear com o lab, e a regressão pareada no A740.

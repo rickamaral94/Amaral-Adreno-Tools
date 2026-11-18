@@ -239,6 +239,21 @@
         "docs/audits/2026-10-31-botw-a740/README.md"
       ],
       "evidence_scope": "Revisão estática dos dois agentes; perfil simbolizado do BOTWRecomp no A740 mostra a cópia em ~3,9% das amostras da thread de render. Um A/B de 60 s no A740 (Odin 2 Portal) indicou queda preliminar de ~60% no custo por bind, sem erro em ~7,5 min. Not-run: CTS, VVL, A6xx, A8xx, AB/BA de 5 rodadas e os casos GPL/secondary/tess/FDM/trace pedidos na revisão."
+    },
+    {
+      "id": "tu-capture-ir-cache-dedup",
+      "kind": "correctness-tooling",
+      "status": "proposed",
+      "default": false,
+      "patch": "docs/research/tu-capture-ir-cache-dedup.patch",
+      "reason": "Com VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS, o Turnip pula a busca no cache, mas depois insere o shader compilado no pipeline cache. Se já existe um objeto igual (ex.: importado do cache do app), a inserção devolve o antigo, sem IR, e a captura só expõe \"NIR from SPIRV\". O patch mantém o próprio objeto quando há captura (gráfico e compute). Pipelines sem a flag seguem exatamente o mesmo código.",
+      "source": "Amaral (claude), a partir do caso Gtavport de 15/11",
+      "license_review": "compatible-mit",
+      "patch_apply_verified_on_mesa": "a6aacf6b0fb0468b1dbe57fa34a0bba7c5ee2413",
+      "evidence": [
+        "docs/audits/2026-11-14-gtav-hdr-autotune.md"
+      ],
+      "evidence_scope": "Reprodução local (tools/research/pipeline-repro, A740 via drm-shim, séries Standard da 5.9.18.1): com VkPipelineCache semeado por um pipeline sem captura, a base expõe 1 representação e o patch expõe 3 (NIR from SPIRV, Final NIR, IR3 Assembly); frio e com cache de disco do Mesa, 3 nos dois. Caminho sem captura igual: mesmas estatísticas (8114 instr, 48 regs, 400/636 STP/LDP) e mesmo acerto de cache (~0,06 ms). Aplica sobre Standard e OneUI. Not-run: hardware, CTS (dEQP-VK.pipeline.*.executable_properties*), VVL. Entra na próxima candidata."
     }
   ]
 }

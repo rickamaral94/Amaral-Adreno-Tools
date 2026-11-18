@@ -1,0 +1,155 @@
+--- a/src/freedreno/vulkan/tu_buffer.cc	2026-11-07 08:11:30.406734624 +0000
++++ b/src/freedreno/vulkan/tu_buffer.cc	2026-11-07 08:11:30.408073925 +0000
+@@ -64,7 +64,9 @@
+       VkResult result =
+          tu_sparse_vma_init(device, &buffer->vk.base, &buffer->vma,
+                             &buffer->vk.device_address, flags,
+-                            pCreateInfo->size, alignment, client_address);
++                            align64(pCreateInfo->size,
++                                    tu_sparse_bind_granularity(device)),
++                            alignment, client_address);
+ 
+       if (result != VK_SUCCESS) {
+          vk_buffer_destroy(&device->vk, pAllocator, &buffer->vk);
+@@ -131,7 +133,7 @@
+    uint64_t size = pInfo->pCreateInfo->size;
+    uint32_t alignment =
+       (pInfo->pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) ?
+-      os_page_size : 64;
++      tu_sparse_bind_granularity(device) : 64;
+    pMemoryRequirements->memoryRequirements = (VkMemoryRequirements) {
+       .size = MAX2(align64(size, alignment), size),
+       .alignment = alignment,
+--- a/src/freedreno/vulkan/tu_image.cc	2026-11-07 08:11:30.409293052 +0000
++++ b/src/freedreno/vulkan/tu_image.cc	2026-11-07 08:11:30.410444472 +0000
+@@ -1048,7 +1048,10 @@
+       }
+ 
+       result = tu_sparse_vma_init(device, &image->vk.base, &image->vma,
+-                                  &image->iova, flags, image->total_size, 0,
++                                  &image->iova, flags,
++                                  align64(image->total_size,
++                                          tu_sparse_bind_granularity(device)),
++                                  0,
+                                   client_address);
+ 
+       if (result != VK_SUCCESS)
+@@ -1192,7 +1195,7 @@
+ {
+    uint32_t alignment = image->layout[0].base_align;
+    if (image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)
+-      alignment = MAX2(alignment, os_page_size);
++      alignment = MAX2(alignment, tu_sparse_bind_granularity(dev));
+    if (image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT)
+       alignment = 65536;
+ 
+@@ -1721,6 +1724,16 @@
+    for (unsigned sy = y_start; sy < y_end; sy += sparse_height) {
+       for (unsigned sx = x_start; sx < x_end; sx += sparse_width,
+            bo_offset += 65536) {
++         /* On KGSL a later unbind of one tile must not touch a bind that
++          * also covers a neighbouring tile (see kgsl_submit_add_bind()), so
++          * never merge a bind across a tile boundary.
++          */
++         if (bo && bind_range && tu_sparse_bind_granularity(device) == 65536) {
++            tu_submit_add_bind(device, submit, &image->vma,
++                               prev_image_offset, bo, prev_bo_offset,
++                               bind_range);
++            bind_range = 0;
++         }
+          uint64_t row_bo_offset = bo_offset;
+          for (unsigned ty = sy; ty < MIN2(sy + sparse_height, y_end);
+               ty += macrotile_height,
+--- a/src/freedreno/vulkan/tu_knl.cc	2026-11-07 08:11:30.416223367 +0000
++++ b/src/freedreno/vulkan/tu_knl.cc	2026-11-07 08:11:30.417315522 +0000
+@@ -307,6 +307,12 @@
+                                                  num_entries);
+ }
+ 
++uint64_t
++tu_sparse_bind_granularity(struct tu_device *dev)
++{
++   return strcmp(dev->instance->knl->name, "kgsl") == 0 ? 65536 : os_page_size;
++}
++
+ void
+ tu_submit_add_bind(struct tu_device *dev,
+                    void *_submit,
+--- a/src/freedreno/vulkan/tu_knl.h	2026-11-07 08:11:30.413988087 +0000
++++ b/src/freedreno/vulkan/tu_knl.h	2026-11-07 08:11:30.415152201 +0000
+@@ -322,6 +322,13 @@
+                       struct tu_cs_entry *entries,
+                       unsigned num_entries);
+ 
++/* Granularity of sparse binds that the kernel can later undo exactly.
++ * KGSL removes a bound interval in full on unbind, so there every sparse
++ * resource uses 64 KiB blocks; elsewhere the page size is enough.
++ */
++uint64_t
++tu_sparse_bind_granularity(struct tu_device *dev);
++
+ void
+ tu_submit_add_bind(struct tu_device *device,
+                    void *_submit,
+--- a/src/freedreno/vulkan/tu_knl_kgsl.cc	2026-11-07 08:11:30.411652767 +0000
++++ b/src/freedreno/vulkan/tu_knl_kgsl.cc	2026-11-07 08:11:30.412812866 +0000
+@@ -1438,11 +1438,11 @@
+ }
+ 
+ static void
+-kgsl_submit_add_bind(struct tu_device *device,
+-                     void *_submit,
+-                     struct tu_sparse_vma *vma, uint64_t vma_offset,
+-                     struct tu_bo *bo, uint64_t bo_offset,
+-                     uint64_t size)
++kgsl_submit_add_bind_range(struct tu_device *device,
++                           void *_submit,
++                           struct tu_sparse_vma *vma, uint64_t vma_offset,
++                           struct tu_bo *bo, uint64_t bo_offset,
++                           uint64_t size)
+ {
+    struct tu_kgsl_queue_submit *submit =
+       static_cast<struct tu_kgsl_queue_submit *>(_submit);
+@@ -1483,6 +1483,42 @@
+    util_dynarray_append(&submit->ranges, range);
+ }
+ 
++/* KGSL keeps one interval per bound range, and an UNBIND removes every
++ * interval it overlaps in full: kgsl_memdesc_remove_range() unmaps the whole
++ * interval, not just the part that was asked for. Unbinding one sparse block
++ * that lies inside a larger earlier bind would therefore also unmap its
++ * neighbours, which then read zeros or fault. Bind in pieces that never cross
++ * a 64 KiB sparse block, the smallest unit the application can unbind, so
++ * that every later unbind removes exactly what it names.
++ */
++#define KGSL_SPARSE_BIND_BLOCK 65536ull
++
++static void
++kgsl_submit_add_bind(struct tu_device *device,
++                     void *_submit,
++                     struct tu_sparse_vma *vma, uint64_t vma_offset,
++                     struct tu_bo *bo, uint64_t bo_offset,
++                     uint64_t size)
++{
++   if (!bo) {
++      kgsl_submit_add_bind_range(device, _submit, vma, vma_offset, NULL, 0,
++                                 size);
++      return;
++   }
++
++   while (size) {
++      uint64_t block_end =
++         (vma_offset & ~(KGSL_SPARSE_BIND_BLOCK - 1)) + KGSL_SPARSE_BIND_BLOCK;
++      uint64_t len = MIN2(size, block_end - vma_offset);
++
++      kgsl_submit_add_bind_range(device, _submit, vma, vma_offset, bo,
++                                 bo_offset, len);
++      vma_offset += len;
++      bo_offset += len;
++      size -= len;
++   }
++}
++
+ /* We don't know the actual CPU pointers until we've finished adding all the
+  * bind commands, so we put the offset from the base instead. We need to write
+  * the actual pointer after all the ranges are added. We also need to fill out
