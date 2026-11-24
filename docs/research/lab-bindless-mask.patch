@@ -1,0 +1,204 @@
+From 0919527621014ce95a6ca02a7a4e0647806d486c Mon Sep 17 00:00:00 2001
+From: Amaral Adreno Tools <noreply@anthropic.com>
+Date: Tue, 24 Nov 2026 16:37:55 +0000
+Subject: [PATCH] tu: lab - invalidate only the graphics bindless sets whose
+ base moved (a7xx)
+
+Every descriptor-set draw state wrote SP_UPDATE_CNTL with
+gfx_bindless = 0xff, so a bind that only changed dynamic offsets (a new
+reserved-set copy) also dropped the cached descriptors of every other
+set.  NVN and D3D translation layers do that on most draws.
+
+Lab behaviour, A7XX graphics only, TU_LAB_BINDLESS_MASK=0 to disable:
+
+- At subpass begin, write an unconditional full invalidation inline in
+  draw_cs; it runs for every tile and in sysmem alike.
+- From there, in sysmem, each descriptor-set draw state invalidates every
+  set whose base differs from the reference taken at the first emission
+  after that point. GMEM and binning keep 0xff (render-mode conditional),
+  since binning can run concurrently with rendering on a7xx.  The mask only grows until the next subpass, so draw states
+  skipped by the visibility stream in a tile cannot leave a moved set
+  cached.
+- Secondary command buffers, the rest of a subpass after
+  vkCmdExecuteCommands, and anything outside that window keep 0xff.
+
+Not for distribution until an A/B on hardware.
+
+Generated-by: LLM
+---
+ src/freedreno/vulkan/tu_cmd_buffer.cc | 61 ++++++++++++++++++++++++---
+ src/freedreno/vulkan/tu_cmd_buffer.h  | 19 +++++++++
+ src/freedreno/vulkan/tu_device.cc     |  1 +
+ src/freedreno/vulkan/tu_device.h      |  4 ++
+ 4 files changed, 80 insertions(+), 5 deletions(-)
+
+diff --git a/src/freedreno/vulkan/tu_cmd_buffer.cc b/src/freedreno/vulkan/tu_cmd_buffer.cc
+index 8e82c28..ae811b5 100644
+--- a/src/freedreno/vulkan/tu_cmd_buffer.cc
++++ b/src/freedreno/vulkan/tu_cmd_buffer.cc
+@@ -4213,6 +4213,7 @@ static void tu_reset_render_pass(struct tu_cmd_buffer *cmd_buffer)
+    cmd_buffer->state.pass = NULL;
+    cmd_buffer->state.subpass = NULL;
+    cmd_buffer->state.framebuffer = NULL;
++   cmd_buffer->state.lab_bindless_ok = false;
+    cmd_buffer->state.attachments = NULL;
+    cmd_buffer->state.clear_values = NULL;
+    cmd_buffer->state.gmem_layout = TU_GMEM_LAYOUT_COUNT; /* invalid value to prevent looking up gmem offsets */
+@@ -4777,6 +4778,10 @@ tu6_emit_descriptor_sets(struct tu_cmd_buffer *cmd,
+       tu_get_descriptors_state(cmd, bind_point);
+    uint32_t sp_bindless_base_reg, hlsq_bindless_base_reg;
+    struct tu_cs *cs, state_cs;
++   /* Amaral lab, see tu_cmd_state::lab_bindless_ok. */
++   const bool lab_mask = CHIP == A7XX &&
++      bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS &&
++      cmd->device->lab_bindless_mask && cmd->state.lab_bindless_ok;
+ 
+    if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+       sp_bindless_base_reg = __SP_GFX_BINDLESS_BASE_DESCRIPTOR<CHIP>(0, {}).reg;
+@@ -4792,10 +4797,14 @@ tu6_emit_descriptor_sets(struct tu_cmd_buffer *cmd,
+                              2 + 2 * bindless_pkt_size +
+                              (descriptors_state->max_dynamic_offset_size ? 6 : 0));
+       } else {
++         /* Amaral lab: two render-mode branches of SP_UPDATE_CNTL, 3 + 2
++          * dwords each, instead of one plain 2-dword write.
++          */
+          cmd->state.desc_sets =
+             tu_cs_draw_state(&cmd->sub_cs, &state_cs,
+                              2 + bindless_pkt_size +
+-                             (descriptors_state->max_dynamic_offset_size ? 3 : 0));
++                             (descriptors_state->max_dynamic_offset_size ? 3 : 0) +
++                             (lab_mask ? 8 : 0));
+       }
+       cs = &state_cs;
+    } else {
+@@ -4831,10 +4840,38 @@ tu6_emit_descriptor_sets(struct tu_cmd_buffer *cmd,
+       }
+    }
+ 
+-   tu_cs_emit_regs(cs, SP_UPDATE_CNTL(CHIP,
+-      .cs_bindless = bind_point == VK_PIPELINE_BIND_POINT_COMPUTE ? CHIP == A6XX ? 0x1f : 0xff : 0,
+-      .gfx_bindless = bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS ? CHIP == A6XX ? 0x1f : 0xff : 0,
+-   ));
++   if (lab_mask) {
++      if (!cmd->state.lab_bindless_ref_valid) {
++         /* The descriptor cache was invalidated inline at subpass begin. */
++         memcpy(cmd->state.lab_bindless_ref_iova, descriptors_state->set_iova,
++                sizeof(cmd->state.lab_bindless_ref_iova));
++         cmd->state.lab_bindless_changed = 0;
++         cmd->state.lab_bindless_ref_valid = true;
++      } else {
++         for (unsigned i = 0; i < MAX_SETS; i++) {
++            if (descriptors_state->set_iova[i] != cmd->state.lab_bindless_ref_iova[i])
++               cmd->state.lab_bindless_changed |= 1u << i;
++         }
++      }
++
++      /* GMEM and binning keep invalidating every set: binning can run
++       * concurrently with rendering on a7xx, so only sysmem takes the mask.
++       */
++      tu_cond_exec_start(cs, CP_COND_REG_EXEC_0_MODE(RENDER_MODE) |
++                             CP_COND_REG_EXEC_0_GMEM |
++                             CP_COND_REG_EXEC_0_BINNING);
++      tu_cs_emit_regs(cs, SP_UPDATE_CNTL(CHIP, .gfx_bindless = 0xff));
++      tu_cond_exec_end(cs);
++      tu_cond_exec_start(cs, CP_COND_EXEC_0_RENDER_MODE_SYSMEM);
++      tu_cs_emit_regs(cs, SP_UPDATE_CNTL(CHIP,
++         .gfx_bindless = cmd->state.lab_bindless_changed));
++      tu_cond_exec_end(cs);
++   } else {
++      tu_cs_emit_regs(cs, SP_UPDATE_CNTL(CHIP,
++         .cs_bindless = bind_point == VK_PIPELINE_BIND_POINT_COMPUTE ? CHIP == A6XX ? 0x1f : 0xff : 0,
++         .gfx_bindless = bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS ? CHIP == A6XX ? 0x1f : 0xff : 0,
++      ));
++   }
+ 
+    if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+       assert(cs->cur == cs->end); /* validate draw state size */
+@@ -6478,6 +6515,11 @@ tu_CmdExecuteCommands(VkCommandBuffer commandBuffer,
+ 
+    assert(commandBufferCount > 0);
+ 
++   /* Amaral lab: secondaries leave the bindless descriptor cache in an
++    * unknown state, so go back to full invalidation until the next subpass.
++    */
++   cmd->state.lab_bindless_ok = false;
++
+    /* Emit any pending flushes. */
+    if (cmd->state.pass) {
+       tu_clean_all_pending(&cmd->state.renderpass_cache);
+@@ -7122,6 +7164,15 @@ tu_emit_subpass_begin(struct tu_cmd_buffer *cmd)
+    vk_cmd_set_cb_attachment_count(&cmd->vk, cmd->state.subpass->color_count);
+ 
+    cmd->state.dirty |= TU_CMD_DIRTY_SUBPASS;
++
++   /* Amaral lab: unconditional point for the per-set bindless invalidation
++    * (see tu_cmd_state::lab_bindless_ok).
++    */
++   if (CHIP == A7XX && cmd->device->lab_bindless_mask) {
++      tu_cs_emit_regs(&cmd->draw_cs, SP_UPDATE_CNTL(CHIP, .gfx_bindless = 0xff));
++      cmd->state.lab_bindless_ok = true;
++      cmd->state.lab_bindless_ref_valid = false;
++   }
+ }
+ 
+ static void
+diff --git a/src/freedreno/vulkan/tu_cmd_buffer.h b/src/freedreno/vulkan/tu_cmd_buffer.h
+index 48577e7..1348a77 100644
+--- a/src/freedreno/vulkan/tu_cmd_buffer.h
++++ b/src/freedreno/vulkan/tu_cmd_buffer.h
+@@ -631,6 +631,25 @@ struct tu_cmd_state
+    bool pipeline_sysmem_single_prim_mode;
+    bool pipeline_has_tess;
+    bool pipeline_disable_gmem;
++
++   /* Amaral lab, graphics bindless invalidation by set (A7XX only).
++    *
++    * lab_bindless_ok is set right after an unconditional "invalidate every
++    * set" written inline into draw_cs at subpass begin, which runs for every
++    * tile and in sysmem alike. From there, every descriptor-set draw state
++    * invalidates each set whose base differs from lab_bindless_ref_iova at
++    * any point since (lab_bindless_changed only grows). Draw states can be
++    * skipped per tile in GMEM, so the mask is cumulative rather than relative
++    * to the previous draw: a set that never moved keeps the base its cached
++    * descriptors came from, and any set that moved is invalidated before
++    * every later draw. The mask only applies when the pass renders in
++    * sysmem; GMEM and binning keep invalidating every set, because binning
++    * can run concurrently with rendering on a7xx.
++    */
++   bool lab_bindless_ok;
++   bool lab_bindless_ref_valid;
++   uint32_t lab_bindless_changed;
++   uint64_t lab_bindless_ref_iova[MAX_SETS];
+    bool raster_order_attachment_access;
+    bool raster_order_attachment_access_valid;
+    bool blit_cache_cleaned;
+diff --git a/src/freedreno/vulkan/tu_device.cc b/src/freedreno/vulkan/tu_device.cc
+index 76910e4..f9ab6ef 100644
+--- a/src/freedreno/vulkan/tu_device.cc
++++ b/src/freedreno/vulkan/tu_device.cc
+@@ -3269,6 +3269,7 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
+       (!border_color_without_format ||
+        !physical_device->instance->drirc.misc.enable_d24s8_border_color_workaround);
+    device->use_lrz = !TU_DEBUG_START(NOLRZ);
++   device->lab_bindless_mask = debug_get_bool_option("TU_LAB_BINDLESS_MASK", true);
+ 
+    tu_gpu_tracepoint_config_variable();
+ 
+diff --git a/src/freedreno/vulkan/tu_device.h b/src/freedreno/vulkan/tu_device.h
+index 4b9f6e7..f932d52 100644
+--- a/src/freedreno/vulkan/tu_device.h
++++ b/src/freedreno/vulkan/tu_device.h
+@@ -494,6 +494,10 @@ struct tu_device
+ 
+    bool use_z24uint_s8uint;
+    bool use_lrz;
++   /* Amaral lab: invalidate only the graphics bindless sets whose base
++    * changed (A7XX). TU_LAB_BINDLESS_MASK=0 restores the 0xff invalidation.
++    */
++   bool lab_bindless_mask;
+ 
+    struct fd_rd_output rd_output;
+ 
+-- 
+2.43.0
+
