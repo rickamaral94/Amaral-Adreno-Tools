@@ -71,3 +71,23 @@ Critério para entrar numa candidata:
 - ganho de GPU reproduzível no A/B/A;
 - nenhum defeito visual;
 - o mesmo resultado num segundo jogo (TOTK ou um jogo DXVK).
+
+## Resultado no Odin (24/11, Botwnspxci Amaral.15) — arquivado
+
+A/B do BOTW na mesma rota, a ~4.500 draws (medição no aparelho, registro `docs/logs/2026-11-24-amaral14-odin.md`
+do Botwnspxci, commit `c98e7d7`):
+
+| Braço | GPU por quadro real | Custo por draw no G-buffer (trace) |
+| --- | --- | --- |
+| Padrão (`TU_LAB_BINDLESS_MASK=0`) | 30,18 ms | 3,72 µs |
+| Lab | 29,51 ms | 3,68 µs |
+
+Sem defeito visual, mas também **sem ganho mensurável**: ~1%, dentro do ruído. A invalidação do cache de
+descritores não é o que limita o G-buffer nesse caso. **Lab arquivado**; não entra em candidata.
+
+O mesmo trace mostrou o que pesa de fato:
+- todos os alvos de cor com `ubwc=n`, por causa do `MUTABLE_FORMAT` sem lista;
+- ~55 render passes de 5 cores por quadro no G-buffer, quebrados para a leitura no lugar;
+- LRZ invalidado por depth write com `ALWAYS`/`NOT_EQUAL`.
+
+Os três são do lado do app e estão na campainha.
