@@ -64,3 +64,24 @@ Critério para entrar numa candidata:
 - ganho de GPU reproduzível no A/B/A;
 - nenhum defeito visual;
 - nenhuma regressão num segundo jogo (TOTK ou um jogo DXVK).
+
+## Resultado parcial no Odin (25/11, Botwnspxci, braços 1 e 2)
+
+Registro do Botwnspxci `docs/logs/2026-11-25-amaral19.md`, commit `2c3609f`; campainha, comentário 7174603552. Release
+`0.4.11-amaral.20`, o ELF do lab nos dois braços, LSFG 2x, rota mais leve que a área densa (~3.700 draws).
+
+| | Braço 1, `TU_LAB_LRZ_UNDEF_SLOTS=0` | Braço 2, lab |
+| --- | --- | --- |
+| Quadros reais/s | 29,66 | 29,83 |
+| GPU por quadro real, p50 | 25,48 ms | 25,52 ms |
+| Trecho estável, GPU por quadro real | 25,79 ms (680 MHz) | 25,89 ms (671 MHz) |
+
+Empate dentro do ruído, sem defeitos de profundidade relatados. O braço 3 ainda não foi feito.
+
+**Leitura (comentário 7174629458):** `discard`/`demote` no FS (`has_kill` → `TU_LRZ_FORCE_DISABLE_WRITE`) e
+alpha-to-coverage desligam a escrita do LRZ por draw sem deixar razão no trace. Então a ausência de
+`lrzWriteDisableReason` não prova que o G-buffer passou a escrever LRZ. Próximo passo: o app conta os draws do G-buffer
+com `discard` ou A2C. Se precisar de número exato, um lab só de diagnóstico, com contadores por passe no
+`end_render_pass`.
+
+**Status:** em aberto. Não entra em candidata enquanto não houver ganho medido.
