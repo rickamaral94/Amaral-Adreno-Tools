@@ -1,0 +1,58 @@
+From f4e6dc0b5dab6a80b07dc4ccd6175f2515c2c0ae Mon Sep 17 00:00:00 2001
+From: Amaral Adreno Tools <noreply@anthropic.com>
+Date: Wed, 25 Nov 2026 20:30:51 +0000
+Subject: [PATCH] tu: lab - do not count format-less color slots as partial
+ writes for LRZ
+
+tu6_calc_blend_lrz() counts the written color attachments only over the
+slots that have a format, but compared that count with
+cb->attachment_count, which also includes VK_FORMAT_UNDEFINED slots.
+A pipeline with an unused slot in the middle was therefore always
+classified as a partial write, and every depth-writing draw disabled
+LRZ writes for the rest of the render pass ('Depth write + blending').
+
+Compare with the number of slots that have a format. Blending, partial
+write masks and disabled color writes on real attachments still mark
+the state as reading the destination.
+
+Lab only: TU_LAB_LRZ_UNDEF_SLOTS=0 restores the stock comparison.
+
+Generated-by: LLM
+---
+ src/freedreno/vulkan/tu_pipeline.cc | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/src/freedreno/vulkan/tu_pipeline.cc b/src/freedreno/vulkan/tu_pipeline.cc
+index 2d366c6..83f1f91 100644
+--- a/src/freedreno/vulkan/tu_pipeline.cc
++++ b/src/freedreno/vulkan/tu_pipeline.cc
+@@ -3234,6 +3234,11 @@ tu_emit_disable_fs(struct tu_disable_fs *disable_fs,
+    disable_fs->valid = true;
+ }
+ 
++/* Lab: TU_LAB_LRZ_UNDEF_SLOTS=0 restores the stock comparison against
++ * cb->attachment_count, which also counts slots without a format.
++ */
++DEBUG_GET_ONCE_BOOL_OPTION(tu_lab_lrz_undef_slots, "TU_LAB_LRZ_UNDEF_SLOTS", true)
++
+ /* Return true if the blend state reads the color attachments. */
+ static tu_lrz_blend_status
+ tu6_calc_blend_lrz(const struct vk_color_blend_state *cb,
+@@ -3261,7 +3266,13 @@ tu6_calc_blend_lrz(const struct vk_color_blend_state *cb,
+    if (written_color_attachments == 0)
+       return TU_LRZ_BLEND_ALL_COLOR_WRITES_SKIPPED;
+ 
+-   if (written_color_attachments < cb->attachment_count)
++   /* Slots whose format is VK_FORMAT_UNDEFINED have no attachment: they are
++    * neither read nor written, so they cannot make the write partial.
++    */
++   const uint32_t expected_written =
++      debug_get_option_tu_lab_lrz_undef_slots() ? total_color_attachments
++                                                : cb->attachment_count;
++   if (written_color_attachments < expected_written)
+       return TU_LRZ_BLEND_READS_DEST_OR_PARTIAL_WRITE;
+ 
+    for (unsigned i = 0; i < cb->attachment_count; i++) {
+-- 
+2.43.0
+
