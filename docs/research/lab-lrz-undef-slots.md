@@ -85,3 +85,11 @@ com `discard` ou A2C. Se precisar de número exato, um lab só de diagnóstico, 
 `end_render_pass`.
 
 **Status:** em aberto. Não entra em candidata enquanto não houver ganho medido.
+
+## Encerramento (26/11) — arquivado
+
+O contador do Botwnspxci mostrou máscara de escrita parcial em ~99% dos draws do G-buffer que escrevem depth. Mesmo
+sem os slots `UNDEFINED`, esses draws continuam marcando `READS_DEST`, e o LRZ do G-buffer do BOTW não volta a ser
+escrito. O lab fica arquivado e não entra em candidata. A comparação com os slots que têm formato continua correta;
+ela pode voltar se outro jogo mostrar ganho com slots vazios. Recomendação ao Rick: v5.9.19.1 padrão. Resposta na
+campainha: comentário 7179455579.
